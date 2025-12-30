@@ -1,0 +1,505 @@
+openapi: 3.0.3
+info:
+  title: TRAKA API
+  description: Logistics and tracking API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  message:
+                    type: string
+                    example: "TRAKA API is running"
+
+  /api/auth/login:
+    post:
+      summary: User login
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid credentials
+
+  /api/auth/register:
+    post:
+      summary: User registration
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                role:
+                  type: string
+                  enum: [ADMIN, RIDER, RECIPIENT]
+                  example: "USER"
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid input
+
+  /api/users:
+    get:
+      summary: Get all users (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users
+        '403':
+          description: Admin access required
+    
+    post:
+      summary: Create user (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "newuser@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                role:
+                  type: string
+                  enum: [ADMIN, RIDER, RECIPIENT]
+                  example: "USER"
+      responses:
+        '201':
+          description: User created successfully
+        '403':
+          description: Admin access required
+
+  /api/users/{user_id}:
+    get:
+      summary: Get user by ID (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: User details
+        '404':
+          description: User not found
+    
+    put:
+      summary: Update user (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "updated@example.com"
+                role:
+                  type: string
+                  enum: [ADMIN, RIDER, RECIPIENT]
+                  example: "RIDER"
+      responses:
+        '200':
+          description: User updated successfully
+        '404':
+          description: User not found
+    
+    delete:
+      summary: Delete user (Admin only)
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: User deleted successfully
+        '404':
+          description: User not found
+
+  /api/packages:
+    post:
+      summary: Create package (Admin only)
+      tags: [Packages]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_email, delivery_address, description]
+              properties:
+                recipient_email:
+                  type: string
+                  format: email
+                  example: "recipient@example.com"
+                delivery_address:
+                  type: string
+                  example: "123 Main St, City, State 12345"
+                description:
+                  type: string
+                  example: "Electronics package"
+      responses:
+        '201':
+          description: Package created successfully
+        '403':
+          description: Admin access required
+
+  /api/packages/{tracking_number}:
+    get:
+      summary: Get package by tracking number
+      tags: [Packages]
+      parameters:
+        - name: tracking_number
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "TRK123456789"
+      responses:
+        '200':
+          description: Package details
+        '404':
+          description: Package not found
+
+  /api/drivers:
+    post:
+      summary: Create driver (Admin only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, license_number, vehicle_type, vehicle_plate]
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                license_number:
+                  type: string
+                  example: "DL123456789"
+                vehicle_type:
+                  type: string
+                  example: "VAN"
+                vehicle_plate:
+                  type: string
+                  example: "ABC-1234"
+      responses:
+        '201':
+          description: Driver created successfully
+        '403':
+          description: Admin access required
+
+  /api/drivers/all:
+    get:
+      summary: Get all drivers (Admin only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of all drivers
+        '403':
+          description: Admin access required
+
+  /api/drivers/available:
+    get:
+      summary: Get available drivers (Admin only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of available drivers
+        '403':
+          description: Admin access required
+
+  /api/drivers/profile:
+    get:
+      summary: Get driver profile (Rider only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Driver profile
+        '403':
+          description: Rider access required
+
+  /api/drivers/{driver_id}/location:
+    put:
+      summary: Update driver location (Rider only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [latitude, longitude]
+              properties:
+                latitude:
+                  type: number
+                  minimum: -90
+                  maximum: 90
+                  example: 40.7128
+                longitude:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+                  example: -74.0060
+      responses:
+        '200':
+          description: Location updated successfully
+        '403':
+          description: Rider access required
+
+  /api/drivers/{driver_id}/status:
+    put:
+      summary: Update driver status (Rider only)
+      tags: [Drivers]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [AVAILABLE, BUSY, OFFLINE]
+                  example: "AVAILABLE"
+      responses:
+        '200':
+          description: Status updated successfully
+        '403':
+          description: Rider access required
+
+  /api/dashboard/overview:
+    get:
+      summary: Get dashboard overview (Admin only)
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard overview data
+        '403':
+          description: Admin access required
+
+  /api/dashboard/drivers:
+    get:
+      summary: Get drivers management data (Admin only)
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Drivers management data
+        '403':
+          description: Admin access required
+
+  /api/dashboard/packages:
+    get:
+      summary: Get packages management data (Admin only)
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Packages management data
+        '403':
+          description: Admin access required
+
+  /api/dashboard/customers:
+    get:
+      summary: Get customers management data (Admin only)
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Customers management data
+        '403':
+          description: Admin access required
+
+  /api/dashboard/analytics:
+    get:
+      summary: Get analytics data (Admin only)
+      tags: [Dashboard]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Analytics data
+        '403':
+          description: Admin access required
+
+  /api/verification/send-otp:
+    post:
+      summary: Send OTP to email
+      tags: [Verification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: OTP sent successfully
+        '400':
+          description: Invalid email
+
+  /api/verification/verify-otp:
+    post:
+      summary: Verify OTP
+      tags: [Verification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                otp:
+                  type: string
+                  minLength: 6
+                  maxLength: 6
+                  example: "123456"
+      responses:
+        '200':
+          description: OTP verified successfully
+        '400':
+          description: Invalid OTP

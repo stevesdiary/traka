@@ -1,0 +1,49 @@
+{
+  "name": "traka",
+  "version": "1.0.0",
+  "description": "Secure package tracking logistics",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [],
+  "author": "Stephen Oyeyemi",
+  "license": "ISC",
+  "packageManager": "pnpm@10.18.3",
+  "dependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.3.0",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "sequelize": "^6.35.0",
+    "sequelize-typescript": "^2.1.6",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.8",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.0.2",
+    "@types/nodemailer": "^6.4.14",
+    "@types/supertest": "^2.0.16",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.9.3"
+  }
+}
