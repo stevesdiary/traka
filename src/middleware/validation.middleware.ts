@@ -1,0 +1,30 @@
+import { Request, Response, NextFunction } from 'express';
+import Joi from 'joi';
+
+export const validateInput = (schema: Joi.Schema, source: 'body' | 'query' | 'params' = 'body') => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const data = req[source];
+    const { error, value } = schema.validate(data, { abortEarly: false });
+    
+    if (error) {
+      // Log the error for debugging
+      console.error('Validation error:', error.details);
+      const validationErrors = error.details.map(detail => ({
+        // field: detail.path.join('.'),
+        message: detail.message.replace(/"/g, ''),
+        value: detail.context?.value
+      }));
+      
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Please check the following fields and try again',
+        validation_errors: validationErrors
+      });
+    }
+    
+    // Replace request data with validated data
+    req[source] = value;
+    next();
+  };
+};
+
