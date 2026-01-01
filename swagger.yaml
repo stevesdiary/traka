@@ -213,7 +213,7 @@ paths:
 
   /api/packages:
     post:
-      summary: Create package (Admin only)
+      summary: Create package
       tags: [Packages]
       security:
         - bearerAuth: []
@@ -223,23 +223,89 @@ paths:
           application/json:
             schema:
               type: object
-              required: [recipient_email, delivery_address, description]
+              required: [recipient_name, recipient_phone, pickup_address, delivery_address, description, package_size, delivery_speed]
               properties:
+                recipient_name:
+                  type: string
+                  example: "John Doe"
                 recipient_email:
                   type: string
                   format: email
                   example: "recipient@example.com"
+                recipient_phone:
+                  type: string
+                  example: "+1234567890"
+                pickup_address:
+                  type: string
+                  example: "456 Pickup St, City, State 12345"
                 delivery_address:
                   type: string
                   example: "123 Main St, City, State 12345"
                 description:
                   type: string
                   example: "Electronics package"
+                delivery_notes:
+                  type: string
+                  example: "Handle with care"
+                package_size:
+                  type: string
+                  enum: [SMALL, MEDIUM, LARGE]
+                  example: "MEDIUM"
+                package_weight:
+                  type: number
+                  example: 2.5
+                delivery_speed:
+                  type: string
+                  enum: [STANDARD, EXPRESS, SAME_DAY]
+                  example: "STANDARD"
       responses:
         '201':
           description: Package created successfully
-        '403':
-          description: Admin access required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tracking_number:
+                    type: string
+                    example: "TRK1703123456ABC12"
+                  pickup_pin:
+                    type: string
+                    example: "123456"
+                  delivery_pin:
+                    type: string
+                    example: "789012"
+                  qr_code_data:
+                    type: string
+                    example: "eyJ0cmFja2luZ19udW1iZXI..."
+                  pricing_breakdown:
+                    type: object
+                    properties:
+                      base_fee:
+                        type: number
+                        example: 5.00
+                      distance_fee:
+                        type: number
+                        example: 7.50
+                      size_fee:
+                        type: number
+                        example: 1.50
+                      speed_fee:
+                        type: number
+                        example: 0.00
+                      platform_fee:
+                        type: number
+                        example: 2.10
+                      total_amount:
+                        type: number
+                        example: 16.10
+                  tracking_url:
+                    type: string
+                    example: "http://localhost:3000/track/TRK1703123456ABC12?token=abc123"
+        '400':
+          description: Invalid input
 
   /api/packages/{tracking_number}:
     get:
@@ -252,11 +318,277 @@ paths:
           schema:
             type: string
             example: "TRK123456789"
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+            example: "abc123"
+          description: Guest tracking token for non-registered recipients
       responses:
         '200':
           description: Package details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  tracking_number:
+                    type: string
+                  status:
+                    type: string
+                    enum: [PENDING, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
+                  recipient_name:
+                    type: string
+                  delivery_address:
+                    type: string
+                  description:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  delivered_at:
+                    type: string
+                    format: date-time
+                  is_guest_delivery:
+                    type: boolean
         '404':
           description: Package not found
+
+  /api/packages/{package_id}/confirm-pickup:
+    post:
+      summary: Confirm package pickup with PIN
+      tags: [Packages]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: package_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pin]
+              properties:
+                pin:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: Pickup confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Package pickup confirmed"
+                  status:
+                    type: string
+                    example: "IN_TRANSIT"
+        '400':
+          description: Invalid PIN
+
+  /api/packages/{package_id}/confirm-delivery:
+    post:
+      summary: Confirm package delivery with PIN
+      tags: [Packages]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: package_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pin]
+              properties:
+                pin:
+                  type: string
+                  example: "789012"
+      responses:
+        '200':
+          description: Delivery confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Package delivery confirmed"
+                  status:
+                    type: string
+                    example: "DELIVERED"
+        '400':
+          description: Invalid PIN
+
+  /api/packages/qr-decode:
+    post:
+      summary: Decode QR code data
+      tags: [Packages]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qr_code_data]
+              properties:
+                qr_code_data:
+                  type: string
+                  example: "eyJ0cmFja2luZ19udW1iZXI..."
+      responses:
+        '200':
+          description: QR code decoded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tracking_number:
+                    type: string
+                  sender_name:
+                    type: string
+                  recipient_name:
+                    type: string
+                  pickup_address:
+                    type: string
+                  delivery_address:
+                    type: string
+                  package_size:
+                    type: string
+                  delivery_speed:
+                    type: string
+                  created_at:
+                    type: string
+        '400':
+          description: Invalid QR code
+
+  /api/pricing/calculate:
+    post:
+      summary: Calculate delivery pricing
+      tags: [Pricing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickup_address, delivery_address, package_size, delivery_speed]
+              properties:
+                pickup_address:
+                  type: string
+                  example: "456 Pickup St, City, State"
+                delivery_address:
+                  type: string
+                  example: "123 Main St, City, State"
+                package_size:
+                  type: string
+                  enum: [SMALL, MEDIUM, LARGE]
+                  example: "MEDIUM"
+                package_weight:
+                  type: number
+                  example: 2.5
+                delivery_speed:
+                  type: string
+                  enum: [STANDARD, EXPRESS, SAME_DAY]
+                  example: "STANDARD"
+      responses:
+        '200':
+          description: Pricing calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  base_fee:
+                    type: number
+                    example: 5.00
+                  distance_fee:
+                    type: number
+                    example: 7.50
+                  size_fee:
+                    type: number
+                    example: 1.50
+                  speed_fee:
+                    type: number
+                    example: 0.00
+                  platform_fee:
+                    type: number
+                    example: 2.10
+                  total_amount:
+                    type: number
+                    example: 16.10
+                  estimated_distance_km:
+                    type: number
+                    example: 5.0
+
+  /api/pricing/bulk-calculate:
+    post:
+      summary: Calculate bulk delivery pricing
+      tags: [Pricing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickup_address, deliveries, delivery_speed]
+              properties:
+                pickup_address:
+                  type: string
+                  example: "456 Pickup St, City, State"
+                deliveries:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      delivery_address:
+                        type: string
+                      package_size:
+                        type: string
+                        enum: [SMALL, MEDIUM, LARGE]
+                      package_weight:
+                        type: number
+                delivery_speed:
+                  type: string
+                  enum: [STANDARD, EXPRESS, SAME_DAY]
+      responses:
+        '200':
+          description: Bulk pricing calculated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deliveries:
+                    type: array
+                    items:
+                      type: object
+                  bulk_discount:
+                    type: number
+                    example: 2.50
+                  total_amount:
+                    type: number
+                    example: 45.60
+                  total_deliveries:
+                    type: integer
+                    example: 3
 
   /api/drivers:
     post:
