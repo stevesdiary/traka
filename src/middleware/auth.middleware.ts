@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthService } from '../auth/auth.service';
-import { JWTPayload } from '../types/index';
+import { AuthService } from '../auth/auth.service.js';
+import { JWTPayload } from '../types/index.js';
 
 declare global {
   namespace Express {
@@ -54,6 +54,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       user: result.user
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -61,69 +62,81 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // Customer Registration
 export const registerCustomer = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('Customer registration attempt:', { email: req.body.email, full_name: req.body.full_name });
     const result = await authService.registerCustomer(req.body);
+    console.log('Customer registration successful:', result.id);
     res.status(201).json({
       message: 'Customer registered successfully',
       user: result
     });
   } catch (error: any) {
+    console.error('Customer registration error:', error);
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 };
 
 // Business Registration
 export const registerBusiness = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('Business registration attempt:', { email: req.body.email, business_name: req.body.business_name });
     const result = await authService.registerBusiness(req.body);
+    console.log('Business registration successful:', result.id);
     res.status(201).json({
       message: 'Business registered successfully. Awaiting approval.',
       data: result
     });
   } catch (error: any) {
+    console.error('Business registration error:', error);
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 };
 
 // Rider Registration
 export const registerRider = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('Rider registration attempt:', { email: req.body.email, full_name: req.body.full_name, vehicle_type: req.body.vehicle_type });
     const result = await authService.registerRider(req.body);
+    console.log('Rider registration successful:', result.id);
     res.status(201).json({
       message: 'Rider registered successfully. Awaiting verification.',
       data: result
     });
   } catch (error: any) {
+    console.error('Rider registration error:', error);
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 };
 
 // Legacy register (kept for backward compatibility)
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('Legacy registration attempt:', { email: req.body.email });
     const userData = req.body;
     const user = await authService.register(userData);
+    console.log('Legacy registration successful:', user.id);
     
     res.status(201).json({
       message: 'User registered successfully',
       user
     });
   } catch (error: any) {
+    console.error('Legacy registration error:', error);
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 };

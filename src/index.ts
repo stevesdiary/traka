@@ -4,8 +4,8 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import routes from './routes';
-import { connectDatabases, disconnectDatabases } from './config/database';
+import routes from './routes.js';
+import { connectDatabases, disconnectDatabases } from './config/database.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -30,15 +30,25 @@ app.use((req, res, next) => {
 app.use('/api', routes);
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handler
 app.use((err: any, req: any, res: any, next: any) => {
+  console.error('=== ERROR DETAILS ===');
+  console.error('URL:', req.method, req.originalUrl);
+  console.error('Body:', req.body);
+  console.error('Headers:', req.headers);
   console.error('Error:', err);
-  res.status(500).json({ error: 'Internal server error', message: err.message });
+  console.error('Stack:', err.stack);
+  console.error('=====================');
+  res.status(500).json({ 
+    error: 'Internal server error', 
+    message: err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 // Health check
