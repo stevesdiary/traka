@@ -4,11 +4,11 @@ dotenv.config();
 import { Sequelize } from 'sequelize-typescript';
 import { createClient, RedisClientType } from 'redis';
 import { MongoClient } from 'mongodb';
-import { UserModel } from '../user/user.model';
-import { PackageModel } from '../package/package.model';
-import { RiderModel } from '../rider/rider.model';
-import { CommissionModel } from '../commission/commission.model';
-import { TenantModel } from '../tenant/tenant.model';
+import { UserModel } from '../user/user.model.js';
+import { PackageModel } from '../package/package.model.js';
+import { RiderModel } from '../rider/rider.model.js';
+import { CommissionModel } from '../commission/commission.model.js';
+import { TenantModel } from '../tenant/tenant.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
