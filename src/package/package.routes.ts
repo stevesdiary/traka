@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { PackageController } from './package.controller';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware';
-import { validateInput } from '../middleware/validation.middleware';
-import { CreatePackageSchema, GuestTrackingSchema } from '../utils/validators';
+import { PackageController } from './package.controller.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { validateInput } from '../middleware/validation.middleware.js';
+import { CreatePackageSchema, GuestTrackingSchema } from '../utils/validators.js';
 
 const router: Router = Router();
 const packageController = new PackageController();

@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { RiderController } from './rider.controller';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware';
-import { validateInput } from '../middleware/validation.middleware';
-import { RiderRegistrationSchema, UpdateLocationSchema, UpdateRiderProfileSchema, UpdateStatusSchema } from '../utils/validators';
+import { RiderController } from './rider.controller.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { validateInput } from '../middleware/validation.middleware.js';
+import { RiderRegistrationSchema, UpdateLocationSchema, UpdateRiderProfileSchema, UpdateStatusSchema } from '../utils/validators.js';
 
 const router: Router = Router();
 const riderController = new RiderController();
