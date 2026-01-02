@@ -197,8 +197,8 @@ export const CreateUserSchema = Joi.object({
     'string.min': 'Password must be at least 6 characters long',
     'any.required': 'Password is required'
   }),
-  role: Joi.string().valid('ADMIN', 'BUSINESS_OWNER', 'RIDER', 'RECIPIENT').required().messages({
-    'any.only': 'Role must be one of: ADMIN, BUSINESS_OWNER, RIDER, RECIPIENT',
+  role: Joi.string().valid('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER').required().messages({
+    'any.only': 'Role must be one of: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER',
     'any.required': 'Role is required'
   })
 });
@@ -207,8 +207,8 @@ export const UpdateUserSchema = Joi.object({
   email: Joi.string().email().optional().messages({
     'string.email': 'Please provide a valid email address'
   }),
-  role: Joi.string().valid('ADMIN', 'BUSINESS_OWNER', 'RIDER', 'RECIPIENT').optional().messages({
-    'any.only': 'Role must be one of: ADMIN, BUSINESS_OWNER, RIDER, RECIPIENT'
+  role: Joi.string().valid('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER').optional().messages({
+    'any.only': 'Role must be one of: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER'
   })
 });
 
