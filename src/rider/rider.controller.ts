@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RiderService } from './rider.service';
+import { RiderService } from './rider.service.js';
 
 export class RiderController {
   private riderService: RiderService;

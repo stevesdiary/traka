@@ -1,5 +1,5 @@
-import { BaseRepository } from '../repositories/base.repository';
-import { RiderModel, RiderProfile } from './rider.model';
+import { BaseRepository } from '../repositories/base.repository.js';
+import { RiderModel, RiderProfile } from './rider.model.js';
 import { WhereOptions } from 'sequelize';
 
 export class RiderRepository extends BaseRepository<RiderModel> {
@@ -76,5 +76,13 @@ export class RiderRepository extends BaseRepository<RiderModel> {
   async updateStatus(userId: string, status: RiderProfile['status']): Promise<RiderModel> {
     await this.model.update({ status }, { where: { user_id: userId } });
     return this.getRiderByUserId(userId) as Promise<RiderModel>;
+  }
+
+  async getUniqueTenants(): Promise<any[]> {
+    return this.model.findAll({
+      attributes: ['business_id'],
+      where: { business_id: { [require('sequelize').Op.ne]: null } },
+      group: ['business_id']
+    });
   }
 }

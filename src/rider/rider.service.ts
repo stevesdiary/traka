@@ -1,5 +1,5 @@
-import { RiderRepository } from './rider.repository';
-import { RiderModel, RiderProfile, RiderRegistration } from './rider.model';
+import { RiderRepository } from './rider.repository.js';
+import { RiderModel, RiderProfile, RiderRegistration } from './rider.model.js';
 
 export class RiderService {
   private riderRepository: RiderRepository;
