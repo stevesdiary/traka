@@ -71,7 +71,7 @@
           }
         },
         {
-          "name": "Register",
+          "name": "Register Customer",
           "request": {
             "method": "POST",
             "header": [
@@ -82,7 +82,70 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"John Doe\",\n  \"role\": \"USER\"\n}"
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/customer",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "customer"]
+            }
+          }
+        },
+        {
+          "name": "Register Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"business@example.com\",\n  \"password\": \"password123\",\n  \"business_name\": \"ABC Logistics\",\n  \"business_address\": \"123 Business Street, City, State 12345\",\n  \"contact_person\": \"Jane Smith\",\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/business",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "business"]
+            }
+          }
+        },
+        {
+          "name": "Register Rider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"Mike Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/rider",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "rider"]
+            }
+          }
+        },
+        {
+          "name": "Register (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"RECIPIENT\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -194,6 +257,120 @@
               "raw": "{{baseUrl}}/users/1",
               "host": ["{{baseUrl}}"],
               "path": ["users", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Riders",
+      "item": [
+        {
+          "name": "Register Rider Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"Mike Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/riders/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get Rider Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/riders/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 6.5244,\n  \"longitude\": 3.3792\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/riders/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "location"]
+            }
+          }
+        },
+        {
+          "name": "Update Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"AVAILABLE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/riders/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "status"]
+            }
+          }
+        },
+        {
+          "name": "Get Available Riders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/riders/available",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "available"]
             }
           }
         }
@@ -582,6 +759,96 @@
               "raw": "{{baseUrl}}/dashboard/analytics",
               "host": ["{{baseUrl}}"],
               "path": ["dashboard", "analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "Get All Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants"]
+            }
+          }
+        },
+        {
+          "name": "Get Pending Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Approve/Verify Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenant_id}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenant_id}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Suspend Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenant_id}}/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenant_id}}", "suspend"]
+            }
+          }
+        },
+        {
+          "name": "Get Active Tenants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "active"]
             }
           }
         }

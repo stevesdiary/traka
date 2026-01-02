@@ -68,9 +68,9 @@ paths:
         '401':
           description: Invalid credentials
 
-  /api/auth/register:
+  /api/auth/register/customer:
     post:
-      summary: User registration
+      summary: Customer registration
       tags: [Authentication]
       requestBody:
         required: true
@@ -78,25 +78,178 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password, role]
+              required: [email, password, full_name, phone]
               properties:
                 email:
                   type: string
                   format: email
-                  example: "user@example.com"
+                  example: "customer@example.com"
                 password:
                   type: string
                   minLength: 6
                   example: "password123"
-                role:
+                full_name:
                   type: string
-                  enum: [ADMIN, RIDER, RECIPIENT]
-                  example: "USER"
+                  minLength: 2
+                  example: "John Doe"
+                phone:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+1234567890"
       responses:
         '201':
-          description: User registered successfully
+          description: Customer registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Customer registered successfully"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+                        example: "RECIPIENT"
+        '409':
+          description: User already exists
         '400':
-          description: Invalid input
+          description: Validation failed
+
+  /api/auth/register/business:
+    post:
+      summary: Business registration
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, business_name, business_address, contact_person, phone]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "business@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                business_name:
+                  type: string
+                  minLength: 2
+                  example: "ABC Logistics"
+                business_address:
+                  type: string
+                  example: "123 Business Street, City, State 12345"
+                contact_person:
+                  type: string
+                  minLength: 2
+                  example: "Jane Smith"
+                phone:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+1234567890"
+      responses:
+        '201':
+          description: Business registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Business registered successfully. Awaiting approval."
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+                        example: "BUSINESS_OWNER"
+        '409':
+          description: User already exists
+        '400':
+          description: Validation failed
+
+  /api/auth/register/rider:
+    post:
+      summary: Rider registration
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, full_name, phone, license_number, vehicle_type, vehicle_plate]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "rider@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                full_name:
+                  type: string
+                  minLength: 2
+                  example: "Mike Wilson"
+                phone:
+                  type: string
+                  pattern: "^\\+?[1-9]\\d{1,14}$"
+                  example: "+1234567890"
+                license_number:
+                  type: string
+                  example: "DL123456789"
+                vehicle_type:
+                  type: string
+                  enum: [BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK]
+                  example: "MOTORCYCLE"
+                vehicle_plate:
+                  type: string
+                  example: "ABC-123"
+                business_id:
+                  type: string
+                  description: Optional business ID for fleet riders
+                  example: "550e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '201':
+          description: Rider registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Rider registered successfully. Awaiting verification."
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+                        example: "RIDER"
+        '409':
+          description: User already exists
+        '400':
+          description: Validation failed
 
   /api/users:
     get:
@@ -834,4 +987,51 @@ paths:
         '200':
           description: OTP verified successfully
         '400':
-          description: Invalid OTP
+          description: Invalid OTP  /api/auth/register:
+    post:
+      summary: Legacy user registration (backward compatibility)
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  minLength: 6
+                  example: "password123"
+                role:
+                  type: string
+                  enum: [ADMIN, RIDER, RECIPIENT]
+                  example: "RECIPIENT"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                      role:
+                        type: string
+        '409':
+          description: User already exists
+        '400':
+          description: Validation failed
