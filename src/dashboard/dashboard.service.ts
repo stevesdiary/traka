@@ -1,6 +1,6 @@
-import { RiderRepository } from '../rider/rider.repository';
-import { PackageRepository } from '../package/package.repository';
-import { UserRepository } from '../user/user.repository';
+import { RiderRepository } from '../rider/rider.repository.js';
+import { PackageRepository } from '../package/package.repository.js';
+import { UserRepository } from '../user/user.repository.js';
 
 export class DashboardService {
   private riderRepository: RiderRepository;
@@ -88,9 +88,9 @@ export class DashboardService {
   // Platform Admin Dashboard Methods
   async getPlatformStats(): Promise<any> {
     const [allRiders, allPackages, allUsers] = await Promise.all([
-      this.riderRepository.model.findAll(),
-      this.packageRepository.model.findAll(),
-      this.userRepository.model.findAll()
+      this.riderRepository.findAll(),
+      this.packageRepository.findAll(),
+      this.userRepository.findAll()
     ]);
 
     return {
@@ -103,12 +103,7 @@ export class DashboardService {
   }
 
   async getAllTenantsOverview(): Promise<any[]> {
-    // Get unique business_ids from riders
-    const tenants = await this.riderRepository.model.findAll({
-      attributes: ['business_id'],
-      where: { business_id: { [require('sequelize').Op.ne]: null } },
-      group: ['business_id']
-    });
+    const tenants = await this.riderRepository.getUniqueTenants();
 
     return Promise.all(tenants.map(async (tenant: any) => {
       const stats = await this.getTenantStats(tenant.business_id);
@@ -120,11 +115,7 @@ export class DashboardService {
   }
 
   async getAllTenants(): Promise<any[]> {
-    const tenants = await this.riderRepository.model.findAll({
-      attributes: ['business_id'],
-      where: { business_id: { [require('sequelize').Op.ne]: null } },
-      group: ['business_id']
-    });
+    const tenants = await this.riderRepository.getUniqueTenants();
 
     return tenants.map((tenant: any) => ({
       id: tenant.business_id,
