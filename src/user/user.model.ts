@@ -34,7 +34,7 @@ export class UserModel extends Model <UserModel> {
   password_hash!: string;
 
   @Column({
-    type: DataType.ENUM('ADMIN', 'BUSINESS_OWNER', 'RIDER', 'RECIPIENT'),
+    type: DataType.ENUM('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER'),
     allowNull: false
   })
   role!: string;
