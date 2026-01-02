@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PackageService } from './package.service';
+import { PackageService } from './package.service.js';
 
 export class PackageController {
   private packageService: PackageService;

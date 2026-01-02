@@ -1,5 +1,5 @@
-import { BaseRepository } from '../repositories/base.repository';
-import { PackageModel } from './package.model';
+import { BaseRepository } from '../repositories/base.repository.js';
+import { PackageModel } from './package.model.js';
 
 export class PackageRepository extends BaseRepository<PackageModel> {
   constructor() {
@@ -23,6 +23,13 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     delivery_address: string;
     description: string;
     delivery_notes?: string;
+    package_size: string;
+    package_weight?: number;
+    delivery_speed: string;
+    delivery_fee?: number;
+    platform_fee?: number;
+    total_amount?: number;
+    estimated_distance_km?: number;
     guest_tracking_token?: string | null;
     tenant_id: string;
   }): Promise<PackageModel> {
@@ -36,6 +43,9 @@ export class PackageRepository extends BaseRepository<PackageModel> {
   async updatePackage(id: string, updateData: {
     recipient_id?: string;
     guest_tracking_token?: string | null;
+    pickup_pin?: string;
+    delivery_pin?: string;
+    qr_code_data?: string;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },

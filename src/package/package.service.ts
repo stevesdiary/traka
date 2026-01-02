@@ -1,13 +1,19 @@
-import { PackageRepository } from "./package.repository";
-import { UserRepository } from "../user/user.repository";
+import { PackageRepository } from "./package.repository.js";
+import { UserRepository } from "../user/user.repository.js";
+import { PricingService, PricingRequest } from "../pricing/pricing.service.js";
+import { PackageVerificationService } from "../verification/package-verification.service.js";
 
 export class PackageService {
   private packageRepository: PackageRepository;
   private userRepository: UserRepository;
+  private pricingService: PricingService;
+  private packageVerificationService: PackageVerificationService;
 
   constructor() {
     this.packageRepository = new PackageRepository();
     this.userRepository = new UserRepository();
+    this.pricingService = new PricingService();
+    this.packageVerificationService = new PackageVerificationService();
   }
 
   async createPackage(
@@ -15,13 +21,28 @@ export class PackageService {
       recipient_name: string;
       recipient_email?: string;
       recipient_phone: string;
+      pickup_address: string;
       delivery_address: string;
       description: string;
       delivery_notes?: string;
+      package_size: 'SMALL' | 'MEDIUM' | 'LARGE';
+      package_weight?: number;
+      delivery_speed: 'STANDARD' | 'EXPRESS' | 'SAME_DAY';
     },
     sender_id: string,
     tenant_id: string
   ): Promise<any> {
+    // Calculate pricing
+    const pricingRequest: PricingRequest = {
+      pickup_address: data.pickup_address,
+      delivery_address: data.delivery_address,
+      package_size: data.package_size,
+      package_weight: data.package_weight,
+      delivery_speed: data.delivery_speed,
+      tenant_id
+    };
+    
+    const pricing = await this.pricingService.calculateDeliveryPrice(pricingRequest);
     // Check if recipient has an account by phone or email
     const existingRecipient =
       (await this.userRepository.findByPhone(data.recipient_phone)) ||
@@ -44,17 +65,47 @@ export class PackageService {
       delivery_address: data.delivery_address,
       description: data.description,
       delivery_notes: data.delivery_notes,
+      package_size: data.package_size,
+      package_weight: data.package_weight,
+      delivery_speed: data.delivery_speed,
+      delivery_fee: pricing.total_amount - pricing.platform_fee,
+      platform_fee: pricing.platform_fee,
+      total_amount: pricing.total_amount,
+      estimated_distance_km: pricing.estimated_distance_km,
       guest_tracking_token: guest_tracking_token || undefined,
       tenant_id,
     };
 
     const newPackage = await this.packageRepository.createPackage(packageData);
 
+    // Generate verification codes and QR code
+    const verification = this.packageVerificationService.generatePackageVerification({
+      package_id: newPackage.id,
+      tracking_number,
+      sender_name: 'Sender', // TODO: Get from sender user data
+      recipient_name: data.recipient_name,
+      pickup_address: data.pickup_address,
+      delivery_address: data.delivery_address,
+      package_size: data.package_size,
+      delivery_speed: data.delivery_speed
+    });
+
     // Send tracking notification to recipient
     await this.sendTrackingNotification(newPackage);
 
     return {
       ...newPackage,
+      pickup_pin: verification.pickup_pin,
+      delivery_pin: verification.delivery_pin,
+      qr_code_data: verification.qr_code_data,
+      pricing_breakdown: {
+        base_fee: pricing.base_fee,
+        distance_fee: pricing.distance_fee,
+        size_fee: pricing.size_fee,
+        speed_fee: pricing.speed_fee,
+        platform_fee: pricing.platform_fee,
+        total_amount: pricing.total_amount
+      },
       tracking_url: this.generateTrackingUrl(
         tracking_number,
         guest_tracking_token || undefined
@@ -132,6 +183,12 @@ export class PackageService {
     const updateData: any = { status };
     if (status === "DELIVERED") {
       updateData.delivered_at = new Date();
+      updateData.delivery_confirmed = true;
+      updateData.delivery_confirmed_at = new Date();
+    }
+    if (status === "IN_TRANSIT") {
+      updateData.pickup_confirmed = true;
+      updateData.pickup_confirmed_at = new Date();
     }
 
     const [affectedRows, updatedPackages] =
@@ -146,6 +203,38 @@ export class PackageService {
     }
 
     return updatedPackages[0];
+  }
+
+  async confirmPickup(package_id: string, pin: string, tenant_id: string): Promise<any> {
+    const verification = this.packageVerificationService.getVerificationStatus(package_id);
+    if (!verification) {
+      throw new Error('Package verification not found');
+    }
+
+    await this.packageVerificationService.confirmPickup(package_id, pin);
+    
+    // Update package status
+    await this.updatePackageStatus(package_id, 'IN_TRANSIT', tenant_id);
+    
+    return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
+  }
+
+  async confirmDelivery(package_id: string, pin: string, tenant_id: string): Promise<any> {
+    const verification = this.packageVerificationService.getVerificationStatus(package_id);
+    if (!verification) {
+      throw new Error('Package verification not found');
+    }
+
+    await this.packageVerificationService.confirmDelivery(package_id, pin);
+    
+    // Update package status
+    await this.updatePackageStatus(package_id, 'DELIVERED', tenant_id);
+    
+    return { message: 'Package delivery confirmed', status: 'DELIVERED' };
+  }
+
+  async getQRCodeData(qr_code_data: string): Promise<any> {
+    return this.packageVerificationService.decodeQRCode(qr_code_data);
   }
 
   private generateTrackingNumber(): string {
