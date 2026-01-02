@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { CommissionController } from './commission.controller';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware';
-import { validateInput } from '../middleware/validation.middleware';
-import { CreateCommissionSchema } from '../utils/validators';
+import { CommissionController } from './commission.controller.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { validateInput } from '../middleware/validation.middleware.js';
+import { CreateCommissionSchema } from '../utils/validators.js';
 
 const router: Router = Router();
 const commissionController = new CommissionController();

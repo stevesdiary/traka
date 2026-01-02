@@ -1,6 +1,6 @@
 import { CommissionRepository } from './commission.repository.js';
 import { CommissionModel, Commission, CommissionSummary } from './commission.model.js';
-import { RiderModel } from '../rider/rider.model';
+import { RiderModel } from '../rider/rider.model.js';
 
 export class CommissionService {
   private commissionRepository: CommissionRepository;

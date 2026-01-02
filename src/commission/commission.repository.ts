@@ -1,6 +1,6 @@
-import { BaseRepository } from '../repositories/base.repository';
-import { CommissionModel, Commission, CommissionSummary } from './commission.model';
-import { RiderModel } from '../rider/rider.model';
+import { BaseRepository } from '../repositories/base.repository.js';
+import { CommissionModel, Commission, CommissionSummary } from './commission.model.js';
+import { RiderModel } from '../rider/rider.model.js';
 import { Op } from 'sequelize';
 
 export class CommissionRepository extends BaseRepository<CommissionModel> {

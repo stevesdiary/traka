@@ -1,5 +1,5 @@
 import { Table, Column, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { RiderModel } from '../rider/rider.model';
+import { RiderModel } from '../rider/rider.model.js';
 
 @Table({
   tableName: 'commissions',
