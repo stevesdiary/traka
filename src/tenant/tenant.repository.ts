@@ -1,5 +1,5 @@
-import { BaseRepository } from '../repositories/base.repository';
-import { TenantModel, Tenant } from './tenant.model';
+import { BaseRepository } from '../repositories/base.repository.js';
+import { TenantModel, Tenant } from './tenant.model.js';
 
 export class TenantRepository extends BaseRepository<TenantModel> {
   constructor() {

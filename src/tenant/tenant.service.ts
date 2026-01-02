@@ -1,5 +1,5 @@
-import { TenantRepository } from './tenant.repository';
-import { TenantModel, Tenant } from './tenant.model';
+import { TenantRepository } from './tenant.repository.js';
+import { TenantModel, Tenant } from './tenant.model.js';
 
 export class TenantService {
   private tenantRepository: TenantRepository;

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { TenantService } from './tenant.service';
+import { TenantService } from './tenant.service.js';
 
 export class TenantController {
   private tenantService: TenantService;
@@ -42,13 +42,16 @@ export class TenantController {
   approveTenant = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      console.log(`Admin approving tenant: ${id}`);
       const tenant = await this.tenantService.approveTenant(id);
+      console.log(`Tenant approved successfully: ${tenant.business_name} (${tenant.id})`);
       res.json({
         message: 'Tenant approved successfully',
         tenant
       });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to approve tenant' });
+    } catch (error: any) {
+      console.error('Failed to approve tenant:', error);
+      res.status(500).json({ error: 'Failed to approve tenant', details: error.message });
     }
   };
 

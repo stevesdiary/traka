@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { TenantController } from './tenant.controller';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware';
+import { TenantController } from './tenant.controller.js';
+import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
 
 const router: Router = Router();
 const tenantController = new TenantController();
