@@ -1,85 +1,64 @@
-import { redis, mongoClient } from '../config/database';
-import { EmailService } from './email.service';
+import { EmailService } from './email.service.js';
+
+interface OTPRecord {
+  email: string;
+  otp: string;
+  expiresAt: Date;
+  verified: boolean;
+}
 
 export class VerificationService {
   private emailService: EmailService;
-  private otpCollection;
+  private otpRecords: Map<string, OTPRecord> = new Map();
 
   constructor() {
     this.emailService = new EmailService();
-    this.otpCollection = mongoClient.db().collection('otp_verifications');
   }
 
   async sendOTP(email: string): Promise<void> {
     const otp = this.generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 10 minutes
 
-    // Store in Redis with TTL
-    try {
-      await redis.setEx(`otp:${email}`, 600, otp);
-    } catch (error) {
-      console.error('Redis OTP storage failed:', error);
-    }
+    // Store OTP record
+    this.otpRecords.set(email, {
+      email,
+      otp,
+      expiresAt,
+      verified: false
+    });
 
-    // Store in MongoDB as fallback
-    await this.otpCollection.updateOne(
-      { email },
-      { 
-        $set: { 
-          otp, 
-          expiresAt, 
-          verified: false,
-          createdAt: new Date()
-        }
-      },
-      { upsert: true }
-    );
-
+    // Send OTP via email
     await this.emailService.sendOTP(email, otp);
   }
 
-  async verifyOTP(email: string, inputOTP: string): Promise<boolean> {
-    let storedOTP: string | null = null;
-
-    // Try Redis first
-    try {
-      storedOTP = await redis.get(`otp:${email}`);
-    } catch (error) {
-      console.error('Redis OTP retrieval failed:', error);
-    }
-
-    // Fallback to MongoDB
-    if (!storedOTP) {
-      const otpDoc = await this.otpCollection.findOne({
-        email,
-        expiresAt: { $gt: new Date() },
-        verified: false
-      });
-      storedOTP = otpDoc?.otp || null;
-    }
-
-    if (!storedOTP || storedOTP !== inputOTP) {
+  async verifyOTP(email: string, otp: string): Promise<boolean> {
+    const record = this.otpRecords.get(email);
+    
+    if (!record) {
       return false;
     }
 
-    // Mark as verified and cleanup
-    await this.cleanup(email);
+    if (record.expiresAt < new Date()) {
+      this.otpRecords.delete(email);
+      return false;
+    }
+
+    if (record.otp !== otp) {
+      return false;
+    }
+
+    // Mark as verified
+    record.verified = true;
     return true;
   }
 
-  private async cleanup(email: string): Promise<void> {
-    // Remove from Redis
-    try {
-      await redis.del(`otp:${email}`);
-    } catch (error) {
-      console.error('Redis cleanup failed:', error);
-    }
+  async isEmailVerified(email: string): Promise<boolean> {
+    const record = this.otpRecords.get(email);
+    return record?.verified || false;
+  }
 
-    // Mark as verified in MongoDB
-    await this.otpCollection.updateOne(
-      { email },
-      { $set: { verified: true } }
-    );
+  async clearVerification(email: string): Promise<void> {
+    this.otpRecords.delete(email);
   }
 
   private generateOTP(): string {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { VerificationService } from './verification.service';
+import { VerificationService } from './verification.service.js';
 
 export class VerificationController {
   private verificationService: VerificationService;

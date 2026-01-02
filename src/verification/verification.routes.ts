@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { VerificationController } from './verification.controller';
-import { validateInput } from '../middleware/validation.middleware';
-import { SendOTPSchema, VerifyOTPSchema } from '../utils/validators';
+import { VerificationController } from './verification.controller.js';
+import { validateInput } from '../middleware/validation.middleware.js';
+import { SendOTPSchema, VerifyOTPSchema } from '../utils/validators.js';
 
 const router: Router = Router();
 const verificationController = new VerificationController();
