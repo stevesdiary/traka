@@ -55,6 +55,19 @@ export class PackageModel extends Model {
   })
   status!: string;
 
+  // Scheduling fields
+  @Column({
+    type: DataType.ENUM('IMMEDIATE', 'SCHEDULED', 'SAME_DAY', 'NEXT_DAY'),
+    defaultValue: 'IMMEDIATE'
+  })
+  schedule_type!: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  scheduled_for?: Date;
+
   @Column({
     type: DataType.STRING,
     allowNull: false
