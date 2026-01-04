@@ -5,12 +5,17 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 ## Features
 
 - **Multi-User Registration**: Customer, Business, and Rider registration
-- **Package Management**: Create, track, and manage deliveries
+- **Package Management**: Create, track, and manage deliveries with scheduling
 - **Real-time Tracking**: GPS location updates and status tracking
 - **Business Verification**: Admin approval system for business tenants
-- **Role-based Access**: Admin, Business Owner, Rider, and Recipient roles
+- **Role-based Access**: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER roles
+- **Wallet System**: Negative balance support with commission management
+- **Business Billing**: Prepaid wallet system with auto-recharge
+- **Delivery Matching**: City-scale matching with vehicle constraints
+- **Scheduled Deliveries**: IMMEDIATE, SCHEDULED, SAME_DAY, NEXT_DAY options
 - **Multi-database**: PostgreSQL, Redis, and MongoDB integration
 - **JWT Authentication**: Secure token-based authentication
+- **Legal Content**: FAQ, Terms of Service, Commission Policy
 - **API Documentation**: Swagger and Postman collections
 
 ## Tech Stack
@@ -76,6 +81,27 @@ npm test
 - `POST /api/packages/{id}/confirm-pickup` - Confirm pickup
 - `POST /api/packages/{id}/confirm-delivery` - Confirm delivery
 
+### Scheduling
+- `POST /api/scheduling/schedule` - Schedule delivery (IMMEDIATE/SCHEDULED/SAME_DAY/NEXT_DAY)
+- `POST /api/scheduling/process-pending` - Process pending deliveries (Admin)
+
+### Delivery Matching
+- `POST /api/matching/dispatch` - Dispatch delivery to available riders
+- `GET /api/matching/available-couriers` - Get available couriers in area
+- `PUT /api/matching/courier-presence` - Update courier presence/location
+
+### Wallet Management
+- `GET /api/wallet/balance` - Get wallet balance
+- `GET /api/wallet/transactions` - Get transaction history
+- `POST /api/wallet/cash-delivery` - Process cash delivery commission
+- `POST /api/wallet/webhook/monnify` - Monnify payment webhook
+
+### Business Billing
+- `GET /api/invoices` - Get tenant invoices
+- `POST /api/invoices/generate` - Generate monthly invoice
+- `PUT /api/invoices/{id}/paid` - Mark invoice as paid
+- `GET /api/invoices/overdue` - Get overdue invoices
+
 ### Business Verification
 - `GET /api/tenants/pending` - Get pending businesses
 - `PUT /api/tenants/{id}/approve` - Approve business (Admin)
@@ -86,25 +112,71 @@ npm test
 - `PUT /api/riders/location` - Update GPS location
 - `PUT /api/riders/status` - Update availability status
 
+### Legal Content
+- `GET /api/legal/faq` - Get FAQs (Public)
+- `GET /api/legal/terms` - Get Terms of Service (Public)
+- `GET /api/legal/commission-policy` - Get Commission Policy (Public)
+- `POST /api/legal/seed` - Seed legal content (Admin)
+
 ## Database Schema
 
 ### PostgreSQL Tables
 - `users` - User accounts and authentication
 - `tenants` - Business information and verification status
 - `riders` - Rider profiles and vehicle details
-- `packages` - Package information and tracking
+- `packages` - Package information and tracking with scheduling
 - `commissions` - Rider earnings and payments
+- `wallets` - Rider wallet balances and credit limits
+- `wallet_transactions` - Complete transaction history
+- `business_wallets` - Business prepaid wallet system
+- `business_wallet_transactions` - Business transaction history
+- `invoices` - Business billing and invoice management
+- `legal_content` - FAQ, Terms of Service, Policies
+
+### Redis Cache
+- `courier_presence` - Real-time courier locations (15s TTL)
+- `dispatch_locks` - Atomic delivery dispatch operations
+- `rate_limiting` - API rate limiting and spam prevention
 
 ### MongoDB Collections
 - `delivery_logs` - Real-time delivery tracking
 - `package_tracking` - Location and status updates
+- `scheduled_deliveries` - Delivery scheduling and processing
 
-## User Roles
+## User Roles & Permissions
 
-- **ADMIN**: System administration and business approval
-- **BUSINESS_OWNER**: Create packages and manage deliveries
-- **RIDER**: Accept deliveries and update locations
-- **RECIPIENT**: Track packages and confirm deliveries
+- **SUPER_ADMIN**: Full system access, user management, system configuration
+- **ADMIN**: Business approval, user management, financial oversight
+- **MANAGER**: Package management, rider coordination, operational tasks
+- **RIDER**: Accept deliveries, update locations, wallet management
+- **USER**: Track packages, manage deliveries, customer support
+
+## Financial System
+
+### Rider Wallet System
+- **Commission Rate**: 20% platform fee per delivery
+- **Negative Balance**: ₦2,000 credit limit with auto-suspension
+- **Payment Methods**: Digital (instant credit) vs Cash (creates debt)
+- **Auto-Settlement**: Debt cleared from future digital earnings
+
+### Business Billing
+- **Prepaid System**: Businesses maintain wallet balance
+- **Platform Fee**: 15% deducted per delivery in real-time
+- **Auto-Recharge**: Triggers at ₦1,000 threshold (₦5,000 top-up)
+- **Zero Collection Risk**: No invoicing delays or bad debt
+
+## Delivery Matching
+
+### Vehicle Constraints
+- **BICYCLE**: 3km range, 10kg capacity, traffic-sensitive
+- **MOTORCYCLE**: 15km range, 50kg capacity, moderate traffic impact
+- **VAN**: 50km range, 200kg capacity, low traffic sensitivity
+
+### Matching Algorithm
+- **Sequential Dispatch**: 6-second timeout per courier
+- **ETA Calculation**: Distance + traffic + vehicle speed
+- **Anti-Spam**: Bicycle deliveries blocked beyond 3km
+- **Redis Locks**: Atomic operations prevent double-dispatch
 
 ## Testing
 
@@ -133,6 +205,11 @@ src/
 ├── rider/          # Rider operations
 ├── tenant/         # Business management
 ├── user/           # User management
+├── wallet/         # Wallet & financial system
+├── invoice/        # Business billing
+├── scheduling/     # Delivery scheduling
+├── matching/       # Delivery matching engine
+├── legal/          # FAQ, Terms, Policies
 ├── verification/   # Email/OTP verification
 └── utils/          # Validation schemas
 ```
@@ -147,6 +224,11 @@ MONGO_URL=mongodb://localhost:27017/traka
 
 # Authentication
 JWT_SECRET=your-secret-key
+
+# Financial
+MONNIFY_SECRET_KEY=your-monnify-secret
+PLATFORM_FEE_RATE_BUSINESS=0.15
+RIDER_COMMISSION_RATE=0.20
 
 # Server
 PORT=3000

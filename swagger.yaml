@@ -1,1037 +1,340 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
-  title: TRAKA API
-  description: Logistics and tracking API
-  version: 1.0.0
+  title: TRAKA Logistics API
+  description: Comprehensive logistics and package tracking platform
+  version: 2.0.0
+  contact:
+    name: TRAKA Support
+    email: support@traka.com
+
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3000/api
     description: Development server
+  - url: https://api.traka.com/api
+    description: Production server
 
 components:
   securitySchemes:
-    bearerAuth:
+    BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
 
-paths:
-  /health:
-    get:
-      summary: Health check
-      tags: [Health]
-      responses:
-        '200':
-          description: API is running
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "OK"
-                  message:
-                    type: string
-                    example: "TRAKA API is running"
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER]
+        tenant_id:
+          type: string
+          format: uuid
 
-  /api/auth/login:
+    Package:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tracking_number:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
+        schedule_type:
+          type: string
+          enum: [IMMEDIATE, SCHEDULED, SAME_DAY, NEXT_DAY]
+        scheduled_for:
+          type: string
+          format: date-time
+
+    WalletBalance:
+      type: object
+      properties:
+        balance:
+          type: number
+          format: decimal
+        is_active:
+          type: boolean
+        credit_limit:
+          type: number
+          format: decimal
+
+paths:
+  # Authentication
+  /auth/login:
     post:
-      summary: User login
       tags: [Authentication]
+      summary: User login
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
               properties:
                 email:
                   type: string
                   format: email
-                  example: "admin@example.com"
                 password:
                   type: string
-                  minLength: 6
-                  example: "password123"
       responses:
         '200':
           description: Login successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         '401':
           description: Invalid credentials
 
-  /api/auth/register/customer:
+  /auth/register/customer:
     post:
-      summary: Customer registration
       tags: [Authentication]
+      summary: Customer registration
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password, full_name, phone]
               properties:
                 email:
                   type: string
                   format: email
-                  example: "customer@example.com"
                 password:
                   type: string
-                  minLength: 6
-                  example: "password123"
                 full_name:
                   type: string
-                  minLength: 2
-                  example: "John Doe"
                 phone:
                   type: string
-                  pattern: "^\\+?[1-9]\\d{1,14}$"
-                  example: "+1234567890"
       responses:
         '201':
           description: Customer registered successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Customer registered successfully"
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
-                        example: "RECIPIENT"
-        '409':
-          description: User already exists
-        '400':
-          description: Validation failed
 
-  /api/auth/register/business:
+  # Package Management
+  /packages:
     post:
-      summary: Business registration
-      tags: [Authentication]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password, business_name, business_address, contact_person, phone]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "business@example.com"
-                password:
-                  type: string
-                  minLength: 6
-                  example: "password123"
-                business_name:
-                  type: string
-                  minLength: 2
-                  example: "ABC Logistics"
-                business_address:
-                  type: string
-                  example: "123 Business Street, City, State 12345"
-                contact_person:
-                  type: string
-                  minLength: 2
-                  example: "Jane Smith"
-                phone:
-                  type: string
-                  pattern: "^\\+?[1-9]\\d{1,14}$"
-                  example: "+1234567890"
-      responses:
-        '201':
-          description: Business registered successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Business registered successfully. Awaiting approval."
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
-                        example: "BUSINESS_OWNER"
-        '409':
-          description: User already exists
-        '400':
-          description: Validation failed
-
-  /api/auth/register/rider:
-    post:
-      summary: Rider registration
-      tags: [Authentication]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password, full_name, phone, license_number, vehicle_type, vehicle_plate]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "rider@example.com"
-                password:
-                  type: string
-                  minLength: 6
-                  example: "password123"
-                full_name:
-                  type: string
-                  minLength: 2
-                  example: "Mike Wilson"
-                phone:
-                  type: string
-                  pattern: "^\\+?[1-9]\\d{1,14}$"
-                  example: "+1234567890"
-                license_number:
-                  type: string
-                  example: "DL123456789"
-                vehicle_type:
-                  type: string
-                  enum: [BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK]
-                  example: "MOTORCYCLE"
-                vehicle_plate:
-                  type: string
-                  example: "ABC-123"
-                business_id:
-                  type: string
-                  description: Optional business ID for fleet riders
-                  example: "550e8400-e29b-41d4-a716-446655440001"
-      responses:
-        '201':
-          description: Rider registered successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Rider registered successfully. Awaiting verification."
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
-                        example: "RIDER"
-        '409':
-          description: User already exists
-        '400':
-          description: Validation failed
-
-  /api/users:
-    get:
-      summary: Get all users (Admin only)
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: List of users
-        '403':
-          description: Admin access required
-    
-    post:
-      summary: Create user (Admin only)
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password, role]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "newuser@example.com"
-                password:
-                  type: string
-                  minLength: 6
-                  example: "password123"
-                role:
-                  type: string
-                  enum: [ADMIN, RIDER, RECIPIENT]
-                  example: "USER"
-      responses:
-        '201':
-          description: User created successfully
-        '403':
-          description: Admin access required
-
-  /api/users/{user_id}:
-    get:
-      summary: Get user by ID (Admin only)
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "1"
-      responses:
-        '200':
-          description: User details
-        '404':
-          description: User not found
-    
-    put:
-      summary: Update user (Admin only)
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "1"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "updated@example.com"
-                role:
-                  type: string
-                  enum: [ADMIN, RIDER, RECIPIENT]
-                  example: "RIDER"
-      responses:
-        '200':
-          description: User updated successfully
-        '404':
-          description: User not found
-    
-    delete:
-      summary: Delete user (Admin only)
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "1"
-      responses:
-        '200':
-          description: User deleted successfully
-        '404':
-          description: User not found
-
-  /api/packages:
-    post:
-      summary: Create package
       tags: [Packages]
+      summary: Create package
       security:
-        - bearerAuth: []
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [recipient_name, recipient_phone, pickup_address, delivery_address, description, package_size, delivery_speed]
               properties:
                 recipient_name:
                   type: string
-                  example: "John Doe"
-                recipient_email:
-                  type: string
-                  format: email
-                  example: "recipient@example.com"
                 recipient_phone:
                   type: string
-                  example: "+1234567890"
-                pickup_address:
-                  type: string
-                  example: "456 Pickup St, City, State 12345"
                 delivery_address:
                   type: string
-                  example: "123 Main St, City, State 12345"
                 description:
                   type: string
-                  example: "Electronics package"
-                delivery_notes:
-                  type: string
-                  example: "Handle with care"
-                package_size:
-                  type: string
-                  enum: [SMALL, MEDIUM, LARGE]
-                  example: "MEDIUM"
-                package_weight:
-                  type: number
-                  example: 2.5
-                delivery_speed:
-                  type: string
-                  enum: [STANDARD, EXPRESS, SAME_DAY]
-                  example: "STANDARD"
       responses:
         '201':
           description: Package created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  tracking_number:
-                    type: string
-                    example: "TRK1703123456ABC12"
-                  pickup_pin:
-                    type: string
-                    example: "123456"
-                  delivery_pin:
-                    type: string
-                    example: "789012"
-                  qr_code_data:
-                    type: string
-                    example: "eyJ0cmFja2luZ19udW1iZXI..."
-                  pricing_breakdown:
-                    type: object
-                    properties:
-                      base_fee:
-                        type: number
-                        example: 5.00
-                      distance_fee:
-                        type: number
-                        example: 7.50
-                      size_fee:
-                        type: number
-                        example: 1.50
-                      speed_fee:
-                        type: number
-                        example: 0.00
-                      platform_fee:
-                        type: number
-                        example: 2.10
-                      total_amount:
-                        type: number
-                        example: 16.10
-                  tracking_url:
-                    type: string
-                    example: "http://localhost:3000/track/TRK1703123456ABC12?token=abc123"
-        '400':
-          description: Invalid input
 
-  /api/packages/{tracking_number}:
+  /packages/{tracking_number}:
     get:
-      summary: Get package by tracking number
       tags: [Packages]
+      summary: Track package
       parameters:
         - name: tracking_number
           in: path
           required: true
           schema:
             type: string
-            example: "TRK123456789"
-        - name: token
-          in: query
-          required: false
-          schema:
-            type: string
-            example: "abc123"
-          description: Guest tracking token for non-registered recipients
       responses:
         '200':
           description: Package details
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  tracking_number:
-                    type: string
-                  status:
-                    type: string
-                    enum: [PENDING, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, CANCELLED]
-                  recipient_name:
-                    type: string
-                  delivery_address:
-                    type: string
-                  description:
-                    type: string
-                  created_at:
-                    type: string
-                    format: date-time
-                  delivered_at:
-                    type: string
-                    format: date-time
-                  is_guest_delivery:
-                    type: boolean
-        '404':
-          description: Package not found
+                $ref: '#/components/schemas/Package'
 
-  /api/packages/{package_id}/confirm-pickup:
+  # Scheduling
+  /scheduling/schedule:
     post:
-      summary: Confirm package pickup with PIN
-      tags: [Packages]
+      tags: [Scheduling]
+      summary: Schedule delivery
       security:
-        - bearerAuth: []
-      parameters:
-        - name: package_id
-          in: path
-          required: true
-          schema:
-            type: string
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [pin]
               properties:
-                pin:
-                  type: string
-                  example: "123456"
-      responses:
-        '200':
-          description: Pickup confirmed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Package pickup confirmed"
-                  status:
-                    type: string
-                    example: "IN_TRANSIT"
-        '400':
-          description: Invalid PIN
-
-  /api/packages/{package_id}/confirm-delivery:
-    post:
-      summary: Confirm package delivery with PIN
-      tags: [Packages]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: package_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [pin]
-              properties:
-                pin:
-                  type: string
-                  example: "789012"
-      responses:
-        '200':
-          description: Delivery confirmed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Package delivery confirmed"
-                  status:
-                    type: string
-                    example: "DELIVERED"
-        '400':
-          description: Invalid PIN
-
-  /api/packages/qr-decode:
-    post:
-      summary: Decode QR code data
-      tags: [Packages]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [qr_code_data]
-              properties:
-                qr_code_data:
-                  type: string
-                  example: "eyJ0cmFja2luZ19udW1iZXI..."
-      responses:
-        '200':
-          description: QR code decoded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  tracking_number:
-                    type: string
-                  sender_name:
-                    type: string
-                  recipient_name:
-                    type: string
-                  pickup_address:
-                    type: string
-                  delivery_address:
-                    type: string
-                  package_size:
-                    type: string
-                  delivery_speed:
-                    type: string
-                  created_at:
-                    type: string
-        '400':
-          description: Invalid QR code
-
-  /api/pricing/calculate:
-    post:
-      summary: Calculate delivery pricing
-      tags: [Pricing]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [pickup_address, delivery_address, package_size, delivery_speed]
-              properties:
-                pickup_address:
-                  type: string
-                  example: "456 Pickup St, City, State"
-                delivery_address:
-                  type: string
-                  example: "123 Main St, City, State"
-                package_size:
-                  type: string
-                  enum: [SMALL, MEDIUM, LARGE]
-                  example: "MEDIUM"
-                package_weight:
-                  type: number
-                  example: 2.5
-                delivery_speed:
-                  type: string
-                  enum: [STANDARD, EXPRESS, SAME_DAY]
-                  example: "STANDARD"
-      responses:
-        '200':
-          description: Pricing calculated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  base_fee:
-                    type: number
-                    example: 5.00
-                  distance_fee:
-                    type: number
-                    example: 7.50
-                  size_fee:
-                    type: number
-                    example: 1.50
-                  speed_fee:
-                    type: number
-                    example: 0.00
-                  platform_fee:
-                    type: number
-                    example: 2.10
-                  total_amount:
-                    type: number
-                    example: 16.10
-                  estimated_distance_km:
-                    type: number
-                    example: 5.0
-
-  /api/pricing/bulk-calculate:
-    post:
-      summary: Calculate bulk delivery pricing
-      tags: [Pricing]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [pickup_address, deliveries, delivery_speed]
-              properties:
-                pickup_address:
-                  type: string
-                  example: "456 Pickup St, City, State"
-                deliveries:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      delivery_address:
-                        type: string
-                      package_size:
-                        type: string
-                        enum: [SMALL, MEDIUM, LARGE]
-                      package_weight:
-                        type: number
-                delivery_speed:
-                  type: string
-                  enum: [STANDARD, EXPRESS, SAME_DAY]
-      responses:
-        '200':
-          description: Bulk pricing calculated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  deliveries:
-                    type: array
-                    items:
-                      type: object
-                  bulk_discount:
-                    type: number
-                    example: 2.50
-                  total_amount:
-                    type: number
-                    example: 45.60
-                  total_deliveries:
-                    type: integer
-                    example: 3
-
-  /api/drivers:
-    post:
-      summary: Create driver (Admin only)
-      tags: [Drivers]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [user_id, license_number, vehicle_type, vehicle_plate]
-              properties:
-                user_id:
+                packageId:
                   type: string
                   format: uuid
-                  example: "123e4567-e89b-12d3-a456-426614174000"
-                license_number:
+                scheduleType:
                   type: string
-                  example: "DL123456789"
-                vehicle_type:
+                  enum: [IMMEDIATE, SCHEDULED, SAME_DAY, NEXT_DAY]
+                scheduledFor:
                   type: string
-                  example: "VAN"
-                vehicle_plate:
-                  type: string
-                  example: "ABC-1234"
+                  format: date-time
       responses:
         '201':
-          description: Driver created successfully
-        '403':
-          description: Admin access required
+          description: Delivery scheduled successfully
 
-  /api/drivers/all:
+  # Wallet Management
+  /wallet/balance:
     get:
-      summary: Get all drivers (Admin only)
-      tags: [Drivers]
+      tags: [Wallet]
+      summary: Get wallet balance
       security:
-        - bearerAuth: []
+        - BearerAuth: []
       responses:
         '200':
-          description: List of all drivers
-        '403':
-          description: Admin access required
+          description: Wallet balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletBalance'
 
-  /api/drivers/available:
+  /wallet/transactions:
     get:
-      summary: Get available drivers (Admin only)
-      tags: [Drivers]
+      tags: [Wallet]
+      summary: Get transaction history
       security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: List of available drivers
-        '403':
-          description: Admin access required
-
-  /api/drivers/profile:
-    get:
-      summary: Get driver profile (Rider only)
-      tags: [Drivers]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Driver profile
-        '403':
-          description: Rider access required
-
-  /api/drivers/{driver_id}/location:
-    put:
-      summary: Update driver location (Rider only)
-      tags: [Drivers]
-      security:
-        - bearerAuth: []
+        - BearerAuth: []
       parameters:
-        - name: driver_id
-          in: path
-          required: true
+        - name: limit
+          in: query
           schema:
-            type: string
-            example: "1"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [latitude, longitude]
-              properties:
-                latitude:
-                  type: number
-                  minimum: -90
-                  maximum: 90
-                  example: 40.7128
-                longitude:
-                  type: number
-                  minimum: -180
-                  maximum: 180
-                  example: -74.0060
+            type: integer
+            default: 50
       responses:
         '200':
-          description: Location updated successfully
-        '403':
-          description: Rider access required
+          description: Transaction history
 
-  /api/drivers/{driver_id}/status:
-    put:
-      summary: Update driver status (Rider only)
-      tags: [Drivers]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: driver_id
-          in: path
-          required: true
-          schema:
-            type: string
-            example: "1"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [status]
-              properties:
-                status:
-                  type: string
-                  enum: [AVAILABLE, BUSY, OFFLINE]
-                  example: "AVAILABLE"
-      responses:
-        '200':
-          description: Status updated successfully
-        '403':
-          description: Rider access required
-
-  /api/dashboard/overview:
-    get:
-      summary: Get dashboard overview (Admin only)
-      tags: [Dashboard]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Dashboard overview data
-        '403':
-          description: Admin access required
-
-  /api/dashboard/drivers:
-    get:
-      summary: Get drivers management data (Admin only)
-      tags: [Dashboard]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Drivers management data
-        '403':
-          description: Admin access required
-
-  /api/dashboard/packages:
-    get:
-      summary: Get packages management data (Admin only)
-      tags: [Dashboard]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Packages management data
-        '403':
-          description: Admin access required
-
-  /api/dashboard/customers:
-    get:
-      summary: Get customers management data (Admin only)
-      tags: [Dashboard]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Customers management data
-        '403':
-          description: Admin access required
-
-  /api/dashboard/analytics:
-    get:
-      summary: Get analytics data (Admin only)
-      tags: [Dashboard]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Analytics data
-        '403':
-          description: Admin access required
-
-  /api/verification/send-otp:
+  /wallet/webhook/monnify:
     post:
-      summary: Send OTP to email
-      tags: [Verification]
+      tags: [Wallet]
+      summary: Monnify payment webhook
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email]
               properties:
-                email:
+                eventType:
                   type: string
-                  format: email
-                  example: "user@example.com"
+                eventData:
+                  type: object
       responses:
         '200':
-          description: OTP sent successfully
-        '400':
-          description: Invalid email
+          description: Webhook processed
 
-  /api/verification/verify-otp:
+  # Delivery Matching
+  /matching/dispatch:
     post:
-      summary: Verify OTP
-      tags: [Verification]
+      tags: [Matching]
+      summary: Dispatch delivery
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, otp]
               properties:
-                email:
+                packageId:
                   type: string
-                  format: email
-                  example: "user@example.com"
-                otp:
-                  type: string
-                  minLength: 6
-                  maxLength: 6
-                  example: "123456"
+                  format: uuid
+                pickupLocation:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
+                deliveryLocation:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                    longitude:
+                      type: number
       responses:
         '200':
-          description: OTP verified successfully
-        '400':
-          description: Invalid OTP  /api/auth/register:
-    post:
-      summary: Legacy user registration (backward compatibility)
-      tags: [Authentication]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password, role]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "user@example.com"
-                password:
-                  type: string
-                  minLength: 6
-                  example: "password123"
-                role:
-                  type: string
-                  enum: [ADMIN, RIDER, RECIPIENT]
-                  example: "RECIPIENT"
+          description: Delivery dispatched successfully
+
+  # Legal Content
+  /legal/faq:
+    get:
+      tags: [Legal]
+      summary: Get FAQs
       responses:
-        '201':
-          description: User registered successfully
+        '200':
+          description: FAQ content
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: "User registered successfully"
-                  user:
+                  faqs:
                     type: object
-                    properties:
-                      id:
-                        type: string
-                      email:
-                        type: string
-                      role:
-                        type: string
-        '409':
-          description: User already exists
-        '400':
-          description: Validation failed
+
+  /legal/terms:
+    get:
+      tags: [Legal]
+      summary: Get Terms of Service
+      responses:
+        '200':
+          description: Terms of Service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  content:
+                    type: string
+                  version:
+                    type: string
+
+  /legal/commission-policy:
+    get:
+      tags: [Legal]
+      summary: Get Commission Policy
+      responses:
+        '200':
+          description: Commission Policy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  content:
+                    type: string
+                  version:
+                    type: string
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Packages
+    description: Package management and tracking
+  - name: Scheduling
+    description: Delivery scheduling system
+  - name: Wallet
+    description: Wallet and financial management
+  - name: Matching
+    description: Delivery matching and dispatch
+  - name: Legal
+    description: Legal content and policies
