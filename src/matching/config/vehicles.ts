@@ -1,6 +1,7 @@
 export enum VehicleType {
   BICYCLE = 'BICYCLE',
   MOTORCYCLE = 'MOTORCYCLE',
+  CAR = 'CAR',
   VAN = 'VAN'
 }
 
@@ -23,6 +24,12 @@ export const VEHICLE_PROFILES: Record<VehicleType, VehicleProfile> = {
     maxWeight: 50,
     avgSpeed: 35,
     trafficSensitivity: 0.3
+  },
+  [VehicleType.CAR]: {
+    maxDistance: 30000, // 30km 
+    maxWeight: 100,
+    avgSpeed: 40,
+    trafficSensitivity: 0.4
   },
   [VehicleType.VAN]: {
     maxDistance: 50000, // 50km
