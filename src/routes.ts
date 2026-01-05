@@ -7,6 +7,11 @@ import verificationRoutes from './verification/verification.routes.js';
 import commissionRoutes from './commission/commission.routes.js';
 import riderRoutes from './rider/rider.routes.js';
 import tenantRoutes from './tenant/tenant.routes.js';
+import matchingRoutes from './matching/routes/matching.routes.js';
+import { schedulingRoutes } from './scheduling/scheduling.routes.js';
+import { walletRoutes } from './wallet/wallet.routes.js';
+import { invoiceRoutes } from './invoice/invoice.routes.js';
+import { legalRoutes } from './legal/legal.routes.js';
 
 const router: Router = Router();
 
@@ -18,5 +23,10 @@ router.use('/verification', verificationRoutes);
 router.use('/commissions', commissionRoutes);
 router.use('/riders', riderRoutes);
 router.use('/tenants', tenantRoutes);
+router.use('/matching', matchingRoutes);
+router.use('/scheduling', schedulingRoutes);
+router.use('/wallet', walletRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/legal', legalRoutes);
 
 export default router;

@@ -9,6 +9,9 @@ import { PackageModel } from '../package/package.model.js';
 import { RiderModel } from '../rider/rider.model.js';
 import { CommissionModel } from '../commission/commission.model.js';
 import { TenantModel } from '../tenant/tenant.model.js';
+import { WalletModel, WalletTransactionModel } from '../wallet/wallet.model.js';
+import { InvoiceModel } from '../invoice/invoice.model.js';
+import { LegalContentModel } from '../legal/legal.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -28,15 +31,22 @@ export const sequelize = new Sequelize(dbUrl, {
 });
 
 // Register Models
-sequelize.addModels([UserModel, PackageModel, RiderModel, CommissionModel, TenantModel]);
+sequelize.addModels([UserModel, PackageModel, RiderModel, CommissionModel, TenantModel, WalletModel, WalletTransactionModel, InvoiceModel, LegalContentModel]);
 
 // Redis Configuration
 export const redis: RedisClientType = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-// MongoDB Configuration
-export const mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka');
+// MongoDB Configuration (optional)
+let mongoClient: MongoClient | null = null;
+try {
+  mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka');
+} catch (error) {
+  console.warn('MongoDB client creation failed, running without MongoDB');
+}
+
+export { mongoClient };
 
 // Database Connection Function
 export const connectDatabases = async () => {
@@ -53,11 +63,19 @@ export const connectDatabases = async () => {
     await redis.connect();
     console.log('Redis connected successfully');
     
-    // Connect to MongoDB
-    await mongoClient.connect();
-    console.log('MongoDB connected successfully');
+    // Connect to MongoDB (optional)
+    if (mongoClient) {
+      try {
+        await mongoClient.connect();
+        console.log('MongoDB connected successfully');
+      } catch (mongoError: any) {
+        console.warn('MongoDB connection failed (optional):', mongoError.message);
+      }
+    } else {
+      console.warn('MongoDB client not available, skipping connection');
+    }
     
-    console.log('All databases connected and ready');
+    console.log('Databases connected and ready');
   } catch (error) {
     console.error('Database connection failed:', error);
     throw error;
@@ -69,8 +87,14 @@ export const disconnectDatabases = async () => {
   try {
     await sequelize.close();
     await redis.disconnect();
-    await mongoClient.close();
-    console.log('✅ All database connections closed');
+    try {
+      if (mongoClient) {
+        await mongoClient.close();
+      }
+    } catch (mongoError: any) {
+      console.warn('MongoDB disconnect warning:', mongoError.message);
+    }
+    console.log('Database connections closed');
   } catch (error) {
     console.error('❌ Error closing database connections:', error);
   }
