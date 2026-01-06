@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { RiderController } from './rider.controller.js';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { authenticateToken } from '../middleware/auth.middleware.js';
+import { requirePermission } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
 import { RiderRegistrationSchema, UpdateLocationSchema, UpdateRiderProfileSchema, UpdateStatusSchema } from '../utils/validators.js';
+import { Resource, Action } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
 const riderController = new RiderController();
@@ -16,13 +18,13 @@ router.get('/eligibility', authenticateToken, riderController.checkOrderEligibil
 // Rider operational routes
 router.put('/location', authenticateToken, validateInput(UpdateLocationSchema), riderController.updateLocation);
 router.put('/status', authenticateToken, validateInput(UpdateStatusSchema), riderController.updateStatus);
-router.get('/available', authenticateToken, requireRole(['ADMIN', 'BUSINESS_OWNER']), riderController.getAvailableRiders);
+router.get('/available', authenticateToken, requirePermission(Resource.USER, Action.READ), riderController.getAvailableRiders);
 
 // Business routes
-router.get('/business/:business_id', authenticateToken, requireRole(['ADMIN', 'BUSINESS_OWNER']), riderController.getBusinessRiders);
+router.get('/business/:business_id', authenticateToken, requirePermission(Resource.TENANT, Action.READ), riderController.getBusinessRiders);
 
 // Admin routes
-router.get('/pending', authenticateToken, requireRole(['ADMIN', 'BUSINESS_OWNER']), riderController.getPendingVerifications);
-router.put('/verify/:user_id', authenticateToken, requireRole(['ADMIN', 'BUSINESS_OWNER']), riderController.verifyRider);
+router.get('/pending', authenticateToken, requirePermission(Resource.USER, Action.READ), riderController.getPendingVerifications);
+router.put('/verify/:user_id', authenticateToken, requirePermission(Resource.USER, Action.APPROVE), riderController.verifyRider);
 
 export default router;

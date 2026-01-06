@@ -1,18 +1,39 @@
 import { Router } from 'express';
 import { CommissionController } from './commission.controller.js';
-import { authenticateToken, requireRole } from '../middleware/auth.middleware.js';
+import { authenticateToken } from '../middleware/auth.middleware.js';
+import { requirePermission } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
 import { CreateCommissionSchema } from '../utils/validators.js';
+import { Resource, Action } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
 const commissionController = new CommissionController();
 
 // Admin routes
-router.post('/', authenticateToken, requireRole(['ADMIN']), validateInput(CreateCommissionSchema), commissionController.createCommission);
-router.put('/:commission_id/pay', authenticateToken, requireRole(['ADMIN']), commissionController.payCommission);
+router.post('/', 
+  authenticateToken, 
+  requirePermission(Resource.PACKAGE, Action.CREATE),
+  validateInput(CreateCommissionSchema), 
+  commissionController.createCommission
+);
 
-// Driver routes
-router.get('/driver/:driver_id', authenticateToken, requireRole(['RIDER', 'ADMIN']), commissionController.getDriverEarnings);
-router.get('/driver/:driver_id/summary', authenticateToken, requireRole(['RIDER', 'ADMIN']), commissionController.getEarningsSummary);
+router.put('/:commission_id/pay', 
+  authenticateToken, 
+  requirePermission(Resource.PACKAGE, Action.UPDATE),
+  commissionController.payCommission
+);
+
+// Rider routes
+router.get('/driver/:driver_id', 
+  authenticateToken, 
+  requirePermission(Resource.PACKAGE, Action.READ),
+  commissionController.getDriverEarnings
+);
+
+router.get('/driver/:driver_id/summary', 
+  authenticateToken, 
+  requirePermission(Resource.PACKAGE, Action.READ),
+  commissionController.getEarningsSummary
+);
 
 export default router;

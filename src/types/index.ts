@@ -1,7 +1,7 @@
 export interface User {
   id: string;
   email: string;
-  role: 'ADMIN' | 'BUSINESS_OWNER' | 'RIDER' | 'RECIPIENT';
+  role: 'ADMIN' | 'BUSINESS_OWNER' | 'RIDER' | 'RECIPIENT | SUPER_ADMIN';
   tenant_id: string;
   created_at: Date;
 }
@@ -38,6 +38,7 @@ export interface Driver {
 }
 
 export interface JWTPayload {
+  id: string;
   userId: string;
   email: string;
   role: string;
