@@ -60,6 +60,14 @@ export class MatchingEngine {
     request: DeliveryRequest
   ): CourierState[] {
     return couriers.filter(courier => {
+      // Block bicycle matching after 7pm
+      if (courier.vehicleType === VehicleType.BICYCLE) {
+        const currentHour = new Date().getHours();
+        if (currentHour >= 19) { // 7pm = 19:00
+          return false;
+        }
+      }
+      
       // Check if specific vehicle type is required
       if (request.requiredVehicleType && courier.vehicleType !== request.requiredVehicleType) {
         return false;

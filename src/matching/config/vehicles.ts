@@ -21,7 +21,7 @@ export const VEHICLE_PROFILES: Record<VehicleType, VehicleProfile> = {
   },
   [VehicleType.MOTORCYCLE]: {
     maxDistance: 15000, // 15km
-    maxWeight: 50,
+    maxWeight: 40,
     avgSpeed: 35,
     trafficSensitivity: 0.3
   },
