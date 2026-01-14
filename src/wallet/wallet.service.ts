@@ -3,8 +3,8 @@ import { WalletRepository } from './wallet.repository.js';
 
 export class WalletService {
   private walletRepository = new WalletRepository();
-  private readonly COMMISSION_RATE = 0.20;
-  private readonly CREDIT_LIMIT = -2000.00;
+  private readonly COMMISSION_RATE = Number(process.env.RIDER_COMMISSION_RATE) || 0.20;
+  private readonly CREDIT_LIMIT = Number(process.env.RIDER_CREDIT_LIMIT) || -2000.00;
 
   async createWallet(userId: string): Promise<any> {
     return await this.walletRepository.createWallet({
