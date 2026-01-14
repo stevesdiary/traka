@@ -12,6 +12,7 @@ import { TenantModel } from '../tenant/tenant.model.js';
 import { WalletModel, WalletTransactionModel } from '../wallet/wallet.model.js';
 import { InvoiceModel } from '../invoice/invoice.model.js';
 import { LegalContentModel } from '../legal/legal.model.js';
+import { UserAddressModel } from '../address/address.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -31,7 +32,7 @@ export const sequelize = new Sequelize(dbUrl, {
 });
 
 // Register Models
-sequelize.addModels([UserModel, PackageModel, RiderModel, CommissionModel, TenantModel, WalletModel, WalletTransactionModel, InvoiceModel, LegalContentModel]);
+sequelize.addModels([UserModel, PackageModel, RiderModel, CommissionModel, TenantModel, WalletModel, WalletTransactionModel, InvoiceModel, LegalContentModel, UserAddressModel]);
 
 // Redis Configuration
 export const redis: RedisClientType = createClient({

@@ -12,6 +12,7 @@ import { schedulingRoutes } from './scheduling/scheduling.routes.js';
 import { walletRoutes } from './wallet/wallet.routes.js';
 import { invoiceRoutes } from './invoice/invoice.routes.js';
 import { legalRoutes } from './legal/legal.routes.js';
+import { addressRoutes } from './address/address.routes.js';
 
 const router: Router = Router();
 
@@ -28,5 +29,6 @@ router.use('/scheduling', schedulingRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/legal', legalRoutes);
+router.use('/addresses', addressRoutes);
 
 export default router;
