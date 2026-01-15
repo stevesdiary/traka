@@ -269,3 +269,95 @@ export const UpdateRiderProfileSchema = Joi.object({
     'string.uri': 'Vehicle photo must be a valid URL'
   })
 });
+
+// Package Cancellation Schema
+export const CancelPackageSchema = Joi.object({
+  cancellation_reason: Joi.string().valid(
+    'PILOT_ASKED_TO_CANCEL',
+    'LONG_PICKUP_TIME',
+    'WRONG_ORDER_DETAILS',
+    'RIDER_ASKING_DIFFERENT_MONEY',
+    'RIDER_UNTIDY_NO_UNIFORM',
+    'FOUND_ALTERNATIVE',
+    'OTHER'
+  ).required().messages({
+    'any.only': 'Invalid cancellation reason',
+    'any.required': 'Cancellation reason is required'
+  }),
+  cancellation_note: Joi.string().when('cancellation_reason', {
+    is: 'OTHER',
+    then: Joi.string().min(10).required().messages({
+      'string.min': 'Please provide detailed reason (minimum 10 characters)',
+      'any.required': 'Cancellation note is required when reason is OTHER'
+    }),
+    otherwise: Joi.string().optional()
+  })
+});
+
+// Rating Schema
+export const CreateRatingSchema = Joi.object({
+  package_id: Joi.string().required().messages({
+    'any.required': 'Package ID is required'
+  }),
+  rider_id: Joi.string().required().messages({
+    'any.required': 'Rider ID is required'
+  }),
+  rating: Joi.number().integer().min(1).max(5).required().messages({
+    'number.min': 'Rating must be between 1 and 5',
+    'number.max': 'Rating must be between 1 and 5',
+    'any.required': 'Rating is required'
+  }),
+  review: Joi.string().max(500).optional().messages({
+    'string.max': 'Review must not exceed 500 characters'
+  })
+});
+
+// Matching Schemas
+export const UpdateCourierLocationSchema = Joi.object({
+  lat: Joi.number().min(-90).max(90).required().messages({
+    'number.min': 'Latitude must be between -90 and 90',
+    'number.max': 'Latitude must be between -90 and 90',
+    'any.required': 'Latitude is required'
+  }),
+  lng: Joi.number().min(-180).max(180).required().messages({
+    'number.min': 'Longitude must be between -180 and 180',
+    'number.max': 'Longitude must be between -180 and 180',
+    'any.required': 'Longitude is required'
+  })
+});
+
+export const UpdateCourierStatusSchema = Joi.object({
+  status: Joi.string().valid('AVAILABLE', 'BUSY', 'OFFLINE').required().messages({
+    'any.only': 'Status must be AVAILABLE, BUSY, or OFFLINE',
+    'any.required': 'Status is required'
+  })
+});
+
+export const FindCouriersSchema = Joi.object({
+  pickupLocation: Joi.object({
+    lat: Joi.number().required(),
+    lng: Joi.number().required(),
+    address: Joi.string().required()
+  }).required(),
+  dropoffLocation: Joi.object({
+    lat: Joi.number().required(),
+    lng: Joi.number().required(),
+    address: Joi.string().required()
+  }).required(),
+  package: Joi.object({
+    weight: Joi.number().positive().required(),
+    size: Joi.string().valid('SMALL', 'MEDIUM', 'LARGE').required()
+  }).required(),
+  vehicleType: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'VAN').optional()
+});
+
+// Tenant Approval Schema
+export const TenantApprovalSchema = Joi.object({
+  approval_notes: Joi.string().optional()
+});
+
+// Commission Payment Schema
+export const PayCommissionSchema = Joi.object({
+  payment_method: Joi.string().valid('BANK_TRANSFER', 'CASH', 'MOBILE_MONEY').optional(),
+  payment_reference: Joi.string().optional()
+});
