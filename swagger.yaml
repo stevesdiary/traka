@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
   title: TRAKA Logistics API
-  description: Comprehensive logistics and package tracking platform
-  version: 2.0.0
+  description: Comprehensive logistics and package tracking platform with rider ratings, wallet management, and delivery scheduling
+  version: 3.0.0
   contact:
     name: TRAKA Support
     email: support@traka.com
@@ -54,6 +54,50 @@ components:
         scheduled_for:
           type: string
           format: date-time
+        cancellation_reason:
+          type: string
+          enum: [PILOT_ASKED_TO_CANCEL, LONG_PICKUP_TIME, WRONG_ORDER_DETAILS, RIDER_ASKING_DIFFERENT_MONEY, RIDER_UNTIDY_NO_UNIFORM, FOUND_ALTERNATIVE, OTHER]
+
+    Rating:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_id:
+          type: string
+          format: uuid
+        rider_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review:
+          type: string
+          maxLength: 500
+
+    Address:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        label:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        is_default:
+          type: boolean
 
     WalletBalance:
       type: object
@@ -79,6 +123,7 @@ paths:
           application/json:
             schema:
               type: object
+              required: [email, password]
               properties:
                 email:
                   type: string
@@ -88,6 +133,15 @@ paths:
       responses:
         '200':
           description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
         '401':
           description: Invalid credentials
 
@@ -101,12 +155,14 @@ paths:
           application/json:
             schema:
               type: object
+              required: [email, password, full_name, phone]
               properties:
                 email:
                   type: string
                   format: email
                 password:
                   type: string
+                  minLength: 6
                 full_name:
                   type: string
                 phone:
@@ -114,6 +170,68 @@ paths:
       responses:
         '201':
           description: Customer registered successfully
+
+  /auth/register/business:
+    post:
+      tags: [Authentication]
+      summary: Business registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, business_name, business_address, contact_person, phone]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                business_name:
+                  type: string
+                business_address:
+                  type: string
+                contact_person:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: Business registered successfully
+
+  /auth/register/rider:
+    post:
+      tags: [Authentication]
+      summary: Rider registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, full_name, phone, license_number, vehicle_type, vehicle_plate]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                full_name:
+                  type: string
+                phone:
+                  type: string
+                license_number:
+                  type: string
+                vehicle_type:
+                  type: string
+                  enum: [BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK]
+                vehicle_plate:
+                  type: string
+                business_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Rider registered successfully
 
   # Package Management
   /packages:
@@ -128,15 +246,30 @@ paths:
           application/json:
             schema:
               type: object
+              required: [recipient_name, recipient_phone, pickup_address, delivery_address, description, package_size, delivery_speed]
               properties:
                 recipient_name:
                   type: string
+                recipient_email:
+                  type: string
                 recipient_phone:
+                  type: string
+                pickup_address:
                   type: string
                 delivery_address:
                   type: string
                 description:
                   type: string
+                delivery_notes:
+                  type: string
+                package_size:
+                  type: string
+                  enum: [SMALL, MEDIUM, LARGE]
+                package_weight:
+                  type: number
+                delivery_speed:
+                  type: string
+                  enum: [STANDARD, EXPRESS, SAME_DAY]
       responses:
         '201':
           description: Package created successfully
@@ -151,6 +284,11 @@ paths:
           required: true
           schema:
             type: string
+        - name: token
+          in: query
+          description: Guest tracking token
+          schema:
+            type: string
       responses:
         '200':
           description: Package details
@@ -158,6 +296,268 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Package'
+
+  /packages/{id}/cancel:
+    post:
+      tags: [Packages]
+      summary: Cancel package
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancellation_reason]
+              properties:
+                cancellation_reason:
+                  type: string
+                  enum: [PILOT_ASKED_TO_CANCEL, LONG_PICKUP_TIME, WRONG_ORDER_DETAILS, RIDER_ASKING_DIFFERENT_MONEY, RIDER_UNTIDY_NO_UNIFORM, FOUND_ALTERNATIVE, OTHER]
+                cancellation_note:
+                  type: string
+                  minLength: 10
+      responses:
+        '200':
+          description: Package cancelled successfully
+
+  /packages/{tracking_number}/claim:
+    post:
+      tags: [Packages]
+      summary: Claim guest package to user account
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tracking_number
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [guest_token]
+              properties:
+                guest_token:
+                  type: string
+      responses:
+        '200':
+          description: Package claimed successfully
+
+  # Ratings
+  /ratings:
+    post:
+      tags: [Ratings]
+      summary: Create rider rating
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [package_id, rider_id, rating]
+              properties:
+                package_id:
+                  type: string
+                  format: uuid
+                rider_id:
+                  type: string
+                  format: uuid
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                review:
+                  type: string
+                  maxLength: 500
+      responses:
+        '201':
+          description: Rating submitted successfully
+
+  /ratings/rider/{rider_id}:
+    get:
+      tags: [Ratings]
+      summary: Get rider ratings
+      parameters:
+        - name: rider_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Rider ratings with stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+                    properties:
+                      avgRating:
+                        type: number
+                      totalRatings:
+                        type: integer
+                  ratings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Rating'
+
+  /ratings/rider/{rider_id}/stats:
+    get:
+      tags: [Ratings]
+      summary: Get rider rating statistics
+      parameters:
+        - name: rider_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rider statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avgRating:
+                    type: number
+                  totalRatings:
+                    type: integer
+
+  # Addresses
+  /addresses:
+    get:
+      tags: [Addresses]
+      summary: Get user addresses
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+
+    post:
+      tags: [Addresses]
+      summary: Create address
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label, address, city, state]
+              properties:
+                label:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                is_default:
+                  type: boolean
+      responses:
+        '201':
+          description: Address created successfully
+
+  /addresses/{id}:
+    put:
+      tags: [Addresses]
+      summary: Update address
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+      responses:
+        '200':
+          description: Address updated successfully
+
+    delete:
+      tags: [Addresses]
+      summary: Delete address
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Address deleted successfully
+
+  /addresses/{id}/default:
+    put:
+      tags: [Addresses]
+      summary: Set default address
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Default address set successfully
 
   # Scheduling
   /scheduling/schedule:
@@ -172,6 +572,7 @@ paths:
           application/json:
             schema:
               type: object
+              required: [packageId, scheduleType]
               properties:
                 packageId:
                   type: string
@@ -185,6 +586,16 @@ paths:
       responses:
         '201':
           description: Delivery scheduled successfully
+
+  /scheduling/process-pending:
+    post:
+      tags: [Scheduling]
+      summary: Process pending deliveries (Admin)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Pending deliveries processed
 
   # Wallet Management
   /wallet/balance:
@@ -217,6 +628,32 @@ paths:
         '200':
           description: Transaction history
 
+  /wallet/cash-delivery:
+    post:
+      tags: [Wallet]
+      summary: Process cash delivery commission
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [riderId, totalFare, packageId]
+              properties:
+                riderId:
+                  type: string
+                  format: uuid
+                totalFare:
+                  type: number
+                packageId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Commission processed
+
   /wallet/webhook/monnify:
     post:
       tags: [Wallet]
@@ -237,10 +674,297 @@ paths:
           description: Webhook processed
 
   # Delivery Matching
-  /matching/dispatch:
+  /matching/find-couriers:
     post:
       tags: [Matching]
-      summary: Dispatch delivery
+      summary: Find matching couriers
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickupLocation, dropoffLocation, package]
+              properties:
+                pickupLocation:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+                    address:
+                      type: string
+                dropoffLocation:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+                    address:
+                      type: string
+                package:
+                  type: object
+                  properties:
+                    weight:
+                      type: number
+                    size:
+                      type: string
+                      enum: [SMALL, MEDIUM, LARGE]
+                vehicleType:
+                  type: string
+                  enum: [BICYCLE, MOTORCYCLE, VAN]
+      responses:
+        '200':
+          description: Matching couriers found
+
+  /matching/request-delivery:
+    post:
+      tags: [Matching]
+      summary: Request delivery dispatch
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickupLocation, dropoffLocation, package]
+              properties:
+                pickupLocation:
+                  type: object
+                dropoffLocation:
+                  type: object
+                package:
+                  type: object
+                vehicleType:
+                  type: string
+      responses:
+        '200':
+          description: Delivery dispatched successfully
+
+  /matching/couriers/{courierId}/location:
+    put:
+      tags: [Matching]
+      summary: Update courier location
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat:
+                  type: number
+                  minimum: -90
+                  maximum: 90
+                lng:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+      responses:
+        '200':
+          description: Location updated
+
+  /matching/couriers/{courierId}/status:
+    put:
+      tags: [Matching]
+      summary: Update courier status
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [AVAILABLE, BUSY, OFFLINE]
+      responses:
+        '200':
+          description: Status updated
+
+  # Tenants
+  /tenants/pending:
+    get:
+      tags: [Tenants]
+      summary: Get pending business verifications
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of pending tenants
+
+  /tenants/{id}/approve:
+    put:
+      tags: [Tenants]
+      summary: Approve business tenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tenant approved
+
+  /tenants/{id}/suspend:
+    put:
+      tags: [Tenants]
+      summary: Suspend business tenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tenant suspended
+
+  # Legal Content
+  /legal/faq:
+    get:
+      tags: [Legal]
+      summary: Get FAQs (Public)
+      responses:
+        '200':
+          description: FAQ content
+
+  /legal/terms:
+    get:
+      tags: [Legal]
+      summary: Get Terms of Service (Public)
+      responses:
+        '200':
+          description: Terms of Service
+
+  /legal/commission-policy:
+    get:
+      tags: [Legal]
+      summary: Get Commission Policy (Public)
+      responses:
+        '200':
+          description: Commission Policy
+
+  # Notifications
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of notifications
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Get unread notification count
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unread_count:
+                    type: integer
+
+  /notifications/{id}/read:
+    put:
+      tags: [Notifications]
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/read-all:
+    put:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /notifications/preferences:
+    get:
+      tags: [Notifications]
+      summary: Get notification preferences
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User notification preferences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  push_enabled:
+                    type: boolean
+                  sms_enabled:
+                    type: boolean
+                  email_enabled:
+                    type: boolean
+                  fcm_token:
+                    type: string
+
+    put:
+      tags: [Notifications]
+      summary: Update notification preferences
       security:
         - BearerAuth: []
       requestBody:
@@ -250,91 +974,37 @@ paths:
             schema:
               type: object
               properties:
-                packageId:
+                push_enabled:
+                  type: boolean
+                sms_enabled:
+                  type: boolean
+                email_enabled:
+                  type: boolean
+                fcm_token:
                   type: string
-                  format: uuid
-                pickupLocation:
-                  type: object
-                  properties:
-                    latitude:
-                      type: number
-                    longitude:
-                      type: number
-                deliveryLocation:
-                  type: object
-                  properties:
-                    latitude:
-                      type: number
-                    longitude:
-                      type: number
+                  description: Firebase Cloud Messaging token for push notifications
       responses:
         '200':
-          description: Delivery dispatched successfully
-
-  # Legal Content
-  /legal/faq:
-    get:
-      tags: [Legal]
-      summary: Get FAQs
-      responses:
-        '200':
-          description: FAQ content
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  faqs:
-                    type: object
-
-  /legal/terms:
-    get:
-      tags: [Legal]
-      summary: Get Terms of Service
-      responses:
-        '200':
-          description: Terms of Service
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                  content:
-                    type: string
-                  version:
-                    type: string
-
-  /legal/commission-policy:
-    get:
-      tags: [Legal]
-      summary: Get Commission Policy
-      responses:
-        '200':
-          description: Commission Policy
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                  content:
-                    type: string
-                  version:
-                    type: string
+          description: Preferences updated successfully
 
 tags:
   - name: Authentication
     description: User authentication and registration
   - name: Packages
-    description: Package management and tracking
+    description: Package management, tracking, and cancellation
+  - name: Ratings
+    description: Rider ratings and reviews
+  - name: Addresses
+    description: User address management
   - name: Scheduling
     description: Delivery scheduling system
   - name: Wallet
     description: Wallet and financial management
   - name: Matching
     description: Delivery matching and dispatch
+  - name: Tenants
+    description: Business verification and management
   - name: Legal
     description: Legal content and policies
+  - name: Notifications
+    description: Push, SMS, and email notifications (Brevo & BulkSMS)

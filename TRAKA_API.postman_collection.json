@@ -82,7 +82,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"+1234567890\"\n}"
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/customer",
@@ -124,7 +124,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"Mike Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Mike\",\n  \"last_name\": \"Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/rider",
@@ -281,7 +281,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"full_name\": \"Mike Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+              "raw": "{\n  \"email\": \"rider@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"Mike\",\n  \"last_name\": \"Wilson\",\n  \"phone\": \"+1234567890\",\n  \"license_number\": \"DL123456789\",\n  \"vehicle_type\": \"MOTORCYCLE\",\n  \"vehicle_plate\": \"ABC-123\",\n  \"business_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/riders/register",
@@ -491,6 +491,56 @@
               "raw": "{{baseUrl}}/packages/qr-decode",
               "host": ["{{baseUrl}}"],
               "path": ["packages", "qr-decode"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancellation_reason\": \"RIDER_ASKING_DIFFERENT_MONEY\",\n  \"cancellation_note\": \"Rider requested cash payment instead of app payment\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/packages/{{package_id}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["packages", "{{package_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Claim Package",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guest_token\": \"guest-tracking-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/packages/{{tracking_number}}/claim",
+              "host": ["{{baseUrl}}"],
+              "path": ["packages", "{{tracking_number}}", "claim"]
             }
           }
         }
@@ -1160,6 +1210,293 @@
               "raw": "{{baseUrl}}/legal/seed",
               "host": ["{{baseUrl}}"],
               "path": ["legal", "seed"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings",
+      "item": [
+        {
+          "name": "Create Rating",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"package_id\": \"package-uuid\",\n  \"rider_id\": \"rider-uuid\",\n  \"rating\": 5,\n  \"review\": \"Excellent service! Very professional and on time.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ratings",
+              "host": ["{{baseUrl}}"],
+              "path": ["ratings"]
+            }
+          }
+        },
+        {
+          "name": "Get Rider Ratings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ratings/rider/{{rider_id}}?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["ratings", "rider", "{{rider_id}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Rider Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ratings/rider/{{rider_id}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["ratings", "rider", "{{rider_id}}", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"address\": \"123 Main Street\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"latitude\": 6.5244,\n  \"longitude\": 3.3792,\n  \"is_default\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses"]
+            }
+          }
+        },
+        {
+          "name": "Get User Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses"]
+            }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Office\",\n  \"address\": \"456 Business Ave\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{address_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", "{{address_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{address_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", "{{address_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Set Default Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addresses/{{address_id}}/default",
+              "host": ["{{baseUrl}}"],
+              "path": ["addresses", "{{address_id}}", "default"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notification_id}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notification_id}}", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          }
+        },
+        {
+          "name": "Get Preferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
+            }
+          }
+        },
+        {
+          "name": "Update Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"push_enabled\": true,\n  \"sms_enabled\": true,\n  \"email_enabled\": true,\n  \"fcm_token\": \"firebase-cloud-messaging-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
             }
           }
         }
