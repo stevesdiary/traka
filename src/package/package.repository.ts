@@ -31,13 +31,19 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     total_amount?: number;
     estimated_distance_km?: number;
     guest_tracking_token?: string | null;
-    tenant_id: string;
+    tenant_id: string | null;
   }): Promise<PackageModel> {
     return this.model.create(packageData as any);
   }
 
-  async updateStatus(id: string, tenant_id: string, updateData: any): Promise<[number, PackageModel[]]> {
-    return this.updateByTenant(id, tenant_id, updateData);
+  async updateStatus(id: string, tenant_id: string | null, updateData: any): Promise<[number, PackageModel[]]> {
+    if (tenant_id) {
+      return this.updateByTenant(id, tenant_id, updateData);
+    }
+    return this.model.update(updateData, {
+      where: { id },
+      returning: true
+    });
   }
 
   async updatePackage(id: string, updateData: {
@@ -46,6 +52,11 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     pickup_pin?: string;
     delivery_pin?: string;
     qr_code_data?: string;
+    status?: string;
+    cancellation_reason?: string;
+    cancellation_note?: string;
+    cancelled_at?: Date;
+    cancelled_by?: string;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },

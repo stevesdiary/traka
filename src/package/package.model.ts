@@ -79,9 +79,9 @@ export class PackageModel extends Model {
 
   @Column({
     type: DataType.UUID,
-    allowNull: false
+    allowNull: true
   })
-  tenant_id!: string;
+  tenant_id?: string;
 
   // Delivery tracking
   @Column(DataType.DATE)
@@ -169,6 +169,38 @@ export class PackageModel extends Model {
 
   @Column(DataType.DATE)
   delivery_confirmed_at?: Date;
+
+  // Cancellation fields
+  @Column({
+    type: DataType.ENUM(
+      'PILOT_ASKED_TO_CANCEL',
+      'LONG_PICKUP_TIME',
+      'WRONG_ORDER_DETAILS',
+      'RIDER_ASKING_DIFFERENT_MONEY',
+      'RIDER_UNTIDY_NO_UNIFORM',
+      'FOUND_ALTERNATIVE',
+      'PACKAGE_HEAVIER_THAN_CAPACITY',
+      'OTHER'
+    ),
+    allowNull: true
+  })
+  cancellation_reason?: string;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true
+  })
+  cancellation_note?: string;
+
+  @Column(DataType.DATE)
+  cancelled_at?: Date;
+
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  cancelled_by?: string;
 
   // Guest tracking token for non-registered recipients
   @Column({

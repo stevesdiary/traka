@@ -30,7 +30,7 @@ export class PackageService {
       delivery_speed: 'STANDARD' | 'EXPRESS' | 'SAME_DAY';
     },
     sender_id: string,
-    tenant_id: string
+    tenant_id: string | null
   ): Promise<any> {
     // Calculate pricing
     const pricingRequest: PricingRequest = {
@@ -175,10 +175,47 @@ export class PackageService {
     return { message: "Package claimed successfully" };
   }
 
+  async cancelPackage(
+    package_id: string,
+    user_id: string,
+    cancellation_reason: string,
+    cancellation_note?: string
+  ): Promise<any> {
+    const packageData = await this.packageRepository.findById(package_id);
+    if (!packageData) {
+      throw new Error("Package not found");
+    }
+
+    if (packageData.sender_id !== user_id) {
+      throw new Error("Unauthorized: Only sender can cancel package");
+    }
+
+    if (packageData.status === 'DELIVERED') {
+      throw new Error("Cannot cancel delivered package");
+    }
+
+    if (packageData.status === 'CANCELLED') {
+      throw new Error("Package already cancelled");
+    }
+
+    await this.packageRepository.updatePackage(package_id, {
+      status: 'CANCELLED',
+      cancellation_reason,
+      cancellation_note,
+      cancelled_at: new Date(),
+      cancelled_by: user_id
+    });
+
+    return { 
+      message: "Package cancelled successfully",
+      tracking_number: packageData.tracking_number
+    };
+  }
+
   async updatePackageStatus(
     package_id: string,
     status: string,
-    tenant_id: string
+    tenant_id: string | null
   ): Promise<any> {
     const updateData: any = { status };
     if (status === "DELIVERED") {
@@ -205,7 +242,7 @@ export class PackageService {
     return updatedPackages[0];
   }
 
-  async confirmPickup(package_id: string, pin: string, tenant_id: string): Promise<any> {
+  async confirmPickup(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
     const verification = this.packageVerificationService.getVerificationStatus(package_id);
     if (!verification) {
       throw new Error('Package verification not found');
@@ -219,7 +256,7 @@ export class PackageService {
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
   }
 
-  async confirmDelivery(package_id: string, pin: string, tenant_id: string): Promise<any> {
+  async confirmDelivery(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
     const verification = this.packageVerificationService.getVerificationStatus(package_id);
     if (!verification) {
       throw new Error('Package verification not found');

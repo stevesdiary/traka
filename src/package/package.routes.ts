@@ -3,7 +3,7 @@ import { PackageController } from './package.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
-import { CreatePackageSchema, GuestTrackingSchema } from '../utils/validators.js';
+import { CreatePackageSchema, GuestTrackingSchema, CancelPackageSchema } from '../utils/validators.js';
 import { Resource, Action } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
@@ -18,6 +18,9 @@ router.get('/:tracking_number', authenticateToken, requirePermission(Resource.PA
 
 // Package claiming for registered users
 router.post('/:tracking_number/claim', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.claimPackage);
+
+// Package cancellation
+router.post('/:id/cancel', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), validateInput(CancelPackageSchema), packageController.cancelPackage);
 
 
 export default router;

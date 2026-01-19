@@ -94,4 +94,27 @@ export class PackageController {
       res.status(500).json({ error: 'Failed to claim package' });
     }
   };
+
+  cancelPackage = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { cancellation_reason, cancellation_note } = req.body;
+      const user_id = req.user!.userId;
+
+      const result = await this.packageService.cancelPackage(
+        id,
+        user_id,
+        cancellation_reason,
+        cancellation_note
+      );
+
+      res.json(result);
+    } catch (error: any) {
+      if (error.message.includes('not found') || error.message.includes('Unauthorized') || error.message.includes('Cannot cancel') || error.message.includes('already cancelled')) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to cancel package' });
+    }
+  };
 }
