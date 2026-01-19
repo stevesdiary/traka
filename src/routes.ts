@@ -13,6 +13,9 @@ import { walletRoutes } from './wallet/wallet.routes.js';
 import { invoiceRoutes } from './invoice/invoice.routes.js';
 import { legalRoutes } from './legal/legal.routes.js';
 import { addressRoutes } from './address/address.routes.js';
+import ratingRoutes from './rating/rating.routes.js';
+import notificationRoutes from './notification/notification.routes.js';
+import referralRoutes from './referral/referral.routes.js';
 
 const router: Router = Router();
 
@@ -30,5 +33,8 @@ router.use('/wallet', walletRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/legal', legalRoutes);
 router.use('/addresses', addressRoutes);
+router.use('/ratings', ratingRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/referrals', referralRoutes);
 
 export default router;
