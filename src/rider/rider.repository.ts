@@ -85,4 +85,20 @@ export class RiderRepository extends BaseRepository<RiderModel> {
       group: ['business_id']
     });
   }
+
+  async findByReferralCode(referralCode: string): Promise<RiderModel | null> {
+    return this.model.findOne({
+      where: { referral_code: referralCode }
+    });
+  }
+
+  async updateReferralCode(userId: string, referralCode: string): Promise<void> {
+    await this.model.update(
+      { 
+        referral_code: referralCode,
+        referral_code_updated_at: new Date()
+      },
+      { where: { user_id: userId } }
+    );
+  }
 }

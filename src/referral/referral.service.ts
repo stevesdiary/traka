@@ -9,12 +9,71 @@ export class ReferralService {
   private riderRepository = new RiderRepository();
   private readonly REFERRAL_REWARD = 1000.00;
 
-  generateReferralCode(riderId: string): string {
-    return `REF${riderId.substring(0, 8).toUpperCase()}`;
+  async generateReferralCode(riderId: string, firstName: string): Promise<string> {
+    const baseName = firstName.toUpperCase().replace(/[^A-Z]/g, '');
+    let code = '';
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    while (attempts < maxAttempts) {
+      const randomDigits = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+      code = `${baseName}${randomDigits}`;
+
+      const existing = await this.riderRepository.findByReferralCode(code);
+      if (!existing) {
+        await this.riderRepository.updateReferralCode(riderId, code);
+        return code;
+      }
+      attempts++;
+    }
+
+    throw new Error('Unable to generate unique referral code');
   }
 
   async getRiderReferralCode(riderId: string): Promise<string> {
-    return this.generateReferralCode(riderId);
+    const rider = await this.riderRepository.getRiderByUserId(riderId);
+    if (!rider) {
+      throw new Error('Rider not found');
+    }
+
+    if (rider.referral_code) {
+      return rider.referral_code;
+    }
+
+    const firstName = rider.full_name.split(' ')[0];
+    return await this.generateReferralCode(riderId, firstName);
+  }
+
+  async updateReferralCode(riderId: string, newCode: string): Promise<void> {
+    const rider = await this.riderRepository.getRiderByUserId(riderId);
+    if (!rider) {
+      throw new Error('Rider not found');
+    }
+
+    // Check if code was updated in the last 14 days
+    if (rider.referral_code_updated_at) {
+      const daysSinceUpdate = Math.floor(
+        (Date.now() - new Date(rider.referral_code_updated_at).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      if (daysSinceUpdate < 14) {
+        const daysRemaining = 14 - daysSinceUpdate;
+        throw new Error(`You can update your referral code again in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''}`);
+      }
+    }
+
+    const normalized = newCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    if (normalized.length < 3 || normalized.length > 20) {
+      throw new Error('Referral code must be 3-20 characters');
+    }
+
+    const existing = await this.riderRepository.findByReferralCode(normalized);
+    if (existing && existing.user_id !== riderId) {
+      throw new Error('Referral code already taken');
+    }
+
+    await this.riderRepository.updateReferralCode(riderId, normalized);
   }
 
   async applyReferralCode(referredRiderId: string, referralCode: string): Promise<void> {
@@ -88,6 +147,7 @@ export class ReferralService {
 
   async getReferralStats(riderId: string): Promise<any> {
     const referrals = await this.referralRepository.getReferralsByReferrer(riderId);
+    const referralCode = await this.getRiderReferralCode(riderId);
     
     return {
       total_referrals: referrals.length,
@@ -95,11 +155,11 @@ export class ReferralService {
       completed: referrals.filter(r => r.status === 'COMPLETED').length,
       rewarded: referrals.filter(r => r.status === 'REWARDED').length,
       total_earned: referrals.filter(r => r.status === 'REWARDED').length * this.REFERRAL_REWARD,
-      referral_code: this.generateReferralCode(riderId),
+      referral_code: referralCode,
       referrals: referrals.map(r => ({
         referred_rider_id: r.referred_rider_id,
         status: r.status,
-        created_at: r.created_at,
+        created_at: r.createdAt,
         first_delivery_at: r.first_delivery_at,
         rewarded_at: r.rewarded_at
       }))
