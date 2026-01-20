@@ -32,10 +32,16 @@ components:
           format: email
         role:
           type: string
-          enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER]
+          enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER, BUSINESS_OWNER]
+          description: Current permission level (can be changed)
+        type:
+          type: string
+          enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER, BUSINESS_OWNER]
+          description: Permanent user classification
         tenant_id:
           type: string
           format: uuid
+          nullable: true
 
     Package:
       type: object
@@ -202,36 +208,111 @@ paths:
   /auth/register/rider:
     post:
       tags: [Authentication]
-      summary: Rider registration
+      summary: Rider registration with unique ID and email verification
+      description: |
+        Register a new rider account. Returns JWT token and encrypted user data.
+        - Auto-generates unique rider ID (TRK-XXXX)
+        - Sends email verification code
+        - Returns encrypted user data for client-side decryption
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password, full_name, phone, license_number, vehicle_type, vehicle_plate]
+              required: [email, password, first_name, last_name, phone, license_number, vehicle_type, vehicle_plate]
               properties:
                 email:
                   type: string
+                  format: email
+                  example: rider@example.com
                 password:
                   type: string
-                full_name:
+                  minLength: 6
+                  example: SecurePass123!
+                first_name:
                   type: string
+                  example: John
+                last_name:
+                  type: string
+                  example: Doe
                 phone:
                   type: string
+                  example: "+2348012345678"
                 license_number:
                   type: string
+                  example: LIC-12345
                 vehicle_type:
                   type: string
                   enum: [BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK]
+                  example: MOTORCYCLE
                 vehicle_plate:
                   type: string
+                  example: ABC-123-XY
                 business_id:
                   type: string
                   format: uuid
+                  description: Optional - for business-managed riders
       responses:
         '201':
           description: Rider registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Rider registered successfully. Please check your email for verification code."
+                  token:
+                    type: string
+                    description: JWT authentication token
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                      tenant_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                  rider_profile:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      rider_id:
+                        type: string
+                        example: "TRK-1000"
+                        description: Unique rider identifier
+                      full_name:
+                        type: string
+                      rider_type:
+                        type: string
+                        enum: [INDEPENDENT, BUSINESS_MANAGED]
+                      verification_status:
+                        type: string
+                        enum: [PENDING, VERIFIED, REJECTED]
+                  verification_required:
+                    type: boolean
+                    example: true
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "User already exists"
+        '500':
+          description: Internal server error
 
   # Package Management
   /packages:
@@ -808,6 +889,74 @@ paths:
         '200':
           description: Status updated
 
+  # User Management
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users with filters
+      description: |
+        Retrieve users filtered by role, type, or tenant_id.
+        - `role`: Filter by current permission level
+        - `type`: Filter by user classification (RIDER, USER, BUSINESS_OWNER, etc.)
+        - `tenant_id`: Filter by business tenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          description: Filter by role
+          schema:
+            type: string
+            enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER, BUSINESS_OWNER]
+        - name: type
+          in: query
+          description: Filter by user type
+          schema:
+            type: string
+            enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER, BUSINESS_OWNER]
+        - name: tenant_id
+          in: query
+          description: Filter by tenant/business ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        email:
+                          type: string
+                        role:
+                          type: string
+                        type:
+                          type: string
+                        tenant_id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+                        updated_at:
+                          type: string
+                          format: date-time
+        '500':
+          description: Failed to retrieve users
+
   # Tenants
   /tenants/pending:
     get:
@@ -990,6 +1139,8 @@ paths:
 tags:
   - name: Authentication
     description: User authentication and registration
+  - name: Users
+    description: User management and filtering
   - name: Packages
     description: Package management, tracking, and cancellation
   - name: Ratings

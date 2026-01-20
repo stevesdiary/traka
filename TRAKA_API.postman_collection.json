@@ -23,11 +23,15 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:3000/health",
+          "raw": "http://localhost:4000/health",
           "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["health"]
+          "host": [
+            "localhost"
+          ],
+          "port": "4000",
+          "path": [
+            "health"
+          ]
         }
       }
     },
@@ -65,8 +69,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "login"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           }
         },
@@ -86,8 +95,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/customer",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register", "customer"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "customer"
+              ]
             }
           }
         },
@@ -107,8 +122,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/business",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register", "business"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "business"
+              ]
             }
           }
         },
@@ -128,8 +149,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/rider",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register", "rider"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register",
+                "rider"
+              ]
             }
           }
         },
@@ -149,8 +176,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["auth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           }
         }
@@ -170,9 +202,33 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "raw": "{{baseUrl}}/users?role={{user_role}}&type={{user_type}}&tenant_id={{tenant_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "{{user_role}}",
+                  "description": "Filter by role (optional)",
+                  "disabled": false
+                },
+                {
+                  "key": "type",
+                  "value": "{{user_type}}",
+                  "description": "Filter by user type (optional)",
+                  "disabled": false
+                },
+                {
+                  "key": "tenant_id",
+                  "value": "{{tenant_id}}",
+                  "description": "Filter by tenant ID (optional)",
+                  "disabled": false
+                }
+              ]
             }
           }
         },
@@ -196,8 +252,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
             }
           }
         },
@@ -213,8 +273,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             }
           }
         },
@@ -238,8 +303,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             }
           }
         },
@@ -255,8 +325,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "1"
+              ]
             }
           }
         }
@@ -285,8 +360,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/riders/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["riders", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "riders",
+                "register"
+              ]
             }
           }
         },
@@ -302,8 +382,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/riders/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["riders", "profile"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "riders",
+                "profile"
+              ]
             }
           }
         },
@@ -327,8 +412,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/riders/location",
-              "host": ["{{baseUrl}}"],
-              "path": ["riders", "location"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "riders",
+                "location"
+              ]
             }
           }
         },
@@ -352,8 +442,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/riders/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["riders", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "riders",
+                "status"
+              ]
             }
           }
         },
@@ -369,8 +464,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/riders/available",
-              "host": ["{{baseUrl}}"],
-              "path": ["riders", "available"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "riders",
+                "available"
+              ]
             }
           }
         }
@@ -399,8 +499,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages"
+              ]
             }
           }
         },
@@ -411,8 +515,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/packages/TRK123456789?token=abc123",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "TRK123456789"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "TRK123456789"
+              ],
               "query": [
                 {
                   "key": "token",
@@ -443,8 +552,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages/package-id/confirm-pickup",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "package-id", "confirm-pickup"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "package-id",
+                "confirm-pickup"
+              ]
             }
           }
         },
@@ -468,8 +583,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages/package-id/confirm-delivery",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "package-id", "confirm-delivery"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "package-id",
+                "confirm-delivery"
+              ]
             }
           }
         },
@@ -489,8 +610,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages/qr-decode",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "qr-decode"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "qr-decode"
+              ]
             }
           }
         },
@@ -514,8 +640,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages/{{package_id}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "{{package_id}}", "cancel"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "{{package_id}}",
+                "cancel"
+              ]
             }
           }
         },
@@ -539,8 +671,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/packages/{{tracking_number}}/claim",
-              "host": ["{{baseUrl}}"],
-              "path": ["packages", "{{tracking_number}}", "claim"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "packages",
+                "{{tracking_number}}",
+                "claim"
+              ]
             }
           }
         }
@@ -565,8 +703,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/pricing/calculate",
-              "host": ["{{baseUrl}}"],
-              "path": ["pricing", "calculate"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pricing",
+                "calculate"
+              ]
             }
           }
         },
@@ -586,8 +729,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/pricing/bulk-calculate",
-              "host": ["{{baseUrl}}"],
-              "path": ["pricing", "bulk-calculate"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pricing",
+                "bulk-calculate"
+              ]
             }
           }
         }
@@ -616,8 +764,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/drivers",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers"
+              ]
             }
           }
         },
@@ -633,8 +785,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/drivers/all",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers", "all"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "all"
+              ]
             }
           }
         },
@@ -650,8 +807,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/drivers/available",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers", "available"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "available"
+              ]
             }
           }
         },
@@ -667,8 +829,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/drivers/profile",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers", "profile"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "profile"
+              ]
             }
           }
         },
@@ -692,8 +859,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/drivers/1/location",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers", "1", "location"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "1",
+                "location"
+              ]
             }
           }
         },
@@ -717,8 +890,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/drivers/1/status",
-              "host": ["{{baseUrl}}"],
-              "path": ["drivers", "1", "status"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "1",
+                "status"
+              ]
             }
           }
         }
@@ -739,8 +918,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/dashboard/overview",
-              "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "overview"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "overview"
+              ]
             }
           }
         },
@@ -756,8 +940,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/dashboard/drivers",
-              "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "drivers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "drivers"
+              ]
             }
           }
         },
@@ -773,8 +962,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/dashboard/packages",
-              "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "packages"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "packages"
+              ]
             }
           }
         },
@@ -790,8 +984,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/dashboard/customers",
-              "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "customers"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "customers"
+              ]
             }
           }
         },
@@ -807,8 +1006,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/dashboard/analytics",
-              "host": ["{{baseUrl}}"],
-              "path": ["dashboard", "analytics"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "analytics"
+              ]
             }
           }
         }
@@ -829,8 +1033,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/tenants",
-              "host": ["{{baseUrl}}"],
-              "path": ["tenants"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants"
+              ]
             }
           }
         },
@@ -846,8 +1054,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/tenants/pending",
-              "host": ["{{baseUrl}}"],
-              "path": ["tenants", "pending"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                "pending"
+              ]
             }
           }
         },
@@ -863,8 +1076,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/tenants/{{tenant_id}}/approve",
-              "host": ["{{baseUrl}}"],
-              "path": ["tenants", "{{tenant_id}}", "approve"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "approve"
+              ]
             }
           }
         },
@@ -880,8 +1099,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/tenants/{{tenant_id}}/suspend",
-              "host": ["{{baseUrl}}"],
-              "path": ["tenants", "{{tenant_id}}", "suspend"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                "{{tenant_id}}",
+                "suspend"
+              ]
             }
           }
         },
@@ -897,8 +1122,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/tenants/active",
-              "host": ["{{baseUrl}}"],
-              "path": ["tenants", "active"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tenants",
+                "active"
+              ]
             }
           }
         }
@@ -919,8 +1149,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/wallet/balance",
-              "host": ["{{baseUrl}}"],
-              "path": ["wallet", "balance"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "balance"
+              ]
             }
           }
         },
@@ -936,8 +1171,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/wallet/transactions?limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["wallet", "transactions"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "transactions"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -967,8 +1207,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/wallet/cash-delivery",
-              "host": ["{{baseUrl}}"],
-              "path": ["wallet", "cash-delivery"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "cash-delivery"
+              ]
             }
           }
         },
@@ -992,8 +1237,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/wallet/webhook/monnify",
-              "host": ["{{baseUrl}}"],
-              "path": ["wallet", "webhook", "monnify"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                "webhook",
+                "monnify"
+              ]
             }
           }
         }
@@ -1022,8 +1273,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/scheduling/schedule",
-              "host": ["{{baseUrl}}"],
-              "path": ["scheduling", "schedule"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scheduling",
+                "schedule"
+              ]
             }
           }
         },
@@ -1047,8 +1303,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/scheduling/schedule",
-              "host": ["{{baseUrl}}"],
-              "path": ["scheduling", "schedule"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scheduling",
+                "schedule"
+              ]
             }
           }
         },
@@ -1064,8 +1325,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/scheduling/process-pending",
-              "host": ["{{baseUrl}}"],
-              "path": ["scheduling", "process-pending"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scheduling",
+                "process-pending"
+              ]
             }
           }
         }
@@ -1094,8 +1360,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/matching/dispatch",
-              "host": ["{{baseUrl}}"],
-              "path": ["matching", "dispatch"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matching",
+                "dispatch"
+              ]
             }
           }
         },
@@ -1111,8 +1382,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/matching/available-couriers?latitude=6.5244&longitude=3.3792&radius=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["matching", "available-couriers"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matching",
+                "available-couriers"
+              ],
               "query": [
                 {
                   "key": "latitude",
@@ -1150,8 +1426,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/matching/courier-presence",
-              "host": ["{{baseUrl}}"],
-              "path": ["matching", "courier-presence"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "matching",
+                "courier-presence"
+              ]
             }
           }
         }
@@ -1167,8 +1448,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/legal/faq",
-              "host": ["{{baseUrl}}"],
-              "path": ["legal", "faq"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "legal",
+                "faq"
+              ]
             }
           }
         },
@@ -1179,8 +1465,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/legal/terms",
-              "host": ["{{baseUrl}}"],
-              "path": ["legal", "terms"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "legal",
+                "terms"
+              ]
             }
           }
         },
@@ -1191,8 +1482,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/legal/commission-policy",
-              "host": ["{{baseUrl}}"],
-              "path": ["legal", "commission-policy"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "legal",
+                "commission-policy"
+              ]
             }
           }
         },
@@ -1208,8 +1504,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/legal/seed",
-              "host": ["{{baseUrl}}"],
-              "path": ["legal", "seed"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "legal",
+                "seed"
+              ]
             }
           }
         }
@@ -1238,8 +1539,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/ratings",
-              "host": ["{{baseUrl}}"],
-              "path": ["ratings"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ratings"
+              ]
             }
           }
         },
@@ -1250,8 +1555,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ratings/rider/{{rider_id}}?limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["ratings", "rider", "{{rider_id}}"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ratings",
+                "rider",
+                "{{rider_id}}"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -1268,8 +1579,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/ratings/rider/{{rider_id}}/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["ratings", "rider", "{{rider_id}}", "stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ratings",
+                "rider",
+                "{{rider_id}}",
+                "stats"
+              ]
             }
           }
         }
@@ -1298,8 +1616,12 @@
             },
             "url": {
               "raw": "{{baseUrl}}/addresses",
-              "host": ["{{baseUrl}}"],
-              "path": ["addresses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses"
+              ]
             }
           }
         },
@@ -1315,8 +1637,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/addresses",
-              "host": ["{{baseUrl}}"],
-              "path": ["addresses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses"
+              ]
             }
           }
         },
@@ -1340,8 +1666,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/addresses/{{address_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["addresses", "{{address_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
             }
           }
         },
@@ -1357,8 +1688,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/addresses/{{address_id}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["addresses", "{{address_id}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
             }
           }
         },
@@ -1374,8 +1710,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/addresses/{{address_id}}/default",
-              "host": ["{{baseUrl}}"],
-              "path": ["addresses", "{{address_id}}", "default"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}",
+                "default"
+              ]
             }
           }
         }
@@ -1396,8 +1738,12 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications?limit=50",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ],
               "query": [
                 {
                   "key": "limit",
@@ -1419,8 +1765,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/unread-count",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications", "unread-count"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "unread-count"
+              ]
             }
           }
         },
@@ -1436,8 +1787,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/{{notification_id}}/read",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications", "{{notification_id}}", "read"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
             }
           }
         },
@@ -1453,8 +1810,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/read-all",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications", "read-all"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read-all"
+              ]
             }
           }
         },
@@ -1470,8 +1832,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/preferences",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications", "preferences"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "preferences"
+              ]
             }
           }
         },
@@ -1495,8 +1862,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/notifications/preferences",
-              "host": ["{{baseUrl}}"],
-              "path": ["notifications", "preferences"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "preferences"
+              ]
             }
           }
         }
