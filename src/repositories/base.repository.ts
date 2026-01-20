@@ -39,7 +39,24 @@ export abstract class BaseRepository<T extends Model> {
     });
   }
 
-  async findAll(): Promise<T[]> {
-    return this.model.findAll();
+  async findAll(options?: any): Promise<T[]> {
+    return this.model.findAll(options);
+  }
+
+  async findById(id: string): Promise<T | null> {
+    return this.model.findByPk(id);
+  }
+
+  async deleteById(id: string): Promise<number> {
+    return this.model.destroy({
+      where: { id } as WhereOptions
+    });
+  }
+
+  async updateById(id: string, data: any): Promise<[number, T[]]> {
+    return this.model.update(data, {
+      where: { id } as WhereOptions,
+      returning: true
+    });
   }
 }
