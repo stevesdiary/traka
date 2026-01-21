@@ -5,14 +5,18 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 ## Features
 
 - **Multi-User Registration**: Customer, Business, and Rider registration
+- **Unique Rider IDs**: Auto-generated IDs (TRK-XXXX) for easy identification
 - **Package Management**: Create, track, and manage deliveries with scheduling
 - **Real-time Tracking**: GPS location updates and status tracking
 - **Business Verification**: Admin approval system for business tenants
 - **Role-based Access**: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER roles
+- **Soft Delete System**: Business-managed rider deletion with 30-day restore window
 - **Wallet System**: Negative balance support with commission management
 - **Business Billing**: Prepaid wallet system with auto-recharge
 - **Delivery Matching**: City-scale matching with vehicle constraints
 - **Scheduled Deliveries**: IMMEDIATE, SCHEDULED, SAME_DAY, NEXT_DAY options
+- **Rider Referral System**: ₦1,000 bonus for both referrer and referred rider
+- **Service Area Jurisdiction**: Coverage validation with waitlist for unlaunched cities
 - **Multi-database**: PostgreSQL, Redis, and MongoDB integration
 - **JWT Authentication**: Secure token-based authentication
 - **Legal Content**: FAQ, Terms of Service, Commission Policy
@@ -111,6 +115,15 @@ npm test
 - `GET /api/riders/profile` - Get rider profile
 - `PUT /api/riders/location` - Update GPS location
 - `PUT /api/riders/status` - Update availability status
+- `DELETE /api/riders/{id}` - Soft delete rider (Business Admin/Manager)
+- `POST /api/riders/{id}/restore` - Restore deleted rider (within 30 days)
+- `GET /api/riders/deleted` - Get deleted riders (Admin)
+- `DELETE /api/riders/{id}/permanent` - Hard delete rider (Super Admin only)
+
+### Rider Referrals
+- `GET /api/referrals/my-code` - Get my referral code
+- `POST /api/referrals/apply` - Apply referral code
+- `GET /api/referrals/stats` - Get referral statistics
 
 ### Legal Content
 - `GET /api/legal/faq` - Get FAQs (Public)
@@ -118,12 +131,21 @@ npm test
 - `GET /api/legal/commission-policy` - Get Commission Policy (Public)
 - `POST /api/legal/seed` - Seed legal content (Admin)
 
+### Service Area & Waitlist
+- `GET /api/service-areas/cities` - Get active service cities (Public)
+- `GET /api/service-areas/check` - Check location coverage (Public)
+- `POST /api/service-areas` - Add service area (Admin)
+- `POST /api/waitlist` - Join waitlist for unlaunched areas (Public)
+- `GET /api/waitlist` - Get waitlist entries (Admin)
+- `GET /api/waitlist/by-city` - Get waitlist grouped by city (Admin)
+- `POST /api/waitlist/notify` - Notify waitlist when launching (Admin)
+
 ## Database Schema
 
 ### PostgreSQL Tables
-- `users` - User accounts and authentication
+- `users` - User accounts and authentication (with soft delete)
 - `tenants` - Business information and verification status
-- `riders` - Rider profiles and vehicle details
+- `riders` - Rider profiles, unique IDs (TRK-XXXX), and vehicle details (with soft delete)
 - `packages` - Package information and tracking with scheduling
 - `commissions` - Rider earnings and payments
 - `wallets` - Rider wallet balances and credit limits
@@ -132,6 +154,9 @@ npm test
 - `business_wallet_transactions` - Business transaction history
 - `invoices` - Business billing and invoice management
 - `legal_content` - FAQ, Terms of Service, Policies
+- `referrals` - Rider referral tracking and rewards
+- `service_areas` - Cities where TRAKA operates with coverage radius
+- `waitlist` - Users interested in unlaunched service areas
 
 ### Redis Cache
 - `courier_presence` - Real-time courier locations (15s TTL)
@@ -158,6 +183,7 @@ npm test
 - **Negative Balance**: ₦2,000 credit limit with auto-suspension
 - **Payment Methods**: Digital (instant credit) vs Cash (creates debt)
 - **Auto-Settlement**: Debt cleared from future digital earnings
+- **Referral Bonus**: ₦1,000 for both referrer and referred rider on first delivery
 
 ### Business Billing
 - **Prepaid System**: Businesses maintain wallet balance
@@ -209,7 +235,10 @@ src/
 ├── invoice/        # Business billing
 ├── scheduling/     # Delivery scheduling
 ├── matching/       # Delivery matching engine
+├── referral/       # Rider referral system
 ├── legal/          # FAQ, Terms, Policies
+├── service-area/   # Jurisdiction & coverage management
+├── waitlist/       # Waitlist for unlaunched areas
 ├── verification/   # Email/OTP verification
 └── utils/          # Validation schemas
 ```
@@ -225,15 +254,42 @@ MONGO_URL=mongodb://localhost:27017/traka
 # Authentication
 JWT_SECRET=your-secret-key
 
-# Financial
-MONNIFY_SECRET_KEY=your-monnify-secret
-PLATFORM_FEE_RATE_BUSINESS=0.15
+# Financial Configuration
 RIDER_COMMISSION_RATE=0.20
+RIDER_CREDIT_LIMIT=-2000.00
+PLATFORM_FEE_RATE_BUSINESS=0.15
+
+# Payment Gateway
+MONNIFY_SECRET_KEY=your-monnify-secret
+
+# Email Notifications
+BREVO_API_KEY=your-brevo-api-key
+SMTP_FROM=noreply@traka.com
 
 # Server
 PORT=3000
 NODE_ENV=development
 ```
+
+## Key Features Documentation
+
+### Unique Rider IDs
+Each rider receives a unique identifier (e.g., TRK-1000, TRK-3245) upon registration. See [RIDER_ID_FEATURE.md](RIDER_ID_FEATURE.md) for details.
+
+### Soft Delete System
+Business-managed riders can be soft deleted with a 30-day restore window. Auto-cleanup after 360 days. See [RIDER_SOFT_DELETE.md](RIDER_SOFT_DELETE.md) for complete documentation.
+
+### Service Area Jurisdiction
+Validate pickup and delivery locations against launched cities. Users outside coverage are added to waitlist. See [SERVICE_AREA_FEATURE.md](SERVICE_AREA_FEATURE.md) for complete documentation.
+
+**Key Rules:**
+- Business admins can soft delete their own riders
+- Cannot delete riders with active deliveries
+- Cannot delete riders with negative wallet balance
+- Email notification sent on deletion
+- 30-day restore window for business admins
+- Auto-hard-delete after 360 days
+- Only Super Admin can permanently delete
 
 ## Contributing
 

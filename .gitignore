@@ -7,3 +7,8 @@ test/
 scripts/
 .DS_Store
 .env.test
+biome.json
+jest.config.js
+docs/
+.gitattributes
+jest.config
