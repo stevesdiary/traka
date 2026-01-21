@@ -8,7 +8,7 @@ export class CommissionRepository extends BaseRepository<CommissionModel> {
     super(CommissionModel);
   }
 
-  async createCommission(commission: Omit<Commission, 'id' | 'created_at'>): Promise<CommissionModel> {
+  async createCommission(commission: Omit<Commission, 'id' | 'created_at' | 'createdAt'>): Promise<CommissionModel> {
     return this.model.create(commission);
   }
 

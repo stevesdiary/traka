@@ -3,7 +3,7 @@ import { CommissionController } from './commission.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
-import { CreateCommissionSchema } from '../utils/validators.js';
+import { CreateCommissionSchema, PayCommissionSchema } from '../utils/validators.js';
 import { Resource, Action } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
@@ -20,6 +20,7 @@ router.post('/',
 router.put('/:commission_id/pay', 
   authenticateToken, 
   requirePermission(Resource.PACKAGE, Action.UPDATE),
+  validateInput(PayCommissionSchema),
   commissionController.payCommission
 );
 

@@ -4,7 +4,8 @@ import { RiderModel } from '../rider/rider.model.js';
 @Table({
   tableName: 'commissions',
   timestamps: true,
-  underscored: true
+  underscored: true,
+  paranoid: true
 })
 export class CommissionModel extends Model {
   @PrimaryKey
@@ -61,7 +62,7 @@ export interface Commission {
   commission_rate: number;
   commission_amount: number;
   status: 'PENDING' | 'PAID' | 'CANCELLED';
-  created_at: Date;
+  createdAt: Date;
   paid_at?: Date;
 }
 
