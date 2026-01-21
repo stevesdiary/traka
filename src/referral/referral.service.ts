@@ -40,7 +40,7 @@ export class ReferralService {
       return rider.referral_code;
     }
 
-    const firstName = rider.full_name.split(' ')[0];
+    const firstName = rider.user.first_name;
     return await this.generateReferralCode(riderId, firstName);
   }
 
