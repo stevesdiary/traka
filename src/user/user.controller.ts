@@ -10,9 +10,12 @@ export class UserManagementController {
 
   getAllUsers = async (req: Request, res: Response): Promise<void> => {
     try {
-      const tenant_id = req.user!.tenant_id;
-      const { role } = req.query;
-      const users = await this.userManagementService.getAllUsers(tenant_id, role as string);
+      const { role, type, tenant_id } = req.query;
+      const users = await this.userManagementService.getAllUsers(
+        role as string,
+        type as string,
+        tenant_id as string
+      );
 
       res.json({
         message: 'Users retrieved successfully',
@@ -27,6 +30,10 @@ export class UserManagementController {
     try {
       const userData = req.body;
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const user = await this.userManagementService.createUser(userData, tenant_id);
 
       res.status(201).json({
@@ -46,6 +53,10 @@ export class UserManagementController {
     try {
       const { user_id } = req.params;
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const user = await this.userManagementService.getUserById(user_id, tenant_id);
 
       res.json({
@@ -66,6 +77,10 @@ export class UserManagementController {
       const { user_id } = req.params;
       const updateData = req.body;
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const user = await this.userManagementService.updateUser(user_id, updateData, tenant_id);
 
       res.json({
@@ -85,6 +100,10 @@ export class UserManagementController {
     try {
       const { user_id } = req.params;
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       await this.userManagementService.deleteUser(user_id, tenant_id);
 
       res.json({

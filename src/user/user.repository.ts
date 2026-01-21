@@ -18,8 +18,20 @@ export class UserRepository extends BaseRepository<UserModel> {
     email: string;
     password_hash: string;
     role: string;
-    tenant_id: string;
+    type: string;
+    tenant_id: string | null;
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
   }): Promise<UserModel> {
     return this.model.create(userData as any);
+  }
+
+  async updateByEmail(email: string, updates: Partial<UserModel>): Promise<void> {
+    await this.model.update(updates, { where: { email } });
+  }
+
+  async updateByPhone(phone: string, updates: Partial<UserModel>): Promise<void> {
+    await this.model.update(updates, { where: { phone } });
   }
 }

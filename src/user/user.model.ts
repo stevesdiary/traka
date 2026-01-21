@@ -3,7 +3,8 @@ import { Table, Column, Model, DataType, Default } from 'sequelize-typescript';
 @Table({
   tableName: 'users',
   timestamps: true,
-  underscored: true
+  underscored: true,
+  paranoid: true
 })
 export class UserModel extends Model <UserModel> {
   @Column({
@@ -15,33 +16,63 @@ export class UserModel extends Model <UserModel> {
 
   @Column({
     type: DataType.STRING,
+    allowNull: false
+  })
+  declare first_name: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false
+  })
+  declare last_name: string;
+
+  @Column({
+    type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  email!: string;
+  declare email: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true,
     unique: true
   })
-  phone?: string;
+  declare phone?: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  password_hash!: string;
+  declare password_hash: string;
 
   @Column({
-    type: DataType.ENUM('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER'),
+    type: DataType.ENUM('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER', 'BUSINESS_OWNER'),
     allowNull: false
   })
-  role!: string;
+  declare role: string;
+
+  @Column({
+    type: DataType.ENUM('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'RIDER', 'USER', 'BUSINESS_OWNER'),
+    allowNull: false
+  })
+  declare type: string;
 
   @Column({
     type: DataType.UUID,
-    allowNull: false
+    allowNull: true
   })
-  tenant_id!: string;
+  declare tenant_id: string | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false
+  })
+  declare email_verified: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false
+  })
+  declare phone_verified: boolean;
 }

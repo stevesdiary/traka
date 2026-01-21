@@ -8,9 +8,13 @@ export class UserManagementService {
     this.userRepository = new UserRepository();
   }
 
-  async getAllUsers(tenant_id: string, role?: string): Promise<any[]> {
-    const whereClause = role ? { role } : {};
-    const users = await this.userRepository.findByTenant(tenant_id, {
+  async getAllUsers(role?: string, type?: string, tenant_id?: string | null): Promise<any[]> {
+    const whereClause: any = {};
+    if (role) whereClause.role = role;
+    if (type) whereClause.type = type;
+    if (tenant_id) whereClause.tenant_id = tenant_id;
+    
+    const users = await this.userRepository.findAll({
       where: whereClause,
       order: [['createdAt', 'DESC']]
     });
@@ -19,12 +23,17 @@ export class UserManagementService {
       id: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
+      tenant_id: user.tenant_id,
       created_at: user.createdAt,
       updated_at: user.updatedAt
     }));
   }
 
   async createUser(userData: {
+    first_name: string;
+    last_name: string;
+    phone: string;
     email: string;
     password: string;
     role: string;
@@ -38,14 +47,19 @@ export class UserManagementService {
     const user = await this.userRepository.createUser({
       ...userData,
       password_hash,
+      type: userData.role,
       tenant_id
     });
+    console.log("Customer registered successfully:", user);
 
     return {
-      id: user.id,
+      // id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      phone: user.phone,
       email: user.email,
-      role: user.role,
-      tenant_id: user.tenant_id,
+      // role: user.role,
+      // tenant_id: user.tenant_id,
       created_at: user.createdAt
     };
   }
