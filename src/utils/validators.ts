@@ -22,9 +22,13 @@ export const CustomerRegistrationSchema = Joi.object({
     'string.min': 'Password must be at least 6 characters long',
     'any.required': 'Password is required'
   }),
-  full_name: Joi.string().min(2).required().messages({
-    'string.min': 'Full name must be at least 2 characters long',
-    'any.required': 'Full name is required'
+  first_name: Joi.string().min(2).required().messages({
+    'string.min': 'First name must be at least 2 characters long',
+    'any.required': 'First name is required'
+  }),
+  last_name: Joi.string().min(2).required().messages({
+    'string.min': 'Last name must be at least 2 characters long',
+    'any.required': 'Last name is required'
   }),
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({
     'string.pattern.base': 'Please provide a valid phone number',
@@ -67,9 +71,13 @@ export const RiderRegistrationSchema = Joi.object({
     'string.min': 'Password must be at least 6 characters long',
     'any.required': 'Password is required'
   }),
-  full_name: Joi.string().min(2).required().messages({
-    'string.min': 'Full name must be at least 2 characters long',
-    'any.required': 'Full name is required'
+  first_name: Joi.string().min(2).required().messages({
+    'string.min': 'First name must be at least 2 characters long',
+    'any.required': 'First name is required'
+  }),
+  last_name: Joi.string().min(2).required().messages({
+    'string.min': 'Last name must be at least 2 characters long',
+    'any.required': 'Last name is required'
   }),
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({
     'string.pattern.base': 'Please provide a valid phone number',
@@ -249,8 +257,11 @@ export const UpdateStatusSchema = Joi.object({
 
 // Rider Profile Schemas
 export const UpdateRiderProfileSchema = Joi.object({
-  full_name: Joi.string().min(2).optional().messages({
-    'string.min': 'Full name must be at least 2 characters long'
+  first_name: Joi.string().min(2).optional().messages({
+    'string.min': 'First name must be at least 2 characters long'
+  }),
+  last_name: Joi.string().min(2).optional().messages({
+    'string.min': 'Last name must be at least 2 characters long'
   }),
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional().messages({
     'string.pattern.base': 'Please provide a valid phone number'
