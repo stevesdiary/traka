@@ -16,6 +16,8 @@ import { addressRoutes } from './address/address.routes.js';
 import ratingRoutes from './rating/rating.routes.js';
 import notificationRoutes from './notification/notification.routes.js';
 import referralRoutes from './referral/referral.routes.js';
+import serviceAreaRoutes from './service-area/service-area.routes.js';
+import waitlistRoutes from './waitlist/waitlist.routes.js';
 
 const router: Router = Router();
 
@@ -36,5 +38,7 @@ router.use('/addresses', addressRoutes);
 router.use('/ratings', ratingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/referrals', referralRoutes);
+router.use('/service-areas', serviceAreaRoutes);
+router.use('/waitlist', waitlistRoutes);
 
 export default router;

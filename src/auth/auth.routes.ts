@@ -5,7 +5,9 @@ import {
   registerBusiness,
   registerRider,
   register,
+  registerAdmin,
 } from "../middleware/auth.middleware.js";
+import { authenticateToken, requireRole } from "../middleware/auth.middleware.js";
 import { validateInput } from "../middleware/validation.middleware.js";
 import {
   LoginSchema,
@@ -34,6 +36,14 @@ router.post(
   "/register/rider",
   validateInput(RiderRegistrationSchema),
   registerRider
+);
+
+// Admin registration (Super Admin only)
+router.post(
+  "/register/admin",
+  authenticateToken,
+  requireRole(['SUPER_ADMIN']),
+  registerAdmin
 );
 
 // Legacy registration (kept for backward compatibility)

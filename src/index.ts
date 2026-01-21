@@ -4,11 +4,20 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import routes from './routes.js';
 import { connectDatabases, disconnectDatabases } from './config/database.js';
+import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
+// import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.LOCAL_PORT;
 
 // Middleware
 app.use(helmet());
@@ -17,14 +26,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  console.log('Headers:', req.headers);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Body:', req.body);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+//   console.log('Headers:', req.headers);
+//   if (req.body && Object.keys(req.body).length > 0) {
+//     console.log('Body:', req.body);
+//   }
+//   next();
+// });
+
+// Swagger Documentation
+const swaggerPath = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, '../swagger.yaml')
+  : path.join(__dirname, '../../swagger.yaml');
+const swaggerDocument = YAML.load(swaggerPath);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
 app.use('/api', routes);
@@ -60,6 +76,11 @@ app.get('/health', (req, res) => {
 const startServer = async () => {
   try {
     await connectDatabases();
+    
+    // Start cron jobs
+    RiderCleanupCron.startCronJob();
+    // startDispatchTimeoutCron();
+    
     const server = app.listen(port, () => {
       console.log(`TRAKA API running on port ${port}`);
     });

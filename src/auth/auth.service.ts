@@ -28,7 +28,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
-      tenant_id: user.tenant_id
+      tenant_id: user.tenant_id ?? null
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
@@ -48,9 +48,10 @@ export class AuthService {
   async registerCustomer(userData: {
     email: string;
     password: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
     phone: string;
-  }): Promise<any> {
+  }): Promise<{ token: string; user: any }> {
     const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
       throw new Error('User already exists');
@@ -60,16 +61,34 @@ export class AuthService {
     const user = await this.userRepository.createUser({
       email: userData.email,
       password_hash,
-      role: 'RECIPIENT',
-      tenant_id: 'public' // Public tenant for individual customers
+      role: 'USER',
+      type: 'USER',
+      tenant_id: null, // Recipients are not tied to any tenant
+      first_name: userData.first_name,
+      last_name: userData.last_name,
+      phone: userData.phone
     });
 
-    return {
+    const payload: JWTPayload = {
       id: user.id,
+      userId: user.id,
       email: user.email,
       role: user.role,
-      full_name: userData.full_name,
-      phone: userData.phone
+      tenant_id: null
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        phone: userData.phone
+      }
     };
   }
 
@@ -81,7 +100,7 @@ export class AuthService {
     business_address: string;
     contact_person: string;
     phone: string;
-  }): Promise<any> {
+  }): Promise<{ token: string; user: any; business: any }> {
     const existingUser = await this.userRepository.findByEmail(businessData.email);
     if (existingUser) {
       throw new Error('User already exists');
@@ -102,10 +121,22 @@ export class AuthService {
       email: businessData.email,
       password_hash,
       role: 'BUSINESS_OWNER',
+      type: 'BUSINESS_OWNER',
       tenant_id: tenant.id
     });
 
+    const payload: JWTPayload = {
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenant_id: user.tenant_id
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+
     return {
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -124,19 +155,20 @@ export class AuthService {
   async registerRider(riderData: {
     email: string;
     password: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
     phone: string;
     license_number: string;
     vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
     vehicle_plate: string;
     business_id?: string;
-  }): Promise<any> {
+  }): Promise<{ token: string; user: any; rider_profile: any }> {
     const existingUser = await this.userRepository.findByEmail(riderData.email);
     if (existingUser) {
       throw new Error('User already exists');
     }
 
-    const tenant_id = riderData.business_id || 'public';
+    const tenant_id = riderData.business_id || null; // Solo riders have no tenant
     const rider_type = riderData.business_id ? 'BUSINESS_MANAGED' : 'INDEPENDENT';
 
     // Create user account
@@ -145,15 +177,17 @@ export class AuthService {
       email: riderData.email,
       password_hash,
       role: 'RIDER',
-      tenant_id
+      type: 'RIDER',
+      tenant_id,
+      first_name: riderData.first_name,
+      last_name: riderData.last_name,
+      phone: riderData.phone
     });
 
     // Create rider profile
     const riderProfile = await this.riderRepository.createRiderProfile({
       user_id: user.id,
       business_id: riderData.business_id,
-      full_name: riderData.full_name,
-      phone: riderData.phone,
       license_number: riderData.license_number,
       vehicle_type: riderData.vehicle_type,
       vehicle_plate: riderData.vehicle_plate,
@@ -163,7 +197,18 @@ export class AuthService {
       status: 'OFFLINE'
     });
 
+    const payload: JWTPayload = {
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenant_id: user.tenant_id
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+
     return {
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -172,7 +217,7 @@ export class AuthService {
       },
       rider_profile: {
         id: riderProfile.id,
-        full_name: riderProfile.full_name,
+        rider_id: riderProfile.rider_id,
         rider_type: riderProfile.rider_type,
         verification_status: riderProfile.verification_status
       }
@@ -194,7 +239,8 @@ export class AuthService {
     const password_hash = await bcrypt.hash(userData.password, 10);
     const user = await this.userRepository.createUser({
       ...userData,
-      password_hash
+      password_hash,
+      type: userData.role
     });
 
     return {
@@ -202,6 +248,62 @@ export class AuthService {
       email: user.email,
       role: user.role,
       tenant_id: user.tenant_id
+    };
+  }
+
+  // Admin Registration (Super Admin only)
+  async registerAdmin(adminData: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    role: 'ADMIN' | 'SUPER_ADMIN' | 'MANAGER';
+  }): Promise<{ token: string; user: any }> {
+    const existingUser = await this.userRepository.findByEmail(adminData.email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+
+    const password_hash = await bcrypt.hash(adminData.password, 10);
+    const user = await this.userRepository.createUser({
+      email: adminData.email,
+      password_hash,
+      role: adminData.role,
+      type: adminData.role,
+      tenant_id: null,
+      first_name: adminData.first_name,
+      last_name: adminData.last_name,
+      phone: adminData.phone
+    });
+
+    await this.userRepository.updateByEmail(adminData.email, {
+      email_verified: true,
+      phone_verified: true
+    });
+
+    const payload: JWTPayload = {
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      tenant_id: null
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        first_name: adminData.first_name,
+        last_name: adminData.last_name,
+        phone: adminData.phone,
+        email_verified: true,
+        phone_verified: true
+      }
     };
   }
 }
