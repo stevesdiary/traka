@@ -16,6 +16,8 @@ import { UserAddressModel } from '../address/address.model.js';
 import { RatingModel } from '../rating/rating.model.js';
 import { NotificationModel, NotificationPreferenceModel } from '../notification/notification.model.js';
 import { ReferralModel } from '../referral/referral.model.js';
+import { ServiceAreaModel } from '../service-area/service-area.model.js';
+import { WaitlistModel } from '../waitlist/waitlist.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -50,6 +52,8 @@ sequelize.addModels([
   NotificationModel,
   NotificationPreferenceModel,
   ReferralModel,
+  ServiceAreaModel,
+  WaitlistModel,
 ]);
 
 // Redis Configuration
