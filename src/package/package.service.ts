@@ -2,18 +2,25 @@ import { PackageRepository } from "./package.repository.js";
 import { UserRepository } from "../user/user.repository.js";
 import { PricingService, PricingRequest } from "../pricing/pricing.service.js";
 import { PackageVerificationService } from "../verification/package-verification.service.js";
+import { ServiceAreaService } from "../service-area/service-area.service.js";
+import { GeocodingService } from "../utils/geocoding.service.js";
+import { customAlphabet } from 'nanoid';
 
 export class PackageService {
   private packageRepository: PackageRepository;
   private userRepository: UserRepository;
   private pricingService: PricingService;
   private packageVerificationService: PackageVerificationService;
+  private serviceAreaService: ServiceAreaService;
+  private geocodingService: GeocodingService;
 
   constructor() {
     this.packageRepository = new PackageRepository();
     this.userRepository = new UserRepository();
     this.pricingService = new PricingService();
     this.packageVerificationService = new PackageVerificationService();
+    this.serviceAreaService = new ServiceAreaService();
+    this.geocodingService = new GeocodingService();
   }
 
   async createPackage(
@@ -32,6 +39,27 @@ export class PackageService {
     sender_id: string,
     tenant_id: string | null
   ): Promise<any> {
+    // Geocode addresses to get coordinates and city/state
+    const pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address);
+    const deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address);
+
+    // Check service area coverage (city/state only)
+    const pickupCoverage = await this.serviceAreaService.checkCoverage(
+      pickupGeo.city,
+      pickupGeo.state
+    );
+    if (!pickupCoverage.covered) {
+      throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
+    }
+
+    const deliveryCoverage = await this.serviceAreaService.checkCoverage(
+      deliveryGeo.city,
+      deliveryGeo.state
+    );
+    if (!deliveryCoverage.covered) {
+      throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
+    }
+
     // Calculate pricing
     const pricingRequest: PricingRequest = {
       pickup_address: data.pickup_address,
@@ -50,7 +78,7 @@ export class PackageService {
         ? await this.userRepository.findByEmail(data.recipient_email)
         : null);
 
-    const tracking_number = this.generateTrackingNumber();
+    const tracking_number = await this.generateTrackingNumber();
     const guest_tracking_token = existingRecipient
       ? null
       : this.generateGuestToken();
@@ -78,11 +106,15 @@ export class PackageService {
 
     const newPackage = await this.packageRepository.createPackage(packageData);
 
+    // Get sender information
+    const sender = await this.userRepository.findById(sender_id);
+    const sender_name = sender ? `${sender.first_name} + ${sender.last_name}` : 'Sender';
+
     // Generate verification codes and QR code
     const verification = this.packageVerificationService.generatePackageVerification({
       package_id: newPackage.id,
       tracking_number,
-      sender_name: 'Sender', // TODO: Get from sender user data
+      sender_name,
       recipient_name: data.recipient_name,
       pickup_address: data.pickup_address,
       delivery_address: data.delivery_address,
@@ -274,12 +306,28 @@ export class PackageService {
     return this.packageVerificationService.decodeQRCode(qr_code_data);
   }
 
-  private generateTrackingNumber(): string {
-    return (
-      "TRK" +
-      Date.now().toString() +
-      Math.random().toString(36).substr(2, 5).toUpperCase()
-    );
+  private async generateTrackingNumber(): Promise<string> {
+    // Generate TRK-XXXX format with random alphanumeric (uppercase letters and numbers)
+    const nanoid = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 4);
+    let trackingNumber: string;
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    while (attempts < maxAttempts) {
+      const randomCode = nanoid();
+      trackingNumber = `TRK-${randomCode}`;
+      
+      // Check if tracking number already exists
+      const existing = await this.packageRepository.findByTrackingNumber(trackingNumber);
+      if (!existing) {
+        return trackingNumber;
+      }
+      attempts++;
+    }
+
+    // Fallback: use timestamp-based code if all random attempts fail
+    const fallbackCode = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 6)();
+    return `TRK-${fallbackCode}`;
   }
 
   private generateGuestToken(): string {

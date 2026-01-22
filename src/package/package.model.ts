@@ -3,7 +3,9 @@ import { UserModel } from '../user/user.model.js';
 
 @Table({
   tableName: 'packages',
-  timestamps: true
+  timestamps: true,
+  underscored: true,
+  paranoid: true
 })
 export class PackageModel extends Model {
   @PrimaryKey
