@@ -32,7 +32,7 @@ export const requireRole = (roles: Role[]) => {
       return res.status(403).json({ 
         error: 'Insufficient permissions',
         required_roles: roles,
-        user_role: req.user?.role
+        // user_role: req.user?.role
       });
     }
     next();

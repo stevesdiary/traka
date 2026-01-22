@@ -19,7 +19,8 @@ export enum Resource {
   TENANT = 'TENANT',
   PACKAGE = 'PACKAGE',
   RIDER = 'RIDER',
-  DASHBOARD = 'DASHBOARD'
+  DASHBOARD = 'DASHBOARD',
+  SYSTEM = 'SYSTEM'
 }
 
 type RolePermissions = {
@@ -32,7 +33,8 @@ export const ROLE_PERMISSIONS: Record<Role, Partial<RolePermissions>> = {
     [Resource.TENANT]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
     [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
     [Resource.RIDER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
-    [Resource.DASHBOARD]: [Action.READ]
+    [Resource.DASHBOARD]: [Action.READ],
+    [Resource.SYSTEM]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE]
   },
   
   [Role.ADMIN]: {
@@ -40,7 +42,8 @@ export const ROLE_PERMISSIONS: Record<Role, Partial<RolePermissions>> = {
     [Resource.TENANT]: [Action.READ, Action.APPROVE],
     [Resource.PACKAGE]: [Action.READ, Action.UPDATE],
     [Resource.RIDER]: [Action.READ, Action.APPROVE],
-    [Resource.DASHBOARD]: [Action.READ]
+    [Resource.DASHBOARD]: [Action.READ],
+    [Resource.SYSTEM]: [Action.READ, Action.UPDATE]
   },
   
   [Role.MANAGER]: {
