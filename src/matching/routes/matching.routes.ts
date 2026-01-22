@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { MatchingController } from '../controllers/MatchingController.js';
 import { authenticateToken, canUpdate, canRead } from '../../middleware/rolePermission.middleware.js';
+import { validateInput } from '../../middleware/validation.middleware.js';
+import { UpdateCourierLocationSchema, UpdateCourierStatusSchema, FindCouriersSchema } from '../../utils/validators.js';
 import { Resource } from '../../utils/rolePermissions.js';
 
 const router: Router = Router();
@@ -9,13 +11,15 @@ const matchingController = new MatchingController();
 // Courier presence routes (require rider authentication)
 router.put('/couriers/:courierId/location', 
   authenticateToken, 
-  canUpdate(Resource.RIDER), 
+  canUpdate(Resource.RIDER),
+  validateInput(UpdateCourierLocationSchema), 
   matchingController.updateLocation
 );
 
 router.put('/couriers/:courierId/status', 
   authenticateToken, 
-  canUpdate(Resource.RIDER), 
+  canUpdate(Resource.RIDER),
+  validateInput(UpdateCourierStatusSchema), 
   matchingController.updateStatus
 );
 
@@ -28,13 +32,15 @@ router.get('/couriers/:courierId/state',
 // Matching routes (require package permissions)
 router.post('/find-couriers', 
   authenticateToken, 
-  canRead(Resource.PACKAGE), 
+  canRead(Resource.PACKAGE),
+  validateInput(FindCouriersSchema), 
   matchingController.findCouriers
 );
 
 router.post('/request-delivery', 
   authenticateToken, 
-  canUpdate(Resource.PACKAGE), 
+  canUpdate(Resource.PACKAGE),
+  validateInput(FindCouriersSchema), 
   matchingController.requestDelivery
 );
 
