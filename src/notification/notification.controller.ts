@@ -88,4 +88,23 @@ export class NotificationController {
       res.status(500).json({ error: 'Failed to update preferences' });
     }
   };
+
+  testSMS = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { phone, message } = req.body;
+      
+      if (!phone || !message) {
+        res.status(400).json({ error: 'Phone and message are required' });
+        return;
+      }
+
+      const { SMSService } = await import('./sms.service.js');
+      const smsService = new SMSService();
+      await smsService.sendSMS(phone, message);
+
+      res.json({ message: 'SMS sent successfully', phone });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to send SMS' });
+    }
+  };
 }

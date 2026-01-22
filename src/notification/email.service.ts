@@ -4,6 +4,7 @@ export class EmailNotificationService {
 
   constructor() {
     this.apiKey = process.env.BREVO_API_KEY || '';
+    // console.log('Brevo API Key configured:', !!this.apiKey);
   }
 
   async sendEmail(to: string, subject: string, htmlContent: string): Promise<void> {
@@ -34,8 +35,10 @@ export class EmailNotificationService {
         const error = await response.json();
         throw new Error(`Brevo API error: ${error.message || response.statusText}`);
       }
-
-      console.log(`Email sent successfully to ${to}`);
+      
+      if(response.ok || response.status === 201) { 
+        console.log(`Email notification sent successfully to ${to}`);
+      }
     } catch (error: any) {
       console.error('Failed to send email:', error.message);
       throw error;

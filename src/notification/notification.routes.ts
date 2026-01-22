@@ -14,4 +14,7 @@ router.put('/read-all', notificationController.markAllAsRead);
 router.get('/preferences', notificationController.getPreferences);
 router.put('/preferences', notificationController.updatePreferences);
 
+// Test SMS endpoint (development/testing only)
+router.post('/test-sms', notificationController.testSMS);
+
 export default router;
