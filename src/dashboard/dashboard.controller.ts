@@ -12,6 +12,10 @@ export class DashboardController {
   getManagerDashboard = async (req: Request, res: Response): Promise<void> => {
     try {
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const stats = await this.dashboardService.getTenantStats(tenant_id);
       const recentActivity = await this.dashboardService.getTenantActivity(tenant_id);
 
@@ -49,6 +53,10 @@ export class DashboardController {
   getTenantRiders = async (req: Request, res: Response): Promise<void> => {
     try {
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const riders = await this.dashboardService.getTenantRiders(tenant_id);
 
       res.json({
@@ -63,6 +71,10 @@ export class DashboardController {
   getTenantPackages = async (req: Request, res: Response): Promise<void> => {
     try {
       const tenant_id = req.user!.tenant_id;
+      if (!tenant_id) {
+        res.status(403).json({ error: 'No tenant access' });
+        return;
+      }
       const { status } = req.query;
       const packages = await this.dashboardService.getTenantPackages(tenant_id, status as string);
 
