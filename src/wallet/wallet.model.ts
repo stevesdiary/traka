@@ -3,7 +3,9 @@ import { UserModel } from '../user/user.model.js';
 
 @Table({
   tableName: 'wallets',
-  timestamps: true
+  timestamps: true,
+  underscored: true,
+  paranoid: true
 })
 export class WalletModel extends Model {
   @PrimaryKey
