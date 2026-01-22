@@ -18,6 +18,8 @@ import notificationRoutes from './notification/notification.routes.js';
 import referralRoutes from './referral/referral.routes.js';
 import serviceAreaRoutes from './service-area/service-area.routes.js';
 import waitlistRoutes from './waitlist/waitlist.routes.js';
+import pricingRoutes from './pricing/pricing.routes.js';
+import fuelPriceRoutes from './pricing/fuel-price.routes.js';
 
 const router: Router = Router();
 
@@ -40,5 +42,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/referrals', referralRoutes);
 router.use('/service-areas', serviceAreaRoutes);
 router.use('/waitlist', waitlistRoutes);
+router.use('/pricing', pricingRoutes);
+router.use('/fuel-price', fuelPriceRoutes);
 
 export default router;
