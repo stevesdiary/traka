@@ -2,6 +2,7 @@ import { redis } from '../../config/database.js';
 import { DeliveryRequest, CourierState } from '../models/CourierState.js';
 import { MatchingEngine, CourierMatch } from './MatchingEngine.js';
 import { MATCHING_CONFIG } from '../config/vehicles.js';
+import { DispatchTimeoutService } from './DispatchTimeoutService.js';
 
 export interface DispatchResult {
   success: boolean;
@@ -14,6 +15,7 @@ export interface DispatchResult {
 export class DispatchService {
   private static readonly DISPATCH_LOCK_PREFIX = 'dispatch:lock:';
   private static readonly COURIER_OFFER_PREFIX = 'offer:';
+  private static timeoutService = new DispatchTimeoutService();
 
   static async dispatchDelivery(request: DeliveryRequest): Promise<DispatchResult> {
     // Get Redis lock for this delivery
@@ -31,8 +33,18 @@ export class DispatchService {
       };
     }
 
+    // Start tracking dispatch attempt with 10-minute timeout
+    await this.timeoutService.trackDispatchAttempt(request.id);
+
     try {
-      return await this.performSequentialDispatch(request);
+      const result = await this.performSequentialDispatch(request);
+      
+      // If successful, clear the timeout tracker
+      if (result.success) {
+        await this.timeoutService.clearDispatchAttempt(request.id);
+      }
+      
+      return result;
     } finally {
       // Release lock
       await redis.del(lockKey);
