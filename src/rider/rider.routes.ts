@@ -27,4 +27,14 @@ router.get('/business/:business_id', authenticateToken, requirePermission(Resour
 router.get('/pending', authenticateToken, requirePermission(Resource.USER, Action.READ), riderController.getPendingVerifications);
 router.put('/verify/:user_id', authenticateToken, requirePermission(Resource.USER, Action.APPROVE), riderController.verifyRider);
 
+// Get deleted riders (must come before /:id routes)
+router.get('/deleted', authenticateToken, requirePermission(Resource.USER, Action.READ), riderController.getDeletedRiders);
+
+// Soft delete routes (Business Admin/Manager)
+router.delete('/:id', authenticateToken, requirePermission(Resource.USER, Action.DELETE), riderController.softDeleteRider);
+router.post('/:id/restore', authenticateToken, requirePermission(Resource.USER, Action.UPDATE), riderController.restoreRider);
+
+// Hard delete route (Super Admin only)
+router.delete('/:id/permanent', authenticateToken, requirePermission(Resource.USER, Action.DELETE), riderController.hardDeleteRider);
+
 export default router;

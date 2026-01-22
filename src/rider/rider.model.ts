@@ -4,13 +4,21 @@ import { UserModel } from '../user/user.model.js';
 @Table({
   tableName: 'riders',
   timestamps: true,
-  underscored: true
+  underscored: true,
+  paranoid: true
 })
 export class RiderModel extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
   declare id: string;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: false,
+    unique: true
+  })
+  rider_id!: string;
 
   @ForeignKey(() => UserModel)
   @Column(DataType.UUID)
@@ -21,18 +29,6 @@ export class RiderModel extends Model {
     allowNull: true
   })
   business_id?: string;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false
-  })
-  full_name!: string;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false
-  })
-  phone!: string;
 
   @Column({
     type: DataType.STRING,
@@ -91,16 +87,28 @@ export class RiderModel extends Model {
   @Column(DataType.DECIMAL(11, 8))
   current_longitude?: number;
 
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: true,
+    unique: true
+  })
+  referral_code?: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  referral_code_updated_at?: Date;
+
   @BelongsTo(() => UserModel)
   user!: UserModel;
 }
 
 export interface RiderProfile {
   id: string;
+  rider_id: string;
   user_id: string;
   business_id?: string;
-  full_name: string;
-  phone: string;
   license_number: string;
   vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
   vehicle_plate: string;
@@ -120,8 +128,6 @@ export interface RiderProfile {
 export interface RiderRegistration {
   email: string;
   password: string;
-  full_name: string;
-  phone: string;
   license_number: string;
   vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
   vehicle_plate: string;

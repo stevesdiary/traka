@@ -11,11 +11,9 @@ export class RiderService {
   async registerRider(registration: RiderRegistration, userId: string): Promise<RiderModel> {
     const riderType: 'BUSINESS_MANAGED' | 'INDEPENDENT' = registration.business_id ? 'BUSINESS_MANAGED' : 'INDEPENDENT';
     
-    const profile: Omit<RiderProfile, 'id' | 'created_at' | 'updated_at'> = {
+    const profile: Omit<RiderProfile, 'id' | 'rider_id' | 'created_at' | 'updated_at'> = {
       user_id: userId,
       business_id: registration.business_id,
-      full_name: registration.full_name,
-      phone: registration.phone,
       license_number: registration.license_number,
       vehicle_type: registration.vehicle_type,
       vehicle_plate: registration.vehicle_plate,
@@ -30,6 +28,10 @@ export class RiderService {
 
   async getRiderProfile(userId: string): Promise<RiderModel | null> {
     return await this.riderRepository.getRiderByUserId(userId);
+  }
+
+  async getRiderById(riderId: string): Promise<RiderModel | null> {
+    return await this.riderRepository.findByRiderId(riderId);
   }
 
   async updateProfile(userId: string, updates: Partial<RiderProfile>): Promise<RiderModel> {
@@ -76,5 +78,73 @@ export class RiderService {
     return profile?.verification_status === 'VERIFIED' && 
            profile.is_available && 
            profile.status === 'AVAILABLE';
+  }
+
+  async softDeleteRider(riderId: string, businessId?: string): Promise<void> {
+    const rider = await this.riderRepository.findByIdWithUser(riderId);
+    if (!rider) throw new Error('Rider not found');
+    
+    if (businessId && rider.business_id !== businessId) {
+      throw new Error('Unauthorized: Rider does not belong to this business');
+    }
+
+    const hasActive = await this.riderRepository.hasActiveDeliveries(riderId);
+    if (hasActive) {
+      throw new Error('Cannot delete rider with active deliveries');
+    }
+
+    const balance = await this.riderRepository.getRiderWalletBalance(rider.user_id);
+    if (balance < 0) {
+      throw new Error('Cannot delete rider with negative wallet balance');
+    }
+
+    await this.riderRepository.updateRiderProfile(rider.user_id, {
+      status: 'OFFLINE',
+      is_available: false
+    });
+
+    await this.riderRepository.softDeleteRider(riderId);
+
+    // Send notification email
+    try {
+      const { EmailNotificationService } = await import('../notification/email.service.js');
+      const emailService = new EmailNotificationService();
+      const fullName = `${rider.user.first_name} ${rider.user.last_name}`;
+      await emailService.sendNotification(
+        rider.user.email,
+        'Account Deactivated',
+        `Dear ${fullName},\n\nYour rider account (${rider.rider_id}) has been deactivated. If you believe this is an error, please contact support.`
+      );
+    } catch (error) {
+      console.error('Failed to send deletion notification:', error);
+    }
+  }
+
+  async hardDeleteRider(riderId: string): Promise<void> {
+    await this.riderRepository.hardDeleteRider(riderId);
+  }
+
+  async restoreRider(riderId: string, businessId?: string): Promise<RiderModel | null> {
+    const rider = await this.riderRepository.findByIdIncludingDeleted(riderId);
+    if (!rider) throw new Error('Rider not found');
+    
+    if (businessId && rider.business_id !== businessId) {
+      throw new Error('Unauthorized: Rider does not belong to this business');
+    }
+
+    if (rider.deletedAt) {
+      const daysSinceDeleted = Math.floor(
+        (Date.now() - rider.deletedAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysSinceDeleted > 30) {
+        throw new Error('Cannot restore rider deleted more than 30 days ago');
+      }
+    }
+
+    return await this.riderRepository.restoreRider(riderId);
+  }
+
+  async getDeletedRiders(businessId?: string): Promise<RiderModel[]> {
+    return await this.riderRepository.getDeletedRiders(businessId);
   }
 }

@@ -123,4 +123,52 @@ export class RiderController {
       res.status(500).json({ error: 'Failed to check eligibility' });
     }
   };
+
+  softDeleteRider = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const businessId = (req as any).user?.tenant_id;
+      
+      await this.riderService.softDeleteRider(id, businessId);
+      res.json({ message: 'Rider deactivated successfully' });
+    } catch (error: any) {
+      const status = error.message.includes('Unauthorized') ? 403 : 
+                     error.message.includes('not found') ? 404 : 400;
+      res.status(status).json({ error: error.message });
+    }
+  };
+
+  hardDeleteRider = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      await this.riderService.hardDeleteRider(id);
+      res.json({ message: 'Rider permanently deleted' });
+    } catch (error: any) {
+      res.status(500).json({ error: 'Failed to delete rider permanently' });
+    }
+  };
+
+  restoreRider = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const businessId = (req as any).user?.tenant_id;
+      
+      const rider = await this.riderService.restoreRider(id, businessId);
+      res.json({ message: 'Rider restored successfully', rider });
+    } catch (error: any) {
+      const status = error.message.includes('Unauthorized') ? 403 : 
+                     error.message.includes('not found') ? 404 : 400;
+      res.status(status).json({ error: error.message });
+    }
+  };
+
+  getDeletedRiders = async (req: Request, res: Response) => {
+    try {
+      const businessId = (req as any).user?.tenant_id;
+      const riders = await this.riderService.getDeletedRiders(businessId);
+      res.json({ riders });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get deleted riders' });
+    }
+  };
 }

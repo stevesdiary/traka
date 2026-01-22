@@ -7,8 +7,26 @@ export class RiderRepository extends BaseRepository<RiderModel> {
     super(RiderModel);
   }
 
-  async createRiderProfile(profile: Omit<RiderProfile, 'id' | 'created_at' | 'updated_at'>): Promise<RiderModel> {
-    return this.model.create(profile);
+  async createRiderProfile(profile: Omit<RiderProfile, 'id' | 'rider_id' | 'created_at' | 'updated_at'>): Promise<RiderModel> {
+    const riderId = await this.generateUniqueRiderId();
+    return this.model.create({ ...profile, rider_id: riderId });
+  }
+
+  private async generateUniqueRiderId(): Promise<string> {
+    const lastRider = await this.model.findOne({
+      order: [['created_at', 'DESC']],
+      attributes: ['rider_id']
+    });
+
+    let nextNumber = 1000;
+    if (lastRider?.rider_id) {
+      const match = lastRider.rider_id.match(/TRK-(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1]) + 1;
+      }
+    }
+
+    return `TRK-${String(nextNumber).padStart(4, '0')}`;
   }
 
   async getRiderByUserId(userId: string): Promise<RiderModel | null> {
@@ -100,5 +118,65 @@ export class RiderRepository extends BaseRepository<RiderModel> {
       },
       { where: { user_id: userId } }
     );
+  }
+
+  async softDeleteRider(riderId: string): Promise<void> {
+    await this.model.destroy({ where: { id: riderId } });
+  }
+
+  async hardDeleteRider(riderId: string): Promise<void> {
+    await this.model.destroy({ where: { id: riderId }, force: true });
+  }
+
+  async restoreRider(riderId: string): Promise<RiderModel | null> {
+    await this.model.restore({ where: { id: riderId } });
+    return this.model.findByPk(riderId, { paranoid: false });
+  }
+
+  async getDeletedRiders(businessId?: string): Promise<RiderModel[]> {
+    const where: WhereOptions = {};
+    if (businessId) {
+      where.business_id = businessId;
+    }
+    return this.model.findAll({
+      where,
+      paranoid: false,
+      include: ['user']
+    }).then(riders => riders.filter(r => r.deletedAt !== null));
+  }
+
+  async hasActiveDeliveries(riderId: string): Promise<boolean> {
+    const { PackageModel } = await import('../package/package.model.js');
+    const rider = await this.model.findByPk(riderId);
+    if (!rider) return false;
+    
+    const count = await PackageModel.count({
+      where: {
+        // Assuming packages will have rider_user_id field
+        status: ['PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY']
+      }
+    });
+    return count > 0;
+  }
+
+  async getRiderWalletBalance(userId: string): Promise<number> {
+    const { WalletModel } = await import('../wallet/wallet.model.js');
+    const wallet = await WalletModel.findOne({ where: { user_id: userId } });
+    return wallet ? Number(wallet.balance) : 0;
+  }
+
+  async findByRiderId(riderId: string): Promise<RiderModel | null> {
+    return this.model.findOne({
+      where: { rider_id: riderId },
+      include: ['user']
+    });
+  }
+
+  async findByIdWithUser(riderId: string): Promise<RiderModel | null> {
+    return this.model.findByPk(riderId, { include: ['user'] });
+  }
+
+  async findByIdIncludingDeleted(riderId: string): Promise<RiderModel | null> {
+    return this.model.findByPk(riderId, { paranoid: false });
   }
 }
