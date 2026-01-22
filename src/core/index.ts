@@ -6,7 +6,7 @@ import router from '../routes.js';
 // import monitoringService from '../middlewares/monitoring.js';
 const server = express();
 
-const port = process.env.LOCAL_PORT || 3000;
+const port = process.env.LOCAL_PORT;
 
 server.use(express.json());
 // server.use(monitoringService.middleware());
