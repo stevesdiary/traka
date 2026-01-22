@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { VerificationController } from './verification.controller.js';
-import { validateInput } from '../middleware/validation.middleware.js';
-import { SendOTPSchema, VerifyOTPSchema } from '../utils/validators.js';
 
 const router: Router = Router();
 const verificationController = new VerificationController();
 
-router.post('/send-otp', validateInput(SendOTPSchema), verificationController.sendOTP);
-router.post('/verify-otp', validateInput(VerifyOTPSchema), verificationController.verifyOTP);
+// Verification routes (public)
+router.post('/verify-email', verificationController.verifyEmail);
+router.post('/verify-phone', verificationController.verifyPhone);
+router.post('/resend-email', verificationController.resendEmailVerification);
+router.post('/resend-phone', verificationController.resendPhoneVerification);
 
 export default router;
