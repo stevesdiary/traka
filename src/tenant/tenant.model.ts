@@ -2,7 +2,9 @@ import { Table, Column, Model, DataType, PrimaryKey, Default } from 'sequelize-t
 
 @Table({
   tableName: 'tenants',
-  timestamps: true
+  timestamps: true,
+  underscored: true,
+  paranoid: true
 })
 export class TenantModel extends Model {
   @PrimaryKey
