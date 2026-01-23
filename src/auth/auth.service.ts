@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { UserRepository } from '../user/user.repository.js';
 import { RiderRepository } from '../rider/rider.repository.js';
 import { TenantRepository } from '../tenant/tenant.repository.js';
+import { VerificationService } from '../verification/verification.service.js';
 import { JWTPayload } from '../types/index.js';
 
 export class AuthService {
@@ -14,6 +15,39 @@ export class AuthService {
     this.userRepository = new UserRepository();
     this.riderRepository = new RiderRepository();
     this.tenantRepository = new TenantRepository();
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    const verificationService = new VerificationService();
+    await verificationService.sendPasswordResetCode(email);
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    const verificationService = new VerificationService();
+    const isValid = await verificationService.verifyPasswordResetCode(email, code);
+    
+    if (!isValid) {
+      throw new Error('Invalid or expired reset code');
+    }
+
+    const password_hash = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.updateByEmail(email, { password_hash });
+    await verificationService.clearResetToken(email);
+  }
+
+  async updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isValidPassword) {
+      throw new Error('Current password is incorrect');
+    }
+
+    const password_hash = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.updateById(userId, { password_hash });
   }
 
   async login(email: string, password: string): Promise<{ token: string; user: any } | null> {

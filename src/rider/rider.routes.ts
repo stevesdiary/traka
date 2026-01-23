@@ -3,14 +3,14 @@ import { RiderController } from './rider.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
-import { RiderRegistrationSchema, UpdateLocationSchema, UpdateRiderProfileSchema, UpdateStatusSchema } from '../utils/validators.js';
+import { RiderProfileCreationSchema, UpdateLocationSchema, UpdateRiderProfileSchema, UpdateStatusSchema } from '../utils/validators.js';
 import { Resource, Action } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
 const riderController = new RiderController();
 
 // Rider routes (authenticated users)
-router.post('/register', authenticateToken, validateInput(RiderRegistrationSchema), riderController.registerRider);
+router.post('/register', authenticateToken, validateInput(RiderProfileCreationSchema), riderController.registerRider);
 router.get('/profile', authenticateToken, riderController.getProfile);
 router.put('/profile', authenticateToken, validateInput(UpdateRiderProfileSchema), riderController.updateProfile);
 router.get('/eligibility', authenticateToken, riderController.checkOrderEligibility);

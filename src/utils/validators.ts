@@ -299,7 +299,16 @@ export const UpdateRiderProfileSchema = Joi.object({
   vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').optional().messages({
     'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK'
   }),
-  vehicle_plate: Joi.string().optional(),
+  license_number: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.optional()
+  }),
+  vehicle_plate: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.optional()
+  }),
   profile_photo: Joi.string().uri().optional().messages({
     'string.uri': 'Profile photo must be a valid URL'
   }),
