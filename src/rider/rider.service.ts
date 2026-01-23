@@ -9,6 +9,23 @@ export class RiderService {
   }
 
   async registerRider(registration: RiderRegistration, userId: string): Promise<RiderModel> {
+    const { UserRepository } = await import('../user/user.repository.js');
+    const userRepository = new UserRepository();
+    const user = await userRepository.findById(userId);
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.type !== 'USER') {
+      throw new Error(`Cannot create rider profile. User type is already set to ${user.type}`);
+    }
+
+    const existingProfile = await this.riderRepository.getRiderByUserId(userId);
+    if (existingProfile) {
+      throw new Error('Rider profile already exists for this user');
+    }
+
     const riderType: 'BUSINESS_MANAGED' | 'INDEPENDENT' = registration.business_id ? 'BUSINESS_MANAGED' : 'INDEPENDENT';
     
     const profile: Omit<RiderProfile, 'id' | 'rider_id' | 'created_at' | 'updated_at'> = {
@@ -23,7 +40,14 @@ export class RiderService {
       status: 'OFFLINE'
     };
 
-    return await this.riderRepository.createRiderProfile(profile);
+    const riderProfile = await this.riderRepository.createRiderProfile(profile);
+
+    await userRepository.updateById(userId, { 
+      type: 'RIDER',
+      role: 'RIDER'
+    });
+
+    return riderProfile;
   }
 
   async getRiderProfile(userId: string): Promise<RiderModel | null> {
