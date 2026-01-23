@@ -14,9 +14,15 @@ import {
   CustomerRegistrationSchema,
   BusinessRegistrationSchema,
   RiderRegistrationSchema,
+  PasswordResetRequestSchema,
+  PasswordResetConfirmSchema,
+  UpdatePasswordSchema,
 } from "../utils/validators.js";
+import { AuthService } from "./auth.service.js";
+import { Request, Response } from "express";
 
 const router: Router = Router();
+const authService = new AuthService();
 
 // Authentication
 router.post("/login", validateInput(LoginSchema), login);
@@ -48,5 +54,50 @@ router.post(
 
 // Legacy registration (kept for backward compatibility)
 router.post("/register", register);
+
+// Password reset
+router.post(
+  "/password/reset-request",
+  validateInput(PasswordResetRequestSchema),
+  async (req: Request, res: Response) => {
+    try {
+      await authService.requestPasswordReset(req.body.email);
+      res.json({ message: 'Password reset code sent to your email' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+router.post(
+  "/password/reset-confirm",
+  validateInput(PasswordResetConfirmSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const { email, code, new_password } = req.body;
+      await authService.resetPassword(email, code, new_password);
+      res.json({ message: 'Password reset successfully' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// Update password (authenticated users)
+router.put(
+  "/password/update",
+  authenticateToken,
+  validateInput(UpdatePasswordSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { current_password, new_password } = req.body;
+      await authService.updatePassword(userId, current_password, new_password);
+      res.json({ message: 'Password updated successfully' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
 
 export default router;
