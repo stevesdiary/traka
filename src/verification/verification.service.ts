@@ -91,4 +91,57 @@ export class VerificationService {
     
     await this.sendPhoneVerification(phone);
   }
+
+  async sendPasswordResetCode(email: string): Promise<void> {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) throw new Error('User not found');
+
+    const code = this.generateCode();
+    const key = `reset:password:${email}`;
+    
+    await redis.setEx(key, this.CODE_EXPIRY, code);
+    
+    const name = user.first_name || 'Customer';
+    await this.emailService.sendEmail(
+      email,
+      'Reset Your TRAKA Password',
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Password Reset Request</h2>
+          <p>Dear ${name},</p>
+          <p>Your password reset code is:</p>
+          <h1 style="color: #4CAF50; font-size: 32px; letter-spacing: 5px;">${code}</h1>
+          <p>This code will expire in 15 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+        </div>
+      `
+    );
+  }
+
+  async verifyPasswordResetCode(email: string, code: string): Promise<boolean> {
+    const key = `reset:password:${email}`;
+    const storedCode = await redis.get(key);
+    
+    if (!storedCode || storedCode !== code) {
+      return false;
+    }
+
+    const tokenKey = `reset:token:${email}`;
+    const resetToken = this.generateCode() + this.generateCode();
+    await redis.setEx(tokenKey, 600, resetToken);
+    await redis.del(key);
+    
+    return true;
+  }
+
+  async validateResetToken(email: string, token: string): Promise<boolean> {
+    const key = `reset:token:${email}`;
+    const storedToken = await redis.get(key);
+    return storedToken === token;
+  }
+
+  async clearResetToken(email: string): Promise<void> {
+    const key = `reset:token:${email}`;
+    await redis.del(key);
+  }
 }
