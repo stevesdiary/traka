@@ -83,15 +83,45 @@ export const RiderRegistrationSchema = Joi.object({
     'string.pattern.base': 'Please provide a valid phone number',
     'any.required': 'Phone number is required'
   }),
-  license_number: Joi.string().required().messages({
-    'any.required': 'License number is required'
+  license_number: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.required().messages({
+      'any.required': 'License number is required for non-bicycle vehicles'
+    })
   }),
   vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').required().messages({
     'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK',
     'any.required': 'Vehicle type is required'
   }),
-  vehicle_plate: Joi.string().required().messages({
-    'any.required': 'Vehicle plate number is required'
+  vehicle_plate: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.required().messages({
+      'any.required': 'Vehicle plate number is required for non-bicycle vehicles'
+    })
+  }),
+  business_id: Joi.string().optional()
+});
+
+export const RiderProfileCreationSchema = Joi.object({
+  license_number: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.required().messages({
+      'any.required': 'License number is required for non-bicycle vehicles'
+    })
+  }),
+  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').required().messages({
+    'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK',
+    'any.required': 'Vehicle type is required'
+  }),
+  vehicle_plate: Joi.string().when('vehicle_type', {
+    is: 'BICYCLE',
+    then: Joi.optional(),
+    otherwise: Joi.required().messages({
+      'any.required': 'Vehicle plate number is required for non-bicycle vehicles'
+    })
   }),
   business_id: Joi.string().optional()
 });
@@ -371,4 +401,37 @@ export const TenantApprovalSchema = Joi.object({
 export const PayCommissionSchema = Joi.object({
   payment_method: Joi.string().valid('BANK_TRANSFER', 'CASH', 'MOBILE_MONEY').optional(),
   payment_reference: Joi.string().optional()
+});
+
+// Password Reset Schemas
+export const PasswordResetRequestSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.email': 'Please provide a valid email address',
+    'any.required': 'Email is required'
+  })
+});
+
+export const PasswordResetConfirmSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    'string.email': 'Please provide a valid email address',
+    'any.required': 'Email is required'
+  }),
+  code: Joi.string().length(6).required().messages({
+    'string.length': 'Reset code must be exactly 6 digits',
+    'any.required': 'Reset code is required'
+  }),
+  new_password: Joi.string().min(6).required().messages({
+    'string.min': 'Password must be at least 6 characters long',
+    'any.required': 'New password is required'
+  })
+});
+
+export const UpdatePasswordSchema = Joi.object({
+  current_password: Joi.string().required().messages({
+    'any.required': 'Current password is required'
+  }),
+  new_password: Joi.string().min(6).required().messages({
+    'string.min': 'New password must be at least 6 characters long',
+    'any.required': 'New password is required'
+  })
 });
