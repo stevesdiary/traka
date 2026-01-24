@@ -135,6 +135,31 @@ export class PackageModel extends Model {
   })
   estimated_distance_km?: number;
 
+  @Column({
+    type: DataType.ENUM(
+      'FOOD',
+      'SHOES',
+      'ELECTRONICS',
+      'CLOTHING',
+      'JEWELRY_VALUABLES',
+      'GROCERIES',
+      'DOCUMENTS',
+      'HEALTH_PHARMACEUTICALS',
+      'CONSTRUCTION_MATERIALS',
+      'HOUSEHOLD_ITEMS',
+      'OTHERS'
+    ),
+    allowNull: false,
+    defaultValue: 'OTHERS'
+  })
+  category!: string;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false
+  })
+  is_fragile!: boolean;
+
   // Verification fields
   @Column({
     type: DataType.STRING(6),

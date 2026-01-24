@@ -35,6 +35,8 @@ export class PackageService {
       package_size: 'SMALL' | 'MEDIUM' | 'LARGE';
       package_weight?: number;
       delivery_speed: 'STANDARD' | 'EXPRESS' | 'SAME_DAY';
+      category: string;
+      is_fragile?: boolean;
     },
     sender_id: string,
     tenant_id: string | null
@@ -96,6 +98,8 @@ export class PackageService {
       package_size: data.package_size,
       package_weight: data.package_weight,
       delivery_speed: data.delivery_speed,
+      category: data.category,
+      is_fragile: data.is_fragile || false,
       delivery_fee: pricing.total_amount - pricing.platform_fee,
       platform_fee: pricing.platform_fee,
       total_amount: pricing.total_amount,

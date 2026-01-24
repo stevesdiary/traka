@@ -159,7 +159,24 @@ export const CreatePackageSchema = Joi.object({
   delivery_speed: Joi.string().valid('STANDARD', 'EXPRESS', 'SAME_DAY').required().messages({
     'any.only': 'Delivery speed must be STANDARD, EXPRESS, or SAME_DAY',
     'any.required': 'Delivery speed is required'
-  })
+  }),
+  category: Joi.string().valid(
+    'FOOD',
+    'SHOES',
+    'ELECTRONICS',
+    'CLOTHING',
+    'JEWELRY_VALUABLES',
+    'GROCERIES',
+    'DOCUMENTS',
+    'HEALTH_PHARMACEUTICALS',
+    'CONSTRUCTION_MATERIALS',
+    'HOUSEHOLD_ITEMS',
+    'OTHERS'
+  ).required().messages({
+    'any.only': 'Invalid package category',
+    'any.required': 'Package category is required'
+  }),
+  is_fragile: Joi.boolean().optional().default(false)
 });
 
 export const GuestTrackingSchema = Joi.object({
