@@ -1,3 +1,5 @@
+import logger from '../utils/logger.js';
+
 interface KudiSMSResponse {
   status: string;
   error_code: string;
@@ -44,15 +46,15 @@ export class SMSService {
 
   async sendSMS(to: string, message: string): Promise<void> {
     if (!this.apiToken) {
-      console.warn('KudiSMS API token not configured. SMS not sent.');
+      logger.warn('KudiSMS API token not configured. SMS not sent.');
       return;
     }
 
-    // Debug: Log the exact message being sent
-    console.log('📱 Attempting to send SMS:');
-    console.log('  To:', to);
-    console.log('  Message:', message);
-    console.log('  Message length:', message.length);
+    logger.debug('Attempting to send SMS', {
+      to,
+      messageLength: message.length,
+      gateway: this.gateway
+    });
 
     try {
       const response = await fetch(this.apiUrl, {
@@ -68,7 +70,7 @@ export class SMSService {
           gateway: this.gateway
         })
       });
-      
+
       if (!response.ok) {
         throw new Error(`KudiSMS API error: ${response.statusText}`);
       }
@@ -76,13 +78,20 @@ export class SMSService {
       const result: KudiSMSResponse = await response.json();
 
       if (result.status === 'success' && result.error_code === '000') {
-        console.log(`SMS sent successfully to ${to}.`);
+        logger.info('SMS sent successfully', {
+          to,
+          cost: result.cost,
+          balance: result.balance
+        });
       } else {
         const errorMessage = KUDISMS_ERROR_MESSAGES[result.error_code] || result.msg || 'Unknown error';
         throw new Error(`KudiSMS API error: ${errorMessage} (Code: ${result.error_code})`);
       }
     } catch (error: any) {
-      console.error('Failed to send SMS:', error.message);
+      logger.error('Failed to send SMS', {
+        to,
+        error: error.message
+      });
       throw error;
     }
   }

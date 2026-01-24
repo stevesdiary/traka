@@ -4,6 +4,7 @@ dotenv.config();
 import { Sequelize } from 'sequelize-typescript';
 import { createClient, RedisClientType } from 'redis';
 import { MongoClient } from 'mongodb';
+import logger from '../utils/logger.js';
 import { UserModel } from '../user/user.model.js';
 import { PackageModel } from '../package/package.model.js';
 import { RiderModel } from '../rider/rider.model.js';
@@ -66,7 +67,9 @@ let mongoClient: MongoClient | null = null;
 try {
   mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka');
 } catch (error) {
-  console.warn('MongoDB client creation failed, running without MongoDB');
+  logger.warn('MongoDB client creation failed, running without MongoDB', {
+    error: error instanceof Error ? error.message : String(error)
+  });
 }
 
 export { mongoClient };
@@ -76,31 +79,36 @@ export const connectDatabases = async () => {
   try {
     // Test PostgreSQL connection
     await sequelize.authenticate();
-    console.log('PostgreSQL connected successfully');
-    
+    logger.info('PostgreSQL connected successfully');
+
     // Sync models (create tables if they don't exist)
     await sequelize.sync({ alter: false });
-    console.log('Database models synchronized');
-    
+    logger.info('Database models synchronized');
+
     // Connect to Redis
     await redis.connect();
-    console.log('Redis connected successfully');
-    
+    logger.info('Redis connected successfully');
+
     // Connect to MongoDB (optional)
     if (mongoClient) {
       try {
         await mongoClient.connect();
-        console.log('MongoDB connected successfully');
+        logger.info('MongoDB connected successfully');
       } catch (mongoError: any) {
-        console.warn('MongoDB connection failed (optional):', mongoError.message);
+        logger.warn('MongoDB connection failed (optional)', {
+          error: mongoError.message
+        });
       }
     } else {
-      console.warn('MongoDB client not available, skipping connection');
+      logger.warn('MongoDB client not available, skipping connection');
     }
-    
-    console.log('Databases connected and ready');
+
+    logger.info('All databases connected and ready');
   } catch (error) {
-    console.error('Database connection failed:', error);
+    logger.error('Database connection failed', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
 };
@@ -115,10 +123,14 @@ export const disconnectDatabases = async () => {
         await mongoClient.close();
       }
     } catch (mongoError: any) {
-      console.warn('MongoDB disconnect warning:', mongoError.message);
+      logger.warn('MongoDB disconnect warning', {
+        error: mongoError.message
+      });
     }
-    console.log('Database connections closed');
+    logger.info('Database connections closed');
   } catch (error) {
-    console.error('❌ Error closing database connections:', error);
+    logger.error('Error closing database connections', {
+      error: error instanceof Error ? error.message : String(error)
+    });
   }
 };

@@ -1,6 +1,7 @@
 import { NotificationModel, NotificationPreferenceModel } from './notification.model.js';
 import { SMSService } from './sms.service.js';
 import { EmailNotificationService } from './email.service.js';
+import logger from '../utils/logger.js';
 
 export enum NotificationType {
   DELIVERY_ASSIGNED = 'DELIVERY_ASSIGNED',
@@ -132,7 +133,11 @@ export class NotificationService {
 
   private async sendPushNotification(fcmToken: string, payload: NotificationPayload): Promise<void> {
     // TODO: Integrate with Firebase Cloud Messaging
-    console.log(`Push notification sent to ${fcmToken}:`, payload.title);
+    logger.warn('Push notification not implemented - FCM integration required', {
+      fcmToken: fcmToken.substring(0, 20) + '...',
+      title: payload.title,
+      type: payload.type
+    });
   }
 
   private async sendSMS(userId: string, message: string): Promise<void> {
@@ -142,7 +147,10 @@ export class NotificationService {
         await this.smsService.sendNotification((user as any).phone, 'TRAKA', message);
       }
     } catch (error) {
-      console.error('Failed to send SMS:', error);
+      logger.error('Failed to send SMS notification', {
+        userId,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
@@ -153,7 +161,11 @@ export class NotificationService {
         await this.emailService.sendNotification((user as any).email, subject, message);
       }
     } catch (error) {
-      console.error('Failed to send email:', error);
+      logger.error('Failed to send email notification', {
+        userId,
+        subject,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 

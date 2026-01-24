@@ -14,3 +14,4 @@ docs/
 jest.config
 traka-client/
 .vscode/settings.json
+logs/

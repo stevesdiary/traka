@@ -11,6 +11,8 @@ import { fileURLToPath } from 'url';
 import routes from './routes.js';
 import { connectDatabases, disconnectDatabases } from './config/database.js';
 import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
+import logger from './utils/logger.js';
+import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 // import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,14 +28,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Request logging
-// app.use((req, res, next) => {
-//   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-//   console.log('Headers:', req.headers);
-//   if (req.body && Object.keys(req.body).length > 0) {
-//     console.log('Body:', req.body);
-//   }
-//   next();
-// });
+app.use(requestLogger);
+
+// Old console-based logging removed - now using Winston logger middleware
 
 // Swagger Documentation
 const swaggerPath = process.env.NODE_ENV === 'production' 
@@ -47,21 +44,30 @@ app.use('/api', routes);
 
 // 404 handler
 app.use((req, res) => {
-  console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  logger.warn('Route not found', {
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip
+  });
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Error logging middleware
+app.use(errorLogger);
+
 // Error handler
 app.use((err: any, req: any, res: any, next: any) => {
-  console.error('=== ERROR DETAILS ===');
-  console.error('URL:', req.method, req.originalUrl);
-  console.error('Body:', req.body);
-  console.error('Headers:', req.headers);
-  console.error('Error:', err);
-  console.error('Stack:', err.stack);
-  console.error('=====================');
-  res.status(500).json({ 
-    error: 'Internal server error', 
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    method: req.method,
+    url: req.originalUrl,
+    body: req.body,
+    ip: req.ip
+  });
+
+  res.status(500).json({
+    error: 'Internal server error',
     message: err.message,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
@@ -76,30 +82,37 @@ app.get('/health', (req, res) => {
 const startServer = async () => {
   try {
     await connectDatabases();
-    
+
     // Start cron jobs
     RiderCleanupCron.startCronJob();
     // startDispatchTimeoutCron();
-    
+
     const server = app.listen(port, () => {
-      console.log(`TRAKA API running on port ${port}`);
+      logger.info(`TRAKA API started successfully`, {
+        port,
+        environment: process.env.NODE_ENV || 'development',
+        nodeVersion: process.version
+      });
     });
-    
+
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
-      console.log(`Received ${signal}. Starting graceful shutdown...`);
+      logger.info(`Received ${signal}. Starting graceful shutdown...`);
       server.close(async () => {
         await disconnectDatabases();
-        console.log('👋 Server shut down gracefully');
+        logger.info('Server shut down gracefully');
         process.exit(0);
       });
     };
-    
+
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    
+
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     process.exit(1);
   }
 };
