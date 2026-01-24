@@ -358,6 +358,9 @@ export const CancelPackageSchema = Joi.object({
       'any.required': 'Cancellation note is required when reason is OTHER'
     }),
     otherwise: Joi.string().optional()
+  }),
+  rider_has_package: Joi.boolean().required().messages({
+    'any.required': 'Please confirm if rider has the package'
   })
 });
 

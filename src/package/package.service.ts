@@ -112,7 +112,7 @@ export class PackageService {
 
     // Get sender information
     const sender = await this.userRepository.findById(sender_id);
-    const sender_name = sender ? `${sender.first_name} + ${sender.last_name}` : 'Sender';
+    const sender_name = sender ? `${sender.first_name} ${sender.last_name}` : 'Sender';
 
     // Generate verification codes and QR code
     const verification = this.packageVerificationService.generatePackageVerification({
@@ -125,6 +125,26 @@ export class PackageService {
       package_size: data.package_size,
       delivery_speed: data.delivery_speed
     });
+
+    // Send pickup code to sender
+    if (sender?.email) {
+      await this.packageVerificationService.sendPickupCodeToSender(
+        sender.email,
+        sender_name,
+        verification.pickup_pin,
+        tracking_number
+      );
+    }
+
+    // Schedule delivery code email (will be sent 5 minutes before arrival)
+    if (data.recipient_email) {
+      await this.packageVerificationService.scheduleDeliveryCodeEmail(
+        data.recipient_email,
+        data.recipient_name,
+        verification.delivery_pin,
+        newPackage.id
+      );
+    }
 
     // Send tracking notification to recipient
     await this.sendTrackingNotification(newPackage);
@@ -215,6 +235,7 @@ export class PackageService {
     package_id: string,
     user_id: string,
     cancellation_reason: string,
+    rider_has_package: boolean,
     cancellation_note?: string
   ): Promise<any> {
     const packageData = await this.packageRepository.findById(package_id);
@@ -238,13 +259,16 @@ export class PackageService {
       status: 'CANCELLED',
       cancellation_reason,
       cancellation_note,
+      rider_has_package,
       cancelled_at: new Date(),
       cancelled_by: user_id
     });
 
     return { 
       message: "Package cancelled successfully",
-      tracking_number: packageData.tracking_number
+      tracking_number: packageData.tracking_number,
+      rider_has_package,
+      action_required: rider_has_package ? 'Rider needs to return the package' : 'No return needed'
     };
   }
 

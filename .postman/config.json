@@ -1,0 +1,17 @@
+{
+  "workspace": {
+    "id": ""
+  },
+  "entities": {
+    "collections": [
+      "../TRAKA_API.postman_collection.json"
+    ],
+    "environments": [],
+    "specs": [
+      "../swagger.yaml"
+    ],
+    "flows": [],
+    "globals": [],
+    "mocks": []
+  }
+}

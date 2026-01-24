@@ -57,6 +57,7 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     cancellation_note?: string;
     cancelled_at?: Date;
     cancelled_by?: string;
+    rider_has_package?: boolean;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },

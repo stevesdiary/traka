@@ -98,13 +98,14 @@ export class PackageController {
   cancelPackage = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
-      const { cancellation_reason, cancellation_note } = req.body;
+      const { cancellation_reason, cancellation_note, rider_has_package } = req.body;
       const user_id = req.user!.userId;
 
       const result = await this.packageService.cancelPackage(
         id,
         user_id,
         cancellation_reason,
+        rider_has_package,
         cancellation_note
       );
 

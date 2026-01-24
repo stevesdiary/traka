@@ -229,6 +229,12 @@ export class PackageModel extends Model {
   })
   cancelled_by?: string;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: true
+  })
+  rider_has_package?: boolean;
+
   // Guest tracking token for non-registered recipients
   @Column({
     type: DataType.STRING,

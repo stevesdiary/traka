@@ -1,3 +1,6 @@
+import { redis } from '../config/database.js';
+import { EmailNotificationService } from '../notification/email.service.js';
+
 export interface PackageVerification {
   package_id: string;
   pickup_pin: string;
@@ -22,6 +25,63 @@ export interface QRCodeData {
 
 export class PackageVerificationService {
   private verifications: Map<string, PackageVerification> = new Map();
+  private emailService: EmailNotificationService;
+
+  constructor() {
+    this.emailService = new EmailNotificationService();
+  }
+
+  async sendPickupCodeToSender(senderEmail: string, senderName: string, pickupCode: string, trackingNumber: string): Promise<void> {
+    await this.emailService.sendEmail(
+      senderEmail,
+      'Pickup Confirmation Code',
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Hello ${senderName},</h2>
+          <p>Your package (${trackingNumber}) is ready for pickup.</p>
+          <p>Please share this pickup confirmation code with the rider:</p>
+          <h1 style="color: #4CAF50; font-size: 32px; letter-spacing: 5px;">${pickupCode}</h1>
+          <p>This code confirms that the rider has collected your package.</p>
+          <p>Thank you for choosing Traka Logistics.</p>
+        </div>
+      `
+    );
+  }
+
+  async sendDeliveryCodeToRecipient(recipientEmail: string, recipientName: string, deliveryCode: string): Promise<void> {
+    await this.emailService.sendEmail(
+      recipientEmail,
+      'Delivery Confirmation Code',
+      `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Hello ${recipientName},</h2>
+          <p>Good news! Your package is almost here 🎉</p>
+          <p>To complete the delivery, please share this delivery confirmation code with the rider:</p>
+          <h1 style="color: #4CAF50; font-size: 32px; letter-spacing: 5px;">${deliveryCode}</h1>
+          <p>This code helps us ensure your package gets to the right hands, yours.</p>
+          <p>If you have any questions or need help, we are happy to assist.</p>
+          <p>Thank you for choosing us,</p>
+          <p><strong>Traka Logistics</strong></p>
+        </div>
+      `
+    );
+  }
+
+  async scheduleDeliveryCodeEmail(recipientEmail: string, recipientName: string, deliveryCode: string, packageId: string): Promise<void> {
+    const key = `delivery_code_scheduled:${packageId}`;
+    await redis.setEx(key, 300, JSON.stringify({ recipientEmail, recipientName, deliveryCode }));
+  }
+
+  async triggerDeliveryCodeEmail(packageId: string): Promise<void> {
+    const key = `delivery_code_scheduled:${packageId}`;
+    const data = await redis.get(key);
+    
+    if (data) {
+      const { recipientEmail, recipientName, deliveryCode } = JSON.parse(data);
+      await this.sendDeliveryCodeToRecipient(recipientEmail, recipientName, deliveryCode);
+      await redis.del(key);
+    }
+  }
 
   generatePackageVerification(packageData: {
     package_id: string;
@@ -115,7 +175,7 @@ export class PackageVerificationService {
   }
 
   private generatePIN(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
   private generateQRCodeData(data: QRCodeData): string {

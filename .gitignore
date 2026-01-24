@@ -13,3 +13,4 @@ docs/
 .gitattributes
 jest.config
 traka-client/
+.vscode/settings.json
