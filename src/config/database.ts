@@ -28,7 +28,12 @@ const isProduction = dbUrl.includes('neon.tech') || process.env.NODE_ENV === 'pr
 export const sequelize = new Sequelize(dbUrl, {
   dialect: 'postgres',
   logging: false,
-  // logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 20,
+    min: 5,
+    acquire: 30000,
+    idle: 10000
+  },
   dialectOptions: isProduction ? {
     ssl: {
       require: true,
@@ -59,13 +64,20 @@ sequelize.addModels([
 
 // Redis Configuration
 export const redis: RedisClientType = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  socket: {
+    reconnectStrategy: (retries) => Math.min(retries * 50, 500)
+  }
 });
 
 // MongoDB Configuration (optional)
 let mongoClient: MongoClient | null = null;
 try {
-  mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka');
+  mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka', {
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    maxIdleTimeMS: 30000
+  });
 } catch (error) {
   logger.warn('MongoDB client creation failed, running without MongoDB', {
     error: error instanceof Error ? error.message : String(error)
