@@ -7,6 +7,9 @@ test/
 scripts/
 .DS_Store
 .env.test
+.env.development
+.env.production
+.env.staging
 biome.json
 jest.config.js
 docs/

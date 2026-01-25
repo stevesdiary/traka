@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-dotenv.config();
+// Load environment configuration first
+import './config/environment.js';
 
 import express from 'express';
 import cors from 'cors';
@@ -13,17 +13,21 @@ import { connectDatabases, disconnectDatabases } from './config/database.js';
 import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
 import logger from './utils/logger.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
+import config from './config/environment.js';
 // import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.LOCAL_PORT;
+const port = config.server.port;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: config.server.corsOrigin,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,7 +37,7 @@ app.use(requestLogger);
 // Old console-based logging removed - now using Winston logger middleware
 
 // Swagger Documentation
-const swaggerPath = process.env.NODE_ENV === 'production' 
+const swaggerPath = config.isProduction 
   ? path.join(__dirname, '../swagger.yaml')
   : path.join(__dirname, '../../swagger.yaml');
 const swaggerDocument = YAML.load(swaggerPath);
@@ -69,7 +73,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).json({
     error: 'Internal server error',
     message: err.message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(config.isDevelopment && { stack: err.stack })
   });
 });
 
@@ -90,8 +94,9 @@ const startServer = async () => {
     const server = app.listen(port, () => {
       logger.info(`TRAKA API started successfully`, {
         port,
-        environment: process.env.NODE_ENV || 'development',
-        nodeVersion: process.version
+        environment: config.env,
+        nodeVersion: process.version,
+        apiBaseUrl: config.server.apiBaseUrl
       });
     });
 
