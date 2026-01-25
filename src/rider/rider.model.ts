@@ -1,5 +1,6 @@
-import { Table, Column, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, PrimaryKey, Default, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
 import { UserModel } from '../user/user.model.js';
+import { RatingModel } from '../rating/rating.model.js';
 
 @Table({
   tableName: 'riders',
@@ -102,6 +103,9 @@ export class RiderModel extends Model {
 
   @BelongsTo(() => UserModel)
   user!: UserModel;
+
+  @HasMany(() => RatingModel, 'rider_id')
+  ratings!: RatingModel[];
 }
 
 export interface RiderProfile {
@@ -121,6 +125,8 @@ export interface RiderProfile {
   status: 'AVAILABLE' | 'BUSY' | 'OFFLINE';
   current_latitude?: number;
   current_longitude?: number;
+  avg_rating?: number;
+  total_ratings?: number;
   created_at: Date;
   updated_at: Date;
 }
