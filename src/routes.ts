@@ -20,6 +20,7 @@ import serviceAreaRoutes from './service-area/service-area.routes.js';
 import waitlistRoutes from './waitlist/waitlist.routes.js';
 import pricingRoutes from './pricing/pricing.routes.js';
 import fuelPriceRoutes from './pricing/fuel-price.routes.js';
+import quoteRoutes from './quote/quote.routes.js';
 
 const router: Router = Router();
 
@@ -44,5 +45,6 @@ router.use('/service-areas', serviceAreaRoutes);
 router.use('/waitlist', waitlistRoutes);
 router.use('/pricing', pricingRoutes);
 router.use('/fuel-price', fuelPriceRoutes);
+router.use('/quotes', quoteRoutes);
 
 export default router;

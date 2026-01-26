@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import routes from './routes.js';
 import { connectDatabases, disconnectDatabases } from './config/database.js';
 import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
+import { QuoteExpirationCron } from './quote/quote-expiration.cron.js';
 import logger from './utils/logger.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import config from './config/environment.js';
@@ -89,6 +90,7 @@ const startServer = async () => {
 
     // Start cron jobs
     RiderCleanupCron.startCronJob();
+    QuoteExpirationCron.startCronJob();
     // startDispatchTimeoutCron();
 
     const server = app.listen(port, () => {
