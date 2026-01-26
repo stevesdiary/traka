@@ -1,6 +1,7 @@
 import { NotificationModel, NotificationPreferenceModel } from './notification.model.js';
 import { SMSService } from './sms.service.js';
 import { EmailNotificationService } from './email.service.js';
+import pushService from './push.service.js';
 import logger from '../utils/logger.js';
 
 export enum NotificationType {
@@ -132,12 +133,13 @@ export class NotificationService {
   }
 
   private async sendPushNotification(fcmToken: string, payload: NotificationPayload): Promise<void> {
-    // TODO: Integrate with Firebase Cloud Messaging
-    logger.warn('Push notification not implemented - FCM integration required', {
-      fcmToken: fcmToken.substring(0, 20) + '...',
-      title: payload.title,
-      type: payload.type
-    });
+    try {
+      await pushService.sendToDevice(fcmToken, payload.title, payload.message, payload.data);
+    } catch (error) {
+      logger.error('Failed to send push notification', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   private async sendSMS(userId: string, message: string): Promise<void> {
