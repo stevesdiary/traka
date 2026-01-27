@@ -123,13 +123,14 @@ export class QuoteService {
   }
 
   async expireOldQuotes(): Promise<number> {
+    const { Op } = await import('sequelize');
     const [affectedCount] = await QuoteModel.update(
       { status: 'EXPIRED' },
       {
         where: {
           status: 'ACTIVE',
           expires_at: {
-            [require('sequelize').Op.lt]: new Date()
+            [Op.lt]: new Date()
           }
         }
       }
