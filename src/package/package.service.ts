@@ -37,6 +37,8 @@ export class PackageService {
       delivery_speed: 'STANDARD' | 'EXPRESS' | 'SAME_DAY';
       category: string;
       is_fragile?: boolean;
+      payment_method?: 'DIGITAL' | 'CASH';
+      payment_by?: 'SENDER' | 'RECIPIENT';
     },
     sender_id: string,
     tenant_id: string | null
@@ -106,6 +108,10 @@ export class PackageService {
       estimated_distance_km: pricing.estimated_distance_km,
       guest_tracking_token: guest_tracking_token || undefined,
       tenant_id,
+      payment_method: data.payment_method || 'DIGITAL',
+      payment_by: data.payment_by || 'SENDER',
+      payment_status: data.payment_method === 'CASH' ? 'PENDING' : 'PAID',
+      paid_at: data.payment_method === 'DIGITAL' ? new Date() : undefined,
     };
 
     const newPackage = await this.packageRepository.createPackage(packageData);

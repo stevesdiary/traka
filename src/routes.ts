@@ -21,6 +21,7 @@ import waitlistRoutes from './waitlist/waitlist.routes.js';
 import pricingRoutes from './pricing/pricing.routes.js';
 import fuelPriceRoutes from './pricing/fuel-price.routes.js';
 import quoteRoutes from './quote/quote.routes.js';
+import cashPaymentRoutes from './payment/cash-payment.routes.js';
 import uploadRoutes from './storage/upload.routes.js';
 
 const router: Router = Router();
@@ -47,6 +48,7 @@ router.use('/waitlist', waitlistRoutes);
 router.use('/pricing', pricingRoutes);
 router.use('/fuel-price', fuelPriceRoutes);
 router.use('/quotes', quoteRoutes);
+router.use('/cash-payments', cashPaymentRoutes);
 router.use('/upload', uploadRoutes);
 
 export default router;
