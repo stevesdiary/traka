@@ -135,6 +135,28 @@ export class PackageModel extends Model {
   })
   estimated_distance_km?: number;
 
+  // Payment fields
+  @Column({
+    type: DataType.ENUM('DIGITAL', 'CASH'),
+    defaultValue: 'DIGITAL'
+  })
+  payment_method!: string;
+
+  @Column({
+    type: DataType.ENUM('SENDER', 'RECIPIENT'),
+    defaultValue: 'SENDER'
+  })
+  payment_by!: string;
+
+  @Column({
+    type: DataType.ENUM('PENDING', 'PAID', 'FAILED'),
+    defaultValue: 'PENDING'
+  })
+  payment_status!: string;
+
+  @Column(DataType.DATE)
+  paid_at?: Date;
+
   @Column({
     type: DataType.ENUM(
       'FOOD',

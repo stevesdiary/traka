@@ -1,5 +1,6 @@
 import { redis } from '../config/database.js';
 import crypto from 'crypto';
+import { SSRFProtection } from './ssrf-protection.js';
 
 export interface GeocodingResult {
   latitude: number;
@@ -53,14 +54,16 @@ export class GeocodingService {
     await this.rateLimit();
 
     try {
-      const response = await fetch(
-        `${this.baseUrl}/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': this.userAgent
-          }
+      const url = `${this.baseUrl}/search?q=${encodeURIComponent(address)}&format=json&limit=1&addressdetails=1`;
+      
+      // SSRF protection
+      SSRFProtection.sanitizeUrl(url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': this.userAgent
         }
-      );
+      });
 
       if (!response.ok) {
         throw new Error('Geocoding request failed');
@@ -116,14 +119,16 @@ export class GeocodingService {
     await this.rateLimit();
 
     try {
-      const response = await fetch(
-        `${this.baseUrl}/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': this.userAgent
-          }
+      const url = `${this.baseUrl}/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
+      
+      // SSRF protection
+      SSRFProtection.sanitizeUrl(url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': this.userAgent
         }
-      );
+      });
 
       if (!response.ok) {
         throw new Error('Reverse geocoding request failed');
