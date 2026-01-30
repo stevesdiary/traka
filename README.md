@@ -264,7 +264,9 @@ MONNIFY_SECRET_KEY=your-monnify-secret
 
 # Email Notifications
 BREVO_API_KEY=your-brevo-api-key
-SMTP_FROM=noreply@traka.com
+EMAIL_FROM=noreply@traka.com
+EMAIL_FROM_NAME=TRAKA
+# SMTP_FROM=noreply@traka.com (legacy fallback)
 
 # Server
 PORT=3000
