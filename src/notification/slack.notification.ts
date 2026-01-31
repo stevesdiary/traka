@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { SSRFProtection } from '../utils/ssrf-protection.js';
 
 interface SlackErrorPayload {
   error: Error;
@@ -18,6 +19,12 @@ export class SlackNotificationService {
   constructor() {
     this.webhookUrl = process.env.SLACK_WEBHOOK_URL || 'https://hooks.slack.com/services/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';
     this.environment = process.env.NODE_ENV || 'development';
+    
+    // Validate webhook URL
+    if (this.webhookUrl && !SSRFProtection.isUrlSafe(this.webhookUrl)) {
+      console.warn('Slack webhook URL failed SSRF validation');
+      this.webhookUrl = '';
+    }
   }
 
   async sendErrorNotification(payload: SlackErrorPayload): Promise<void> {

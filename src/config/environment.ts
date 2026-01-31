@@ -10,7 +10,8 @@ const environment = process.env.NODE_ENV || 'development';
 
 // Load environment-specific .env file
 const envFile = `.env.${environment}`;
-const envPath = path.resolve(__dirname, '../../', envFile);
+const rootDir = path.resolve(process.cwd());
+const envPath = path.join(rootDir, envFile);
 
 console.log(`🌍 Loading environment: ${environment}`);
 console.log(`📁 Config file: ${envFile}`);
@@ -82,8 +83,9 @@ export const config = {
   },
   
   email: {
-    brevoApiKey: process.env.BREVO_API_KEY!,
-    smtpFrom: process.env.SMTP_FROM || 'noreply@traka.com'
+    brevoApiKey: process.env.BREVO_API_KEY || '',
+    fromEmail: process.env.EMAIL_FROM || process.env.SMTP_FROM || 'noreply@traka.com',
+    fromName: process.env.EMAIL_FROM_NAME || 'TRAKA'
   },
   
   sms: {
