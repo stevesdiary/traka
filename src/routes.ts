@@ -23,6 +23,7 @@ import fuelPriceRoutes from './pricing/fuel-price.routes.js';
 import quoteRoutes from './quote/quote.routes.js';
 import cashPaymentRoutes from './payment/cash-payment.routes.js';
 import uploadRoutes from './storage/upload.routes.js';
+import promotionRoutes from './promotion/promotion.routes.js';
 
 const router: Router = Router();
 
@@ -50,5 +51,6 @@ router.use('/fuel-price', fuelPriceRoutes);
 router.use('/quotes', quoteRoutes);
 router.use('/cash-payments', cashPaymentRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/promotions', promotionRoutes);
 
 export default router;

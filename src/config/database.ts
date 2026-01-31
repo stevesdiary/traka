@@ -20,6 +20,7 @@ import { ReferralModel } from '../referral/referral.model.js';
 import { ServiceAreaModel } from '../service-area/service-area.model.js';
 import { WaitlistModel } from '../waitlist/waitlist.model.js';
 import { QuoteModel } from '../quote/quote.model.js';
+import { PromotionModel, PromotionUsageModel } from '../promotion/promotion.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -62,6 +63,8 @@ sequelize.addModels([
   ServiceAreaModel,
   WaitlistModel,
   QuoteModel,
+  PromotionModel,
+  PromotionUsageModel,
 ]);
 
 // Redis Configuration

@@ -403,6 +403,57 @@ export const UpdateCourierStatusSchema = Joi.object({
   })
 });
 
+// Promotions
+export const CreatePromotionSchema = Joi.object({
+  code: Joi.string().trim().uppercase().min(3).max(30).pattern(/^[A-Z0-9_-]+$/).required().messages({
+    'string.pattern.base': 'Promotion code can only contain letters, numbers, underscores, and dashes',
+    'any.required': 'Promotion code is required'
+  }),
+  name: Joi.string().min(2).required().messages({
+    'any.required': 'Promotion name is required'
+  }),
+  description: Joi.string().max(1000).optional(),
+  discount_type: Joi.string().valid('PERCENTAGE', 'FIXED').required().messages({
+    'any.only': 'Discount type must be PERCENTAGE or FIXED',
+    'any.required': 'Discount type is required'
+  }),
+  discount_value: Joi.number().positive().required().messages({
+    'any.required': 'Discount value is required'
+  }),
+  max_uses: Joi.number().integer().positive().optional(),
+  max_uses_per_user: Joi.number().integer().positive().optional(),
+  start_date: Joi.date().required().messages({
+    'any.required': 'Start date is required'
+  }),
+  end_date: Joi.date().greater(Joi.ref('start_date')).required().messages({
+    'date.greater': 'End date must be after start date',
+    'any.required': 'End date is required'
+  }),
+  is_active: Joi.boolean().optional()
+});
+
+export const UpdatePromotionSchema = Joi.object({
+  code: Joi.string().trim().uppercase().min(3).max(30).pattern(/^[A-Z0-9_-]+$/).optional(),
+  name: Joi.string().min(2).optional(),
+  description: Joi.string().max(1000).optional(),
+  discount_type: Joi.string().valid('PERCENTAGE', 'FIXED').optional(),
+  discount_value: Joi.number().positive().optional(),
+  max_uses: Joi.number().integer().positive().optional(),
+  max_uses_per_user: Joi.number().integer().positive().optional(),
+  start_date: Joi.date().optional(),
+  end_date: Joi.date().optional(),
+  is_active: Joi.boolean().optional()
+});
+
+export const RedeemPromotionSchema = Joi.object({
+  code: Joi.string().trim().uppercase().min(3).max(30).required().messages({
+    'any.required': 'Promotion code is required'
+  }),
+  amount: Joi.number().positive().optional(),
+  currency: Joi.string().length(3).optional(),
+  package_id: Joi.string().optional()
+});
+
 export const FindCouriersSchema = Joi.object({
   pickupLocation: Joi.object({
     lat: Joi.number().required(),
