@@ -13,6 +13,7 @@
     "start:staging": "NODE_ENV=staging node dist/src/index.js",
     "start:prod": "NODE_ENV=production node dist/src/index.js",
     "seed:admins": "tsc && node dist/scripts/seed-admins.js",
+    "seed:legal": "tsc -p tsconfig.seed.json && node dist/scripts/seed-legal.js",
     "migrate:up": "tsc && node dist/scripts/migrate.js up",
     "migrate:down": "tsc && node dist/scripts/migrate.js down",
     "migrate:pending": "tsc && node dist/scripts/migrate.js pending",
@@ -35,6 +36,7 @@
     "@types/bcrypt": "^6.0.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^5.2.1",
@@ -61,6 +63,7 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.8",
     "@types/jsonwebtoken": "^9.0.10",
