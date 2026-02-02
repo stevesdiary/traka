@@ -6,7 +6,10 @@ import {
   registerRider,
   register,
   registerAdmin,
-} from "../middleware/auth.middleware.js";
+  logout,
+  getMe,
+  refresh,
+} from "./auth.controller.js";
 import { authenticateToken, requireRole } from "../middleware/auth.middleware.js";
 import { validateInput } from "../middleware/validation.middleware.js";
 import {
@@ -26,6 +29,9 @@ const authService = new AuthService();
 
 // Authentication
 router.post("/login", validateInput(LoginSchema), login);
+router.post("/logout", authenticateToken, logout);
+router.get("/me", authenticateToken, getMe);
+router.post("/refresh", refresh);
 
 // Registration endpoints
 router.post(

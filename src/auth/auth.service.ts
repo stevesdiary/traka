@@ -62,6 +62,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
       tenant_id: user.tenant_id ?? null
     };
 
@@ -73,6 +74,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        type: user.type,
         tenant_id: user.tenant_id
       }
     };
@@ -108,6 +110,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
       tenant_id: null
     };
 
@@ -119,6 +122,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        type: user.type,
         first_name: userData.first_name,
         last_name: userData.last_name,
         phone: userData.phone
@@ -164,6 +168,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
       tenant_id: user.tenant_id
     };
 
@@ -175,6 +180,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        type: user.type,
         tenant_id: user.tenant_id
       },
       business: {
@@ -193,7 +199,7 @@ export class AuthService {
     last_name: string;
     phone: string;
     license_number: string;
-    vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
+    vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
     vehicle_plate: string;
     business_id?: string;
   }): Promise<{ token: string; user: any; rider_profile: any }> {
@@ -236,6 +242,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
       tenant_id: user.tenant_id
     };
 
@@ -247,6 +254,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        type: user.type,
         tenant_id: user.tenant_id
       },
       rider_profile: {
@@ -321,6 +329,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: user.role,
+      type: user.type,
       tenant_id: null
     };
 
@@ -332,6 +341,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
+        type: user.type,
         first_name: adminData.first_name,
         last_name: adminData.last_name,
         phone: adminData.phone,
