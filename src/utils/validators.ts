@@ -90,8 +90,8 @@ export const RiderRegistrationSchema = Joi.object({
       'any.required': 'License number is required for non-bicycle vehicles'
     })
   }),
-  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').required().messages({
-    'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK',
+  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE').required().messages({
+    'any.only': 'Vehicle type must be BICYCLE or MOTORCYCLE',
     'any.required': 'Vehicle type is required'
   }),
   vehicle_plate: Joi.string().when('vehicle_type', {
@@ -112,8 +112,8 @@ export const RiderProfileCreationSchema = Joi.object({
       'any.required': 'License number is required for non-bicycle vehicles'
     })
   }),
-  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').required().messages({
-    'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK',
+  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE').required().messages({
+    'any.only': 'Vehicle type must be BICYCLE or MOTORCYCLE',
     'any.required': 'Vehicle type is required'
   }),
   vehicle_plate: Joi.string().when('vehicle_type', {
@@ -185,6 +185,28 @@ export const GuestTrackingSchema = Joi.object({
   }),
   guest_token: Joi.string().optional()
 });
+
+// Business (new lightweight business profile)
+export const BusinessCreateSchema = Joi.object({
+  business_name: Joi.string().min(2).required().messages({
+    'string.min': 'Business name must be at least 2 characters long',
+    'any.required': 'Business name is required'
+  }),
+  business_address: Joi.string().allow('', null).optional(),
+  contact_person: Joi.string().allow('', null).optional(),
+  phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).allow('', null).optional().messages({
+    'string.pattern.base': 'Please provide a valid phone number'
+  })
+});
+
+export const BusinessUpdateSchema = Joi.object({
+  business_name: Joi.string().min(2).optional(),
+  business_address: Joi.string().allow('', null).optional(),
+  contact_person: Joi.string().allow('', null).optional(),
+  phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).allow('', null).optional().messages({
+    'string.pattern.base': 'Please provide a valid phone number'
+  })
+}).min(1);
 
 export const TrackingNumberSchema = Joi.object({
   tracking_number: Joi.string().required().messages({
@@ -313,8 +335,8 @@ export const UpdateRiderProfileSchema = Joi.object({
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional().messages({
     'string.pattern.base': 'Please provide a valid phone number'
   }),
-  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK').optional().messages({
-    'any.only': 'Vehicle type must be one of: BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK'
+  vehicle_type: Joi.string().valid('BICYCLE', 'MOTORCYCLE').optional().messages({
+    'any.only': 'Vehicle type must be BICYCLE or MOTORCYCLE'
   }),
   license_number: Joi.string().when('vehicle_type', {
     is: 'BICYCLE',

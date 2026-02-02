@@ -889,8 +889,232 @@ paths:
         '200':
           description: Status updated
 
-  # User Management
-  /users:
+  # File Upload
+  /upload/profile:
+    post:
+      tags: [Upload]
+      summary: Upload profile photo
+      description: Upload and optimize profile photo. Image is automatically resized to 1200px width and compressed to 85% quality.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP)
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    example: "profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+                  url:
+                    type: string
+                    example: "https://f000.backblazeb2.com/file/bucket-name/profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+        '400':
+          description: No file uploaded
+        '500':
+          description: Upload failed
+
+  /upload/vehicle:
+    post:
+      tags: [Upload]
+      summary: Upload vehicle photo
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded successfully
+
+  /upload/package:
+    post:
+      tags: [Upload]
+      summary: Upload package photo
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded successfully
+
+  /upload/document:
+    post:
+      tags: [Upload]
+      summary: Upload document
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: File uploaded successfully
+
+  /upload/signed-url/{key}:
+    get:
+      tags: [Upload]
+      summary: Get signed URL for private file
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: File key from upload response
+      responses:
+        '200':
+          description: Signed URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+
+  /upload/{key}:
+    delete:
+      tags: [Upload]
+      summary: Delete uploaded file
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File deleted successfully
+
+  /auth/me/profile-photo:
+    put:
+      tags: [Authentication]
+      summary: Update user profile photo URL
+      description: Save the profile photo URL to user profile after uploading via /upload/profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [profile_photo]
+              properties:
+                profile_photo:
+                  type: string
+                  format: uri
+                  example: "https://f000.backblazeb2.com/file/bucket-name/profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+      responses:
+        '200':
+          description: Profile photo updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile photo updated"
+                  profile_photo:
+                    type: string
+        '400':
+          description: Failed to update profile photo
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      description: Returns authenticated user's profile including profile_photo
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                      role:
+                        type: string
+                      type:
+                        type: string
+                      tenant_id:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      first_name:
+                        type: string
+                      last_name:
+                        type: string
+                      phone:
+                        type: string
+                      email_verified:
+                        type: boolean
+                      phone_verified:
+                        type: boolean
+                      profile_photo:
+                        type: string
+                        nullable: true
+                        example: "https://f000.backblazeb2.com/file/bucket-name/profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+        '401':
+          description: Authentication required
+        '404':
+          description: User not found
     get:
       tags: [Users]
       summary: Get all users with filters
@@ -1137,6 +1361,8 @@ paths:
           description: Preferences updated successfully
 
 tags:
+  - name: Upload
+    description: File upload and management (Backblaze B2)
   - name: Authentication
     description: User authentication and registration
   - name: Users
