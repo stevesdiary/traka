@@ -148,6 +148,10 @@ export class RiderService {
     return await this.riderRepository.updateStatus(userId, status);
   }
 
+  async updateAvailability(userId: string, isAvailable: boolean): Promise<RiderModel> {
+    return await this.riderRepository.updateAvailability(userId, isAvailable);
+  }
+
   async canReceiveOrders(userId: string): Promise<boolean> {
     const profile = await this.getRiderProfile(userId);
     return (

@@ -114,6 +114,17 @@ export class RiderController {
     }
   };
 
+  updateAvailability = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { is_available } = req.body;
+      const rider = await this.riderService.updateAvailability(userId, is_available);
+      res.json(rider);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update availability' });
+    }
+  };
+
   checkOrderEligibility = async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;

@@ -38,7 +38,7 @@ export class RiderModel extends Model {
   license_number!: string;
 
   @Column({
-    type: DataType.ENUM('BICYCLE', 'MOTORCYCLE', 'CAR', 'VAN', 'TRUCK'),
+    type: DataType.ENUM('BICYCLE', 'MOTORCYCLE'),
     allowNull: false
   })
   vehicle_type!: string;
@@ -114,7 +114,7 @@ export interface RiderProfile {
   user_id: string;
   business_id?: string;
   license_number: string;
-  vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
+  vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
   vehicle_plate: string;
   profile_photo?: string;
   license_photo?: string;
@@ -135,7 +135,7 @@ export interface RiderRegistration {
   email: string;
   password: string;
   license_number: string;
-  vehicle_type: 'BICYCLE' | 'MOTORCYCLE' | 'CAR' | 'VAN' | 'TRUCK';
+  vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
   vehicle_plate: string;
   business_id?: string;
 }

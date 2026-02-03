@@ -96,6 +96,12 @@ export class RiderRepository extends BaseRepository<RiderModel> {
     return this.getRiderByUserId(userId) as Promise<RiderModel>;
   }
 
+  async updateAvailability(userId: string, is_available: boolean): Promise<RiderModel> {
+    const status: RiderProfile['status'] = is_available ? 'AVAILABLE' : 'OFFLINE';
+    await this.model.update({ is_available, status }, { where: { user_id: userId } });
+    return this.getRiderByUserId(userId) as Promise<RiderModel>;
+  }
+
   async getUniqueTenants(): Promise<any[]> {
     return this.model.findAll({
       attributes: ['business_id'],
