@@ -1,37 +1,68 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import B2 from 'backblaze-b2';
 import { randomUUID } from 'crypto';
 import logger from '../utils/logger.js';
 
+interface B2Config {
+  applicationKeyId: string;
+  applicationKey: string;
+  bucketName: string;
+  bucketId?: string;
+}
+
 class StorageService {
-  private s3Client: S3Client;
+  private b2: B2;
   private bucketName: string;
+  private bucketId: string | null = null;
+  private downloadUrl: string | null = null;
   private enabled: boolean;
 
   constructor() {
-    const endpoint = process.env.B2_ENDPOINT;
     const keyId = process.env.B2_KEY_ID;
     const applicationKey = process.env.B2_APPLICATION_KEY;
     this.bucketName = process.env.B2_BUCKET_NAME || '';
 
-    this.enabled = !!(endpoint && keyId && applicationKey && this.bucketName);
+    this.enabled = !!(keyId && applicationKey && this.bucketName);
 
     if (!this.enabled) {
       logger.warn('Backblaze B2 not configured. File storage disabled.');
-      this.s3Client = {} as S3Client;
+      this.b2 = {} as B2;
       return;
     }
 
-    this.s3Client = new S3Client({
-      endpoint,
-      region: 'us-west-000',
-      credentials: {
-        accessKeyId: keyId!,
-        secretAccessKey: applicationKey!
-      }
+    this.b2 = new B2({
+      applicationKeyId: keyId!,
+      applicationKey: applicationKey!,
     });
 
     logger.info('Backblaze B2 storage initialized');
+  }
+
+  private async initialize() {
+    if (!this.bucketId) {
+      try {
+        logger.info('Attempting B2 authorization', { 
+          keyId: process.env.B2_KEY_ID?.substring(0, 10) + '...', 
+          keyLength: process.env.B2_APPLICATION_KEY?.length 
+        });
+        await this.b2.authorize();
+        const response = await this.b2.listBuckets();
+        const bucket = response.data.buckets.find(
+          (b: any) => b.bucketName === this.bucketName
+        );
+        if (!bucket) throw new Error(`Bucket ${this.bucketName} not found`);
+        this.bucketId = bucket.bucketId;
+        this.downloadUrl = response.data.downloadUrl;
+        logger.info('B2 authorization successful');
+      } catch (error: any) {
+        logger.error('B2 authorization failed', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          message: error.message,
+          code: error.code
+        });
+        throw error;
+      }
+    }
   }
 
   async uploadFile(file: Express.Multer.File, folder: string): Promise<string> {
@@ -39,53 +70,88 @@ class StorageService {
       throw new Error('Storage service not configured');
     }
 
+    await this.initialize();
+
     const ext = file.originalname.split('.').pop();
-    const key = `${folder}/${randomUUID()}.${ext}`;
+    const fileName = `${folder}/${randomUUID()}.${ext}`;
 
-    await this.s3Client.send(new PutObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype
-    }));
+    try {
+      const uploadUrl = await this.b2.getUploadUrl({ bucketId: this.bucketId! });
 
-    logger.info('File uploaded', { key, size: file.size });
-    return key;
+      await this.b2.uploadFile({
+        uploadUrl: uploadUrl.data.uploadUrl,
+        uploadAuthToken: uploadUrl.data.authorizationToken,
+        fileName,
+        data: file.buffer,
+        mime: file.mimetype,
+      });
+
+      logger.info('File uploaded', { fileName, size: file.size });
+      return fileName;
+    } catch (error: any) {
+      logger.error('Storage upload failed', {
+        error: error?.message || String(error),
+        code: error?.name
+      });
+      throw new Error('File upload failed. Please try again later.');
+    }
   }
 
-  async deleteFile(key: string): Promise<void> {
+  async deleteFile(fileName: string): Promise<void> {
     if (!this.enabled) return;
 
     try {
-      await this.s3Client.send(new DeleteObjectCommand({
-        Bucket: this.bucketName,
-        Key: key
-      }));
-      logger.info('File deleted', { key });
+      await this.initialize();
+
+      const fileInfo = await this.b2.listFileNames({
+        bucketId: this.bucketId!,
+        startFileName: fileName,
+        maxFileCount: 1,
+        delimiter: '',
+        prefix: ''
+      });
+
+      const file = fileInfo.data.files.find((f: any) => f.fileName === fileName);
+      if (!file) {
+        logger.warn('File not found for deletion', { fileName });
+        return;
+      }
+
+      await this.b2.deleteFileVersion({
+        fileId: file.fileId,
+        fileName: file.fileName,
+      });
+
+      logger.info('File deleted', { fileName });
     } catch (error) {
       logger.error('Failed to delete file', {
-        key,
+        fileName,
         error: error instanceof Error ? error.message : String(error)
       });
     }
   }
 
-  async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
+  async getSignedUrl(fileName: string, expiresIn = 3600): Promise<string> {
     if (!this.enabled) {
       throw new Error('Storage service not configured');
     }
 
-    const command = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key
+    await this.initialize();
+
+    const auth = await this.b2.getDownloadAuthorization({
+      bucketId: this.bucketId!,
+      fileNamePrefix: fileName,
+      validDurationInSeconds: expiresIn,
     });
 
-    return await getSignedUrl(this.s3Client, command, { expiresIn });
+    return `${this.downloadUrl}/file/${this.bucketName}/${fileName}?Authorization=${auth.data.authorizationToken}`;
   }
 
-  getPublicUrl(key: string): string {
-    const endpoint = process.env.B2_ENDPOINT || '';
-    return `${endpoint}/${this.bucketName}/${key}`;
+  getPublicUrl(fileName: string): string {
+    if (!this.downloadUrl) {
+      return `https://f000.backblazeb2.com/file/${this.bucketName}/${fileName}`;
+    }
+    return `${this.downloadUrl}/file/${this.bucketName}/${fileName}`;
   }
 
   isEnabled(): boolean {

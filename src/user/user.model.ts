@@ -75,4 +75,10 @@ export class UserModel extends Model <UserModel> {
     defaultValue: false
   })
   declare phone_verified: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true
+  })
+  declare profile_photo?: string;
 }

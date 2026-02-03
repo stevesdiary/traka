@@ -324,6 +324,19 @@ export const UpdateStatusSchema = Joi.object({
   })
 });
 
+export const UpdateAvailabilitySchema = Joi.object({
+  is_available: Joi.boolean().required().messages({
+    'any.required': 'Availability flag is required'
+  })
+});
+
+export const ProfilePhotoUpdateSchema = Joi.object({
+  profile_photo: Joi.string().uri().required().messages({
+    'string.uri': 'Profile photo must be a valid URL',
+    'any.required': 'Profile photo URL is required'
+  })
+});
+
 // Rider Profile Schemas
 export const UpdateRiderProfileSchema = Joi.object({
   first_name: Joi.string().min(2).optional().messages({

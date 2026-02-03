@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import storageService from './storage.service.js';
+import imageProcessing from './image-processing.service.js';
+import logger from '../utils/logger.js';
 
 export class UploadController {
   uploadProfilePicture = async (req: Request, res: Response): Promise<void> => {
@@ -9,12 +11,17 @@ export class UploadController {
         return;
       }
 
+      // Optimize image for web
+      const optimizedBuffer = await imageProcessing.optimizeForWeb(req.file.buffer);
+      req.file.buffer = optimizedBuffer;
+
       const key = await storageService.uploadFile(req.file, 'profiles');
       const url = storageService.getPublicUrl(key);
 
       res.json({ key, url });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Upload failed' });
+      logger.error('Profile upload failed', { error: error.message, stack: error.stack });
+      res.status(500).json({ error: 'Upload failed. Please try again later.', details: error.message });
     }
   };
 
@@ -25,12 +32,16 @@ export class UploadController {
         return;
       }
 
+      // Optimize image for web
+      const optimizedBuffer = await imageProcessing.optimizeForWeb(req.file.buffer);
+      req.file.buffer = optimizedBuffer;
+
       const key = await storageService.uploadFile(req.file, 'vehicles');
       const url = storageService.getPublicUrl(key);
 
       res.json({ key, url });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Upload failed' });
+      res.status(500).json({ error: 'Upload failed. Please try again later.' });
     }
   };
 
@@ -41,12 +52,16 @@ export class UploadController {
         return;
       }
 
+      // Optimize image for web
+      const optimizedBuffer = await imageProcessing.optimizeForWeb(req.file.buffer);
+      req.file.buffer = optimizedBuffer;
+
       const key = await storageService.uploadFile(req.file, 'packages');
       const url = storageService.getPublicUrl(key);
 
       res.json({ key, url });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Upload failed' });
+      res.status(500).json({ error: 'Upload failed. Please try again later.' });
     }
   };
 
@@ -62,7 +77,7 @@ export class UploadController {
 
       res.json({ key, url });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Upload failed' });
+      res.status(500).json({ error: 'Upload failed. Please try again later.' });
     }
   };
 
@@ -73,7 +88,7 @@ export class UploadController {
 
       res.json({ url });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to generate URL' });
+      res.status(500).json({ error: 'Failed to generate URL. Please try again later.' });
     }
   };
 
@@ -84,7 +99,7 @@ export class UploadController {
 
       res.json({ message: 'File deleted successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Delete failed' });
+      res.status(500).json({ error: 'Delete failed. Please try again later.' });
     }
   };
 }
