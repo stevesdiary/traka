@@ -51,7 +51,8 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         last_name: user.last_name,
         phone: user.phone,
         email_verified: user.email_verified,
-        phone_verified: user.phone_verified
+        phone_verified: user.phone_verified,
+        profile_photo: user.profile_photo
       }
     });
   } catch {

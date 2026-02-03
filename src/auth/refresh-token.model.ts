@@ -17,26 +17,26 @@ export class RefreshTokenModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  token_hash!: string;
+  declare token_hash: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  expires_at!: Date;
+  declare expires_at: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: true
   })
-  revoked_at?: Date;
+  declare revoked_at: Date | null;
 
   @BelongsTo(() => UserModel)
   user!: UserModel;

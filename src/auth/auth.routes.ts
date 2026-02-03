@@ -20,12 +20,15 @@ import {
   PasswordResetRequestSchema,
   PasswordResetConfirmSchema,
   UpdatePasswordSchema,
+  ProfilePhotoUpdateSchema,
 } from "../utils/validators.js";
 import { AuthService } from "./auth.service.js";
 import { Request, Response } from "express";
+import { UserRepository } from "../user/user.repository.js";
 
 const router: Router = Router();
 const authService = new AuthService();
+const userRepository = new UserRepository();
 
 // Authentication
 router.post("/login", validateInput(LoginSchema), login);
@@ -102,6 +105,23 @@ router.put(
       res.json({ message: 'Password updated successfully' });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// Profile photo update
+router.put(
+  "/me/profile-photo",
+  authenticateToken,
+  validateInput(ProfilePhotoUpdateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { profile_photo } = req.body;
+      const updated = await userRepository.updateById(userId, { profile_photo });
+      res.json({ message: 'Profile photo updated', profile_photo });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to update profile photo' });
     }
   }
 );
