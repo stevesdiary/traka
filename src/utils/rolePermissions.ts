@@ -2,6 +2,7 @@ export enum Role {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
+  BUSINESS_OWNER = 'BUSINESS_OWNER',
   RIDER = 'RIDER',
   USER = 'USER'
 }
@@ -11,7 +12,8 @@ export enum Action {
   READ = 'READ',
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',
-  DELETE = 'DELETE'
+  DELETE = 'DELETE',
+  HARD_DELETE = 'HARD_DELETE'
 }
 
 export enum Resource {
@@ -33,7 +35,7 @@ export const ROLE_PERMISSIONS: Record<Role, Partial<RolePermissions>> = {
     [Resource.USER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
     [Resource.TENANT]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
     [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
-    [Resource.RIDER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
+    [Resource.RIDER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE, Action.HARD_DELETE],
     [Resource.DASHBOARD]: [Action.READ],
     [Resource.SYSTEM]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
     [Resource.PROMOTION]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE]
@@ -50,9 +52,23 @@ export const ROLE_PERMISSIONS: Record<Role, Partial<RolePermissions>> = {
   },
   
   [Role.MANAGER]: {
-    [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE],
-    [Resource.RIDER]: [Action.READ],
-    [Resource.DASHBOARD]: [Action.READ]
+    [Resource.USER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.TENANT]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
+    [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.RIDER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
+    [Resource.DASHBOARD]: [Action.READ],
+    [Resource.SYSTEM]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.PROMOTION]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE]
+  },
+
+  [Role.BUSINESS_OWNER]: {
+    [Resource.USER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.TENANT]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
+    [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.RIDER]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE, Action.APPROVE],
+    [Resource.DASHBOARD]: [Action.READ],
+    [Resource.SYSTEM]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE],
+    [Resource.PROMOTION]: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE]
   },
   
   [Role.RIDER]: {
@@ -90,5 +106,9 @@ export class PermissionService {
   
   static canDelete(role: Role, resource: Resource): boolean {
     return this.hasPermission(role, resource, Action.DELETE);
+  }
+
+  static canHardDelete(role: Role, resource: Resource): boolean {
+    return this.hasPermission(role, resource, Action.HARD_DELETE);
   }
 }
