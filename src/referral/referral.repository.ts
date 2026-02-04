@@ -57,7 +57,7 @@ export class ReferralRepository {
   async getReferralsByReferrer(referrerId: string): Promise<ReferralModel[]> {
     return await ReferralModel.findAll({
       where: { referrer_rider_id: referrerId },
-      order: [['created_at', 'DESC']]
+      order: [['createdAt', 'DESC']]
     });
   }
 }

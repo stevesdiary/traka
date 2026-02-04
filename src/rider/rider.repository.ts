@@ -14,7 +14,7 @@ export class RiderRepository extends BaseRepository<RiderModel> {
 
   private async generateUniqueRiderId(): Promise<string> {
     const lastRider = await this.model.findOne({
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       attributes: ['rider_id']
     });
 
