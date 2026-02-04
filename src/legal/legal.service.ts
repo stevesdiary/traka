@@ -16,70 +16,74 @@ export class LegalService {
   }
 
   async seedLegalContent(): Promise<void> {
-    const existingContent = await this.legalRepository.count();
-    if (existingContent > 0) return;
+    const existingFaqs = await this.legalRepository.findByType('FAQ');
+    const existingTerms = await this.legalRepository.findLatestByType('TERMS_OF_SERVICE');
+    const existingPolicy = await this.legalRepository.findLatestByType('COMMISSION_POLICY');
 
     const legalContent = [
-      // FAQ - General
-      {
-        type: 'FAQ',
-        category: 'General',
-        title: 'What is TRAKA?',
-        content: 'TRAKA is a comprehensive logistics and package tracking platform that connects businesses, riders, and recipients for efficient delivery services.',
-        order_index: 1
-      },
-      {
-        type: 'FAQ',
-        category: 'General',
-        title: 'How do I track my package?',
-        content: 'You can track your package using the tracking number provided. Enter it on our tracking page or use the mobile app for real-time updates.',
-        order_index: 2
-      },
-      
-      // FAQ - Riders
-      {
-        type: 'FAQ',
-        category: 'Riders',
-        title: 'How do rider commissions work?',
-        content: 'TRAKA deducts a 20% service fee from every completed delivery. For digital payments, you receive 80% in your wallet. For cash collections, the 20% commission creates a debt in your wallet.',
-        order_index: 1
-      },
-      {
-        type: 'FAQ',
-        category: 'Riders',
-        title: 'What is the wallet credit limit?',
-        content: 'Every rider has a ₦2,000 credit limit. If your negative balance exceeds this limit, your account will be suspended until repayment is made.',
-        order_index: 2
-      },
-      {
-        type: 'FAQ',
-        category: 'Riders',
-        title: 'How are negative balances cleared?',
-        content: 'Negative balances are automatically cleared using earnings from your future digital payment orders. You can also make manual payments to clear debt faster.',
-        order_index: 3
-      },
+      ...(existingFaqs.length === 0 ? [
+        // FAQ - General
+        {
+          type: 'FAQ',
+          category: 'General',
+          title: 'What is TRAKA?',
+          content: 'TRAKA is a comprehensive logistics and package tracking platform that connects businesses, riders, and recipients for efficient delivery services.',
+          order_index: 1
+        },
+        {
+          type: 'FAQ',
+          category: 'General',
+          title: 'How do I track my package?',
+          content: 'You can track your package using the tracking number provided. Enter it on our tracking page or use the mobile app for real-time updates.',
+          order_index: 2
+        },
+        
+        // FAQ - Riders
+        {
+          type: 'FAQ',
+          category: 'Riders',
+          title: 'How do rider commissions work?',
+          content: 'TRAKA deducts a 20% service fee from every completed delivery. For digital payments, you receive 80% in your wallet. For cash collections, the 20% commission creates a debt in your wallet.',
+          order_index: 1
+        },
+        {
+          type: 'FAQ',
+          category: 'Riders',
+          title: 'What is the wallet credit limit?',
+          content: 'Every rider has a ₦2,000 credit limit. If your negative balance exceeds this limit, your account will be suspended until repayment is made.',
+          order_index: 2
+        },
+        {
+          type: 'FAQ',
+          category: 'Riders',
+          title: 'How are negative balances cleared?',
+          content: 'Negative balances are automatically cleared using earnings from your future digital payment orders. You can also make manual payments to clear debt faster.',
+          order_index: 3
+        },
 
-      // FAQ - Businesses
-      {
-        type: 'FAQ',
-        category: 'Businesses',
-        title: 'How does business billing work?',
-        content: 'Businesses maintain a prepaid wallet balance. Platform fees (15%) are deducted in real-time per delivery. Auto-recharge triggers when balance drops below threshold.',
-        order_index: 1
-      },
-      {
-        type: 'FAQ',
-        category: 'Businesses',
-        title: 'How do I get verified as a business?',
-        content: 'After registration, submit your business documents for admin review. Verification typically takes 1-3 business days.',
-        order_index: 2
-      },
+        // FAQ - Businesses
+        {
+          type: 'FAQ',
+          category: 'Businesses',
+          title: 'How does business billing work?',
+          content: 'Businesses maintain a prepaid wallet balance. Platform fees (15%) are deducted in real-time per delivery. Auto-recharge triggers when balance drops below threshold.',
+          order_index: 1
+        },
+        {
+          type: 'FAQ',
+          category: 'Businesses',
+          title: 'How do I get verified as a business?',
+          content: 'After registration, submit your business documents for admin review. Verification typically takes 1-3 business days.',
+          order_index: 2
+        }
+      ] : []),
 
-      // Terms of Service
-      {
-        type: 'TERMS_OF_SERVICE',
-        title: 'TRAKA Terms of Service',
-        content: `
+      ...(existingTerms ? [] : [
+        // Terms of Service
+        {
+          type: 'TERMS_OF_SERVICE',
+          title: 'TRAKA Terms of Service',
+          content: `
 # TRAKA TERMS OF SERVICE
 
 ## 1. ACCEPTANCE OF TERMS
@@ -120,15 +124,17 @@ These terms are governed by the laws of Nigeria.
 
 Last updated: ${new Date().toISOString().split('T')[0]}
         `,
-        order_index: 1,
-        content_version: '1.0.0'
-      },
+          order_index: 1,
+          content_version: '1.0.0'
+        }
+      ]),
 
-      // Commission Policy
-      {
-        type: 'COMMISSION_POLICY',
-        title: 'TRAKA Commission & Wallet Policy',
-        content: `
+      ...(existingPolicy ? [] : [
+        // Commission Policy
+        {
+          type: 'COMMISSION_POLICY',
+          title: 'TRAKA Commission & Wallet Policy',
+          content: `
 # COMMISSION & WALLET SETTLEMENT POLICY
 
 ## Commission Structure
@@ -173,10 +179,13 @@ Contact support within 48 hours of any transaction disputes.
 
 Effective Date: ${new Date().toISOString().split('T')[0]}
         `,
-        order_index: 1,
-        content_version: '1.0.0'
-      }
+          order_index: 1,
+          content_version: '1.0.0'
+        }
+      ])
     ];
+
+    if (legalContent.length === 0) return;
 
     await this.legalRepository.bulkCreate(legalContent);
   }

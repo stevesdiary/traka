@@ -97,7 +97,7 @@ export class QuoteService {
   async getUserQuotes(user_id: string, limit: number = 10): Promise<QuoteModel[]> {
     return await QuoteModel.findAll({
       where: { created_by_user_id: user_id },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit
     });
   }
@@ -105,7 +105,7 @@ export class QuoteService {
   async getAnonymousQuotes(session_id: string, limit: number = 10): Promise<QuoteModel[]> {
     return await QuoteModel.findAll({
       where: { anonymous_session_id: session_id },
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit
     });
   }
