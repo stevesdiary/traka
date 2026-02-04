@@ -28,6 +28,13 @@ import businessRoutes from './business/business.routes.js';
 
 const router: Router = Router();
 
+router.get('/', (req, res) => {
+  res.json({
+    message: 'TRAKA API',
+    docs: '/api-docs'
+  });
+});
+
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/packages', packageRoutes);

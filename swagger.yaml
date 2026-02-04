@@ -8,7 +8,7 @@ info:
     email: support@traka.com
 
 servers:
-  - url: http://localhost:3000/api
+  - url: http://localhost:4000/api
     description: Development server
   - url: https://api.traka.com/api
     description: Production server
@@ -117,7 +117,112 @@ components:
           type: number
           format: decimal
 
+    RiderProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        rider_id:
+          type: string
+          description: Unique rider identifier
+        user_id:
+          type: string
+          format: uuid
+        business_id:
+          type: string
+          format: uuid
+          nullable: true
+        license_number:
+          type: string
+        vehicle_type:
+          type: string
+          enum: [BICYCLE, MOTORCYCLE]
+        vehicle_plate:
+          type: string
+        profile_photo:
+          type: string
+          nullable: true
+        license_photo:
+          type: string
+          nullable: true
+        vehicle_photo:
+          type: string
+          nullable: true
+        verification_status:
+          type: string
+          enum: [PENDING, VERIFIED, REJECTED]
+        is_available:
+          type: boolean
+        rider_type:
+          type: string
+          enum: [INDEPENDENT, BUSINESS_MANAGED]
+        status:
+          type: string
+          enum: [AVAILABLE, BUSY, OFFLINE]
+        current_latitude:
+          type: number
+          nullable: true
+        current_longitude:
+          type: number
+          nullable: true
+        avg_rating:
+          type: number
+          nullable: true
+        total_ratings:
+          type: integer
+          nullable: true
+        user:
+          type: object
+          properties:
+            first_name:
+              type: string
+            last_name:
+              type: string
+            phone:
+              type: string
+            email:
+              type: string
+
 paths:
+  /:
+    get:
+      tags: [System]
+      summary: API root
+      description: Basic API root response.
+      responses:
+        '200':
+          description: API root response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  docs:
+                    type: string
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      servers:
+        - url: http://localhost:4000
+          description: Development server (root)
+        - url: https://api.traka.com
+          description: Production server (root)
+      responses:
+        '200':
+          description: API health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
   # Authentication
   /auth/login:
     post:
@@ -144,12 +249,42 @@ paths:
               schema:
                 type: object
                 properties:
+                  message:
+                    type: string
+                    example: Login successful
                   token:
                     type: string
-                  user:
-                    $ref: '#/components/schemas/User'
         '401':
           description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+        '401':
+          description: Unauthorized
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Unauthorized
 
   /auth/register/customer:
     post:
@@ -161,7 +296,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password, full_name, phone]
+              required: [email, password, first_name, last_name, phone]
               properties:
                 email:
                   type: string
@@ -169,7 +304,9 @@ paths:
                 password:
                   type: string
                   minLength: 6
-                full_name:
+                first_name:
+                  type: string
+                last_name:
                   type: string
                 phone:
                   type: string
@@ -244,7 +381,7 @@ paths:
                   example: LIC-12345
                 vehicle_type:
                   type: string
-                  enum: [BICYCLE, MOTORCYCLE, CAR, VAN, TRUCK]
+                  enum: [BICYCLE, MOTORCYCLE]
                   example: MOTORCYCLE
                 vehicle_plate:
                   type: string
@@ -314,6 +451,336 @@ paths:
         '500':
           description: Internal server error
 
+  /auth/register/admin:
+    post:
+      tags: [Authentication]
+      summary: Register an admin user (Super Admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                role:
+                  type: string
+                  enum: [ADMIN, MANAGER]
+      responses:
+        '201':
+          description: Admin registered successfully
+        '401':
+          description: Unauthorized
+
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Legacy registration endpoint
+      description: Backward-compatible registration endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Registration successful
+
+  /auth/password/reset-request:
+    post:
+      tags: [Authentication]
+      summary: Request password reset code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Reset code sent
+        '400':
+          description: Validation error
+
+  /auth/password/reset-confirm:
+    post:
+      tags: [Authentication]
+      summary: Confirm password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, new_password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password reset successfully
+        '400':
+          description: Validation error
+
+  /auth/password/update:
+    put:
+      tags: [Authentication]
+      summary: Update password for authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, new_password]
+              properties:
+                current_password:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 6
+      responses:
+        '200':
+          description: Password updated
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+  # Rider Profile & Availability
+  /riders/profile:
+    get:
+      tags: [Riders]
+      summary: Get rider profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Rider profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '404':
+          description: Rider profile not found
+        '401':
+          description: Unauthorized
+    put:
+      tags: [Riders]
+      summary: Update rider profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                phone:
+                  type: string
+                vehicle_type:
+                  type: string
+                  enum: [BICYCLE, MOTORCYCLE]
+                license_number:
+                  type: string
+                vehicle_plate:
+                  type: string
+                profile_photo:
+                  type: string
+                license_photo:
+                  type: string
+                vehicle_photo:
+                  type: string
+      responses:
+        '200':
+          description: Rider profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+  /riders/availability:
+    put:
+      tags: [Riders]
+      summary: Update rider availability (online/offline)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_available]
+              properties:
+                is_available:
+                  type: boolean
+      responses:
+        '200':
+          description: Availability updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+  /riders/status:
+    put:
+      tags: [Riders]
+      summary: Update rider status (AVAILABLE, BUSY, OFFLINE)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [AVAILABLE, BUSY, OFFLINE]
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+  /riders/location:
+    put:
+      tags: [Riders]
+      summary: Update rider location
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [latitude, longitude]
+              properties:
+                latitude:
+                  type: number
+                  minimum: -90
+                  maximum: 90
+                longitude:
+                  type: number
+                  minimum: -180
+                  maximum: 180
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
+  /riders/eligibility:
+    get:
+      tags: [Riders]
+      summary: Check if rider can receive orders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Eligibility status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eligible:
+                    type: boolean
+        '401':
+          description: Unauthorized
+
+  /riders/register:
+    post:
+      tags: [Riders]
+      summary: Create rider profile for an authenticated user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vehicle_type]
+              properties:
+                license_number:
+                  type: string
+                vehicle_type:
+                  type: string
+                  enum: [BICYCLE, MOTORCYCLE]
+                vehicle_plate:
+                  type: string
+                business_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Rider profile created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  profile:
+                    $ref: '#/components/schemas/RiderProfile'
+        '400':
+          description: Validation error
+        '401':
+          description: Unauthorized
+
   # Package Management
   /packages:
     post:
@@ -351,23 +818,23 @@ paths:
                 delivery_speed:
                   type: string
                   enum: [STANDARD, EXPRESS, SAME_DAY]
+                category:
+                  type: string
+                  enum: [FOOD, SHOES, ELECTRONICS, CLOTHING, JEWELRY_VALUABLES, GROCERIES, DOCUMENTS, HEALTH_PHARMACEUTICALS, CONSTRUCTION_MATERIALS, HOUSEHOLD_ITEMS, OTHERS]
+                is_fragile:
+                  type: boolean
       responses:
         '201':
           description: Package created successfully
 
-  /packages/{tracking_number}:
+  /packages/track/{tracking_number}:
     get:
       tags: [Packages]
-      summary: Track package
+      summary: Track package (public)
       parameters:
         - name: tracking_number
           in: path
           required: true
-          schema:
-            type: string
-        - name: token
-          in: query
-          description: Guest tracking token
           schema:
             type: string
       responses:
@@ -377,6 +844,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Package'
+        '404':
+          description: Package not found
+
+  /packages/{tracking_number}:
+    get:
+      tags: [Packages]
+      summary: Get package by tracking number (authenticated)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tracking_number
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Package details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+        '401':
+          description: Unauthorized
 
   /packages/{id}/cancel:
     post:
@@ -405,6 +896,8 @@ paths:
                 cancellation_note:
                   type: string
                   minLength: 10
+                rider_has_package:
+                  type: boolean
       responses:
         '200':
           description: Package cancelled successfully
@@ -575,14 +1068,51 @@ paths:
         '201':
           description: Address created successfully
 
-  /addresses/{id}:
+  /addresses/default:
+    get:
+      tags: [Addresses]
+      summary: Get default address
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Default address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '404':
+          description: Default address not found
+
+  /addresses/{addressId}:
+    get:
+      tags: [Addresses]
+      summary: Get address by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '404':
+          description: Address not found
     put:
       tags: [Addresses]
       summary: Update address
       security:
         - BearerAuth: []
       parameters:
-        - name: id
+        - name: addressId
           in: path
           required: true
           schema:
@@ -613,7 +1143,7 @@ paths:
       security:
         - BearerAuth: []
       parameters:
-        - name: id
+        - name: addressId
           in: path
           required: true
           schema:
@@ -623,14 +1153,14 @@ paths:
         '200':
           description: Address deleted successfully
 
-  /addresses/{id}/default:
+  /addresses/{addressId}/default:
     put:
       tags: [Addresses]
       summary: Set default address
       security:
         - BearerAuth: []
       parameters:
-        - name: id
+        - name: addressId
           in: path
           required: true
           schema:
@@ -1115,6 +1645,8 @@ paths:
           description: Authentication required
         '404':
           description: User not found
+
+  /users:
     get:
       tags: [Users]
       summary: Get all users with filters
@@ -1147,41 +1679,113 @@ paths:
       responses:
         '200':
           description: Users retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  users:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                          format: uuid
-                        email:
-                          type: string
-                        role:
-                          type: string
-                        type:
-                          type: string
-                        tenant_id:
-                          type: string
-                          format: uuid
-                          nullable: true
-                        created_at:
-                          type: string
-                          format: date-time
-                        updated_at:
-                          type: string
-                          format: date-time
         '500':
           description: Failed to retrieve users
+    post:
+      tags: [Users]
+      summary: Create user
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 6
+                role:
+                  type: string
+                  enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER]
+      responses:
+        '201':
+          description: User created successfully
+        '400':
+          description: Validation error
+
+  /users/{user_id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User retrieved successfully
+        '404':
+          description: User not found
+    put:
+      tags: [Users]
+      summary: Update user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER]
+      responses:
+        '200':
+          description: User updated successfully
+        '400':
+          description: Validation error
+    delete:
+      tags: [Users]
+      summary: Delete user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted successfully
 
   # Tenants
+  /tenants:
+    get:
+      tags: [Tenants]
+      summary: Get all tenants
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Tenants retrieved successfully
+        '401':
+          description: Unauthorized
+
   /tenants/pending:
     get:
       tags: [Tenants]
@@ -1191,6 +1795,35 @@ paths:
       responses:
         '200':
           description: List of pending tenants
+
+  /tenants/active:
+    get:
+      tags: [Tenants]
+      summary: Get active tenants
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of active tenants
+
+  /tenants/{id}:
+    get:
+      tags: [Tenants]
+      summary: Get tenant by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tenant retrieved successfully
+        '404':
+          description: Tenant not found
 
   /tenants/{id}/approve:
     put:
@@ -1250,6 +1883,18 @@ paths:
       responses:
         '200':
           description: Commission Policy
+
+  /legal/seed:
+    post:
+      tags: [Legal]
+      summary: Seed legal content (Admin)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Legal content seeded
+        '401':
+          description: Unauthorized
 
   # Notifications
   /notifications:
@@ -1360,15 +2005,988 @@ paths:
         '200':
           description: Preferences updated successfully
 
+  /notifications/test-sms:
+    post:
+      tags: [Notifications]
+      summary: Send test SMS (dev/testing)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: SMS sent
+
+  # Dashboard
+  /dashboard/manager:
+    get:
+      tags: [Dashboard]
+      summary: Get tenant manager dashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Manager dashboard data
+
+  /dashboard/manager/riders:
+    get:
+      tags: [Dashboard]
+      summary: Get tenant riders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Riders retrieved successfully
+
+  /dashboard/manager/packages:
+    get:
+      tags: [Dashboard]
+      summary: Get tenant packages
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Packages retrieved successfully
+
+  /dashboard/admin:
+    get:
+      tags: [Dashboard]
+      summary: Get admin dashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Admin dashboard data
+
+  /dashboard/admin/tenants:
+    get:
+      tags: [Dashboard]
+      summary: Get all tenants (admin)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Tenants retrieved successfully
+
+  /dashboard/admin/analytics:
+    get:
+      tags: [Dashboard]
+      summary: Get platform analytics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Platform analytics data
+
+  # Verification
+  /verification/verify-email:
+    post:
+      tags: [Verification]
+      summary: Verify email with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email:
+                  type: string
+                  format: email
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: Email verified
+        '400':
+          description: Validation error
+
+  /verification/verify-phone:
+    post:
+      tags: [Verification]
+      summary: Verify phone with OTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: Phone verified
+        '400':
+          description: Validation error
+
+  /verification/resend-email:
+    post:
+      tags: [Verification]
+      summary: Resend email verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Verification email sent
+
+  /verification/resend-phone:
+    post:
+      tags: [Verification]
+      summary: Resend phone verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Verification SMS sent
+
+  /verification/trigger-delivery-code/{package_id}:
+    post:
+      tags: [Verification]
+      summary: Trigger delivery code email
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: package_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Delivery code sent
+        '400':
+          description: Failed to send delivery code
+
+  # Commissions
+  /commissions:
+    post:
+      tags: [Commissions]
+      summary: Create commission
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [package_id, rider_id, delivery_fee]
+              properties:
+                package_id:
+                  type: string
+                rider_id:
+                  type: string
+                delivery_fee:
+                  type: number
+      responses:
+        '201':
+          description: Commission created
+
+  /commissions/{commission_id}/pay:
+    put:
+      tags: [Commissions]
+      summary: Pay commission
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: commission_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_method:
+                  type: string
+                  enum: [BANK_TRANSFER, CASH, MOBILE_MONEY]
+                payment_reference:
+                  type: string
+      responses:
+        '200':
+          description: Commission paid
+
+  /commissions/driver/{driver_id}:
+    get:
+      tags: [Commissions]
+      summary: Get driver earnings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Driver earnings
+
+  /commissions/driver/{driver_id}/summary:
+    get:
+      tags: [Commissions]
+      summary: Get driver earnings summary
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: driver_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Earnings summary
+
+  # Riders (admin/business operations)
+  /riders/available:
+    get:
+      tags: [Riders]
+      summary: Get available riders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available riders
+
+  /riders/business/{business_id}:
+    get:
+      tags: [Riders]
+      summary: Get riders for a business
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Business riders
+
+  /riders/pending:
+    get:
+      tags: [Riders]
+      summary: Get pending rider verifications
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Pending riders
+
+  /riders/verify/{user_id}:
+    put:
+      tags: [Riders]
+      summary: Verify rider
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rider verified
+
+  /riders/deleted:
+    get:
+      tags: [Riders]
+      summary: Get deleted riders
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Deleted riders
+
+  /riders/{id}:
+    delete:
+      tags: [Riders]
+      summary: Soft delete rider
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rider deleted
+
+  /riders/{id}/restore:
+    post:
+      tags: [Riders]
+      summary: Restore soft-deleted rider
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rider restored
+
+  /riders/{id}/permanent:
+    delete:
+      tags: [Riders]
+      summary: Permanently delete rider
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rider permanently deleted
+
+  # Matching (additional)
+  /matching/couriers/{courierId}/state:
+    get:
+      tags: [Matching]
+      summary: Get courier state
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Courier state
+
+  /matching/offers/{courierId}/{requestId}/accept:
+    post:
+      tags: [Matching]
+      summary: Accept courier offer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Offer accepted
+
+  /matching/offers/{courierId}/{requestId}/reject:
+    post:
+      tags: [Matching]
+      summary: Reject courier offer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Offer rejected
+
+  /matching/debug/available-couriers:
+    get:
+      tags: [Matching]
+      summary: Debug available couriers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Available couriers
+
+  # Invoices
+  /invoices/generate:
+    post:
+      tags: [Invoices]
+      summary: Generate invoice for tenant
+      security:
+        - BearerAuth: []
+      responses:
+        '201':
+          description: Invoice generated
+
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: Get tenant invoices
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Invoices retrieved
+
+  /invoices/{invoiceId}/paid:
+    put:
+      tags: [Invoices]
+      summary: Mark invoice as paid
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice marked as paid
+
+  /invoices/overdue:
+    get:
+      tags: [Invoices]
+      summary: Get overdue invoices
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Overdue invoices
+
+  # Referrals
+  /referrals/my-code:
+    get:
+      tags: [Referrals]
+      summary: Get my referral code
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Referral code
+
+  /referrals/apply:
+    post:
+      tags: [Referrals]
+      summary: Apply referral code
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Referral applied
+
+  /referrals/update-code:
+    put:
+      tags: [Referrals]
+      summary: Update referral code
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Referral code updated
+
+  /referrals/stats:
+    get:
+      tags: [Referrals]
+      summary: Get referral stats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Referral stats
+
+  # Service Areas
+  /service-areas/cities:
+    get:
+      tags: [Service Areas]
+      summary: Get active cities
+      responses:
+        '200':
+          description: Active cities
+
+  /service-areas/check:
+    get:
+      tags: [Service Areas]
+      summary: Check service coverage
+      parameters:
+        - name: city
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Coverage status
+
+  /service-areas:
+    post:
+      tags: [Service Areas]
+      summary: Add service area
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Service area added
+
+  # Waitlist
+  /waitlist:
+    post:
+      tags: [Waitlist]
+      summary: Add to waitlist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Added to waitlist
+    get:
+      tags: [Waitlist]
+      summary: Get waitlist
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Waitlist entries
+
+  /waitlist/by-city:
+    get:
+      tags: [Waitlist]
+      summary: Get waitlist by city
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Waitlist by city
+
+  /waitlist/notify:
+    post:
+      tags: [Waitlist]
+      summary: Notify waitlist
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Notifications sent
+
+  # Pricing
+  /pricing/calculate:
+    post:
+      tags: [Pricing]
+      summary: Calculate delivery price
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pickup_address, delivery_address, package_size, delivery_speed]
+              properties:
+                pickup_address:
+                  type: string
+                delivery_address:
+                  type: string
+                package_size:
+                  type: string
+                  enum: [SMALL, MEDIUM, LARGE]
+                package_weight:
+                  type: number
+                delivery_speed:
+                  type: string
+                  enum: [STANDARD, EXPRESS, SAME_DAY]
+      responses:
+        '200':
+          description: Price calculated
+
+  # Fuel Price
+  /fuel-price/fuel-price:
+    get:
+      tags: [Fuel Price]
+      summary: Get fuel price
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Fuel price retrieved
+    put:
+      tags: [Fuel Price]
+      summary: Update fuel price
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [price_per_liter]
+              properties:
+                price_per_liter:
+                  type: number
+      responses:
+        '200':
+          description: Fuel price updated
+
+  # Quotes
+  /quotes:
+    post:
+      tags: [Quotes]
+      summary: Create quote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Quote created
+
+  /quotes/{quote_code}:
+    get:
+      tags: [Quotes]
+      summary: Get quote by code
+      parameters:
+        - name: quote_code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quote details
+
+  /quotes/user/my-quotes:
+    get:
+      tags: [Quotes]
+      summary: Get authenticated user quotes
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User quotes
+
+  /quotes/session/{session_id}:
+    get:
+      tags: [Quotes]
+      summary: Get anonymous quotes by session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session quotes
+
+  # Cash Payments
+  /cash-payments/packages/{package_id}/confirm-cash:
+    post:
+      tags: [Cash Payments]
+      summary: Confirm cash payment collected
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: package_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cash payment confirmed
+
+  /cash-payments/summary:
+    get:
+      tags: [Cash Payments]
+      summary: Get cash payment summary
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cash payment summary
+
+  # Promotions
+  /promotions:
+    post:
+      tags: [Promotions]
+      summary: Create promotion
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Promotion created
+    get:
+      tags: [Promotions]
+      summary: List promotions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Promotions retrieved
+
+  /promotions/{id}:
+    get:
+      tags: [Promotions]
+      summary: Get promotion by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Promotion details
+    put:
+      tags: [Promotions]
+      summary: Update promotion
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Promotion updated
+
+  /promotions/{id}/usages:
+    get:
+      tags: [Promotions]
+      summary: Get promotion usages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Promotion usages
+
+  /promotions/redeem:
+    post:
+      tags: [Promotions]
+      summary: Redeem promotion
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                amount:
+                  type: number
+                currency:
+                  type: string
+                package_id:
+                  type: string
+      responses:
+        '200':
+          description: Promotion redeemed
+
+  # Businesses
+  /businesses:
+    post:
+      tags: [Businesses]
+      summary: Create business
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [business_name]
+              properties:
+                business_name:
+                  type: string
+                business_address:
+                  type: string
+                contact_person:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: Business created
+    get:
+      tags: [Businesses]
+      summary: List businesses
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Businesses retrieved
+
+  /businesses/{business_id}:
+    patch:
+      tags: [Businesses]
+      summary: Update business
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: business_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Business updated
+
 tags:
+  - name: System
+    description: Health and root endpoints
   - name: Upload
     description: File upload and management (Backblaze B2)
   - name: Authentication
     description: User authentication and registration
+  - name: Verification
+    description: Email and phone verification workflows
   - name: Users
     description: User management and filtering
+  - name: Riders
+    description: Rider profile, status, and administration
   - name: Packages
     description: Package management, tracking, and cancellation
+  - name: Dashboard
+    description: Manager and admin dashboard data
+  - name: Commissions
+    description: Rider commissions and payouts
+  - name: Invoices
+    description: Tenant invoices and billing
+  - name: Referrals
+    description: Rider referral program
+  - name: Service Areas
+    description: Service coverage management
+  - name: Waitlist
+    description: Waitlist intake and notifications
+  - name: Pricing
+    description: Price calculation endpoints
+  - name: Fuel Price
+    description: Fuel price management
+  - name: Quotes
+    description: Quote generation and retrieval
+  - name: Cash Payments
+    description: Cash payment confirmations and summaries
+  - name: Promotions
+    description: Promotion codes and redemption
+  - name: Businesses
+    description: Business profiles and updates
   - name: Ratings
     description: Rider ratings and reviews
   - name: Addresses
