@@ -5,14 +5,16 @@ export class EncryptionService {
   private key: Buffer;
   private ivLength = 16;
   private authTagLength = 16;
+  private iterations = 100000;
+  private salt = 'salt';
 
   constructor() {
     const encryptionKey = process.env.ENCRYPTION_KEY;
     if (!encryptionKey) {
       throw new Error('ENCRYPTION_KEY not configured in environment');
     }
-    // Ensure key is 32 bytes for AES-256
-    this.key = crypto.scryptSync(encryptionKey, 'salt', 32);
+    // Derive 32-byte key for AES-256 using PBKDF2 (browser-compatible)
+    this.key = crypto.pbkdf2Sync(encryptionKey, this.salt, this.iterations, 32, 'sha256');
   }
 
   encrypt(data: any): string {
