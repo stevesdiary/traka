@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "include": [
+    "src/**/*",
+    "scripts/seed-legal.ts",
+    "migrations/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts/test-data/**/*",
+    "scripts/test-service-area.ts",
+    "scripts/seed-admins.ts",
+    "scripts/seed-service-areas.ts"
+  ]
+}

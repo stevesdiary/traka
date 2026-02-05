@@ -21,6 +21,7 @@
     "test": "NODE_ENV=test jest",
     "test:watch": "NODE_ENV=test jest --watch",
     "test:coverage": "NODE_ENV=test jest --coverage",
+    "test:integration": "NODE_ENV=test jest --testPathPattern=tests/integration",
     "lint": "biome lint src/",
     "lint:fix": "biome lint --write src/",
     "format": "biome format --write src/",
