@@ -24,4 +24,15 @@ export class TenantRepository extends BaseRepository<TenantModel> {
       order: [['createdAt', 'DESC']]
     });
   }
+
+  async findByIds(ids: string[]): Promise<TenantModel[]> {
+    return this.model.findAll({
+      where: { id: ids },
+      order: [['createdAt', 'DESC']]
+    });
+  }
+
+  async updateFields(id: string, updates: Partial<Tenant>): Promise<void> {
+    await this.model.update(updates, { where: { id } });
+  }
 }
