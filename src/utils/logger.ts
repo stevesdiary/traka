@@ -3,13 +3,30 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 
 const { combine, timestamp, errors, json, printf, colorize } = winston.format;
 
+const safeStringify = (value: unknown) => {
+  const seen = new WeakSet();
+  return JSON.stringify(
+    value,
+    (_key, val) => {
+      if (typeof val === 'object' && val !== null) {
+        if (seen.has(val)) {
+          return '[Circular]';
+        }
+        seen.add(val);
+      }
+      return val;
+    },
+    2
+  );
+};
+
 // Custom format for development (human-readable)
 const devFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
   let log = `${timestamp} [${level}]: ${message}`;
 
   // Add metadata if present
   if (Object.keys(metadata).length > 0) {
-    log += `\n${JSON.stringify(metadata, null, 2)}`;
+    log += `\n${safeStringify(metadata)}`;
   }
 
   // Add stack trace for errors
