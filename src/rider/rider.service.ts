@@ -8,6 +8,38 @@ export class RiderService {
     this.riderRepository = new RiderRepository();
   }
 
+  private async attachRatingStats(rider: RiderModel): Promise<RiderModel> {
+    const { RatingRepository } = await import("../rating/rating.repository.js");
+    const ratingRepo = new RatingRepository();
+    const stats = await ratingRepo.getRiderStats(rider.user_id);
+
+    return {
+      ...rider.toJSON(),
+      avg_rating: stats.avgRating,
+      total_ratings: stats.totalRatings,
+    } as any;
+  }
+
+  private async syncCourierPresence(
+    rider: RiderModel,
+    status: RiderProfile["status"],
+  ): Promise<void> {
+    const { CourierPresenceService } = await import(
+      "../matching/services/CourierPresenceService.js"
+    );
+
+    try {
+      if (status === "OFFLINE") {
+        await CourierPresenceService.removeCourier(rider.id);
+        return;
+      }
+
+      await CourierPresenceService.updateCourierStatus(rider.id, status);
+    } catch (error) {
+      console.error("Failed to sync courier presence", error);
+    }
+  }
+
   async registerRider(
     registration: RiderRegistration,
     userId: string,
@@ -63,30 +95,14 @@ export class RiderService {
     const rider = await this.riderRepository.getRiderByUserId(userId);
     if (!rider) return null;
 
-    const { RatingRepository } = await import("../rating/rating.repository.js");
-    const ratingRepo = new RatingRepository();
-    const stats = await ratingRepo.getRiderStats(rider.user_id);
-
-    return {
-      ...rider.toJSON(),
-      avg_rating: stats.avgRating,
-      total_ratings: stats.totalRatings,
-    } as any;
+    return await this.attachRatingStats(rider);
   }
 
   async getRiderById(riderId: string): Promise<RiderModel | null> {
     const rider = await this.riderRepository.findByRiderId(riderId);
     if (!rider) return null;
 
-    const { RatingRepository } = await import("../rating/rating.repository.js");
-    const ratingRepo = new RatingRepository();
-    const stats = await ratingRepo.getRiderStats(rider.user_id);
-
-    return {
-      ...rider.toJSON(),
-      avg_rating: stats.avgRating,
-      total_ratings: stats.totalRatings,
-    } as any;
+    return await this.attachRatingStats(rider);
   }
 
   async updateProfile(
@@ -94,10 +110,11 @@ export class RiderService {
     updates: Partial<RiderProfile>,
   ): Promise<RiderModel> {
     const { verification_status, ...allowedUpdates } = updates;
-    return await this.riderRepository.updateRiderProfile(
+    const rider = await this.riderRepository.updateRiderProfile(
       userId,
       allowedUpdates,
     );
+    return await this.attachRatingStats(rider);
   }
 
   async verifyRider(userId: string, approved: boolean): Promise<RiderModel> {
@@ -108,13 +125,14 @@ export class RiderService {
     );
 
     if (approved) {
-      await this.riderRepository.updateRiderProfile(userId, {
+      const rider = await this.riderRepository.updateRiderProfile(userId, {
         is_available: true,
         status: "AVAILABLE",
       });
+      await this.syncCourierPresence(rider, "AVAILABLE");
     }
 
-    return profile;
+    return await this.attachRatingStats(profile);
   }
 
   async getPendingVerifications(businessId?: string): Promise<RiderModel[]> {
@@ -134,22 +152,27 @@ export class RiderService {
     latitude: number,
     longitude: number,
   ): Promise<RiderModel> {
-    return await this.riderRepository.updateLocation(
+    const rider = await this.riderRepository.updateLocation(
       userId,
       latitude,
       longitude,
     );
+    return await this.attachRatingStats(rider);
   }
 
   async updateStatus(
     userId: string,
     status: RiderProfile["status"],
   ): Promise<RiderModel> {
-    return await this.riderRepository.updateStatus(userId, status);
+    const rider = await this.riderRepository.updateStatus(userId, status);
+    await this.syncCourierPresence(rider, status);
+    return await this.attachRatingStats(rider);
   }
 
   async updateAvailability(userId: string, isAvailable: boolean): Promise<RiderModel> {
-    return await this.riderRepository.updateAvailability(userId, isAvailable);
+    const rider = await this.riderRepository.updateAvailability(userId, isAvailable);
+    await this.syncCourierPresence(rider, isAvailable ? "AVAILABLE" : "OFFLINE");
+    return await this.attachRatingStats(rider);
   }
 
   async canReceiveOrders(userId: string): Promise<boolean> {

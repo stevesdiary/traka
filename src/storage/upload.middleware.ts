@@ -9,13 +9,14 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
     'image/png',
     'image/webp',
     'application/pdf',
+    'image/avif'
     // 'csv'
   ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, WEBP, and PDF allowed'));
+      cb(new Error('Invalid file type. Only JPEG, PNG, WEBP, PDF and AVIF files are llowed'));
   }
 };
 
