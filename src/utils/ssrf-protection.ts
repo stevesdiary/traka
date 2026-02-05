@@ -33,6 +33,7 @@ const ALLOWED_PROTOCOLS = ['http:', 'https:'];
 // Allowed domains (whitelist for external APIs)
 const ALLOWED_DOMAINS = [
   'nominatim.openstreetmap.org',  // Geocoding
+  'photon.komoot.io',             // Geocoding fallback
   'api.brevo.com',                 // Email service
   'my.kudisms.net',                // SMS service
   'hooks.slack.com',               // Slack webhooks
