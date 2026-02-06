@@ -25,6 +25,7 @@ import cashPaymentRoutes from './payment/cash-payment.routes.js';
 import uploadRoutes from './storage/upload.routes.js';
 import promotionRoutes from './promotion/promotion.routes.js';
 import businessRoutes from './business/business.routes.js';
+import messageRoutes from './message/message.routes.js';
 
 const router: Router = Router();
 
@@ -61,5 +62,6 @@ router.use('/cash-payments', cashPaymentRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/promotions', promotionRoutes);
 router.use('/businesses', businessRoutes);
+router.use('/', messageRoutes);
 
 export default router;
