@@ -264,9 +264,19 @@ export class PackageModel extends Model {
   })
   guest_tracking_token?: string;
 
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.UUID,
+    allowNull: true
+  })
+  rider_id?: string;
+
   @BelongsTo(() => UserModel, 'sender_id')
   sender!: UserModel;
 
   @BelongsTo(() => UserModel, 'recipient_id')
   recipient?: UserModel;
+
+  @BelongsTo(() => UserModel, 'rider_id')
+  rider?: UserModel;
 }
