@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { SchedulingService } from './scheduling.service.js';
 import { DeliveryScheduleType } from './scheduling.types.js';
+import { FeatureOptInModel } from './feature-opt-in.model.js';
 
 export class SchedulingController {
   private schedulingService = new SchedulingService();
@@ -40,6 +41,28 @@ export class SchedulingController {
     try {
       await this.schedulingService.processPendingDeliveries();
       res.json({ message: 'Pending deliveries processed' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  optInForScheduledDelivery = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email } = req.body;
+
+      if (!email || !email.includes('@')) {
+        res.status(400).json({ error: 'Valid email is required' });
+        return;
+      }
+
+      await FeatureOptInModel.create({
+        email,
+        feature_name: 'scheduled_delivery'
+      });
+
+      res.status(201).json({ 
+        message: 'Thank you! We will notify you when scheduled delivery becomes available.' 
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

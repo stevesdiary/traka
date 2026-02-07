@@ -18,4 +18,9 @@ router.post('/process-pending',
   schedulingController.processPending
 );
 
+// Opt-in for scheduled delivery feature
+router.post('/opt-in/scheduled-delivery',
+  schedulingController.optInForScheduledDelivery
+);
+
 export { router as schedulingRoutes };
