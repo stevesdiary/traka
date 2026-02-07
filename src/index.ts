@@ -7,6 +7,7 @@ import { QuoteExpirationCron } from './quote/quote-expiration.cron.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
 import { createApp } from './app.js';
+import { initializeWebSocket } from './websocket/websocket.service.js';
 // import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
 
 const app = createApp();
@@ -30,6 +31,9 @@ const startServer = async () => {
         apiBaseUrl: config.server.apiBaseUrl
       });
     });
+
+    // Initialize WebSocket
+    initializeWebSocket(server);
 
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
