@@ -24,6 +24,7 @@ import { PromotionModel, PromotionUsageModel } from '../promotion/promotion.mode
 import { RefreshTokenModel } from '../auth/refresh-token.model.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
 import { MessageModel } from '../message/message.model.js';
+import { FeatureOptInModel } from '../scheduling/feature-opt-in.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -71,6 +72,7 @@ sequelize.addModels([
   PromotionUsageModel,
   RefreshTokenModel,
   MessageModel,
+  FeatureOptInModel,
 ]);
 
 // Redis Configuration
