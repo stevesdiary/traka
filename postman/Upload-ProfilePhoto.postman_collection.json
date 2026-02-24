@@ -1,0 +1,349 @@
+{
+  "info": {
+    "name": "TRAKA - Upload & Profile Photo",
+    "description": "File upload and profile photo management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload Profile Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/profile",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "profile"]
+            },
+            "description": "Upload and optimize profile photo. Image is automatically resized to 1200px width and compressed to 85% quality."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Vehicle Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/vehicle",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "vehicle"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Package Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/package",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "package"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/document",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "document"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Signed URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/upload/signed-url/:key",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "signed-url", ":key"],
+              "variable": [
+                {
+                  "key": "key",
+                  "value": "profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+                }
+              ]
+            },
+            "description": "Get a signed URL for private file access"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/upload/:key",
+              "host": ["{{base_url}}"],
+              "path": ["upload", ":key"],
+              "variable": [
+                {
+                  "key": "key",
+                  "value": "profiles/550e8400-e29b-41d4-a716-446655440000.jpg"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile Photo Management",
+      "item": [
+        {
+          "name": "Update Profile Photo URL",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_photo\": \"https://f000.backblazeb2.com/file/bucket-name/profiles/550e8400-e29b-41d4-a716-446655440000.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/me/profile-photo",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me", "profile-photo"]
+            },
+            "description": "Save the profile photo URL to user profile after uploading via /upload/profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current user profile including profile_photo field"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Complete Profile Photo Flow",
+      "item": [
+        {
+          "name": "Step 1: Upload Photo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('uploaded_photo_url', response.url);",
+                  "    console.log('Photo URL saved:', response.url);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload/profile",
+              "host": ["{{base_url}}"],
+              "path": ["upload", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_photo\": \"{{uploaded_photo_url}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/me/profile-photo",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me", "profile-photo"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Step 3: Verify Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "uploaded_photo_url",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
