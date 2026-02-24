@@ -182,4 +182,13 @@ export class RiderController {
       res.status(500).json({ error: 'Failed to get deleted riders' });
     }
   };
+
+  getAvailableJobs = async (req: Request, res: Response) => {
+    try {
+      const jobs = await this.riderService.getAvailableJobs();
+      res.json({ jobs });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get jobs' });
+    }
+  };
 }

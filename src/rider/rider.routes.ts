@@ -10,6 +10,7 @@ const router: Router = Router();
 const riderController = new RiderController();
 
 // Rider routes (authenticated users)
+router.get('/jobs', authenticateToken, riderController.getAvailableJobs);
 router.post('/register', authenticateToken, validateInput(RiderProfileCreationSchema), riderController.registerRider);
 router.get('/profile', authenticateToken, riderController.getProfile);
 router.put('/profile', authenticateToken, validateInput(UpdateRiderProfileSchema), riderController.updateProfile);

@@ -257,4 +257,11 @@ export class RiderService {
   async getDeletedRiders(businessId?: string): Promise<RiderModel[]> {
     return await this.riderRepository.getDeletedRiders(businessId);
   }
+
+  async getAvailableJobs(): Promise<any[]> {
+    const { PackageRepository } = await import("../package/package.repository.js");
+    const packageRepo = new PackageRepository();
+    // Use repository method instead of accessing protected model property
+    return await packageRepo.findAvailablePackages();
+  }
 }
