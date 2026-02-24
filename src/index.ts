@@ -2,7 +2,7 @@
 import './config/environment.js';
 
 import { connectDatabases, disconnectDatabases } from './config/database.js';
-import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
+// import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
 import { QuoteExpirationCron } from './quote/quote-expiration.cron.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
@@ -19,7 +19,7 @@ const startServer = async () => {
     await connectDatabases();
 
     // Start cron jobs
-    RiderCleanupCron.startCronJob();
+    // RiderCleanupCron.startCronJob();
     QuoteExpirationCron.startCronJob();
     // startDispatchTimeoutCron();
 
@@ -27,7 +27,6 @@ const startServer = async () => {
       logger.info(`TRAKA API started successfully`, {
         port,
         environment: config.env,
-        nodeVersion: process.version,
         apiBaseUrl: config.server.apiBaseUrl
       });
     });
