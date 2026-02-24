@@ -11,7 +11,7 @@ const userController = new UserManagementController();
 router.use(authenticateToken);
 
 router.get('/', canRead(Resource.USER), userController.getAllUsers);
-router.post('/', canCreate(Resource.USER), validateInput(CreateUserSchema), userController.createUser);
+router.post('/register', canCreate(Resource.USER), validateInput(CreateUserSchema), userController.createUser);
 router.get('/:user_id', canRead(Resource.USER), userController.getUserById);
 router.put('/:user_id', canUpdate(Resource.USER), validateInput(UpdateUserSchema), userController.updateUser);
 router.delete('/:user_id', canDelete(Resource.USER), userController.deleteUser);
