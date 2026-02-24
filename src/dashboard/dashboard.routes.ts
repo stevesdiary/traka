@@ -17,4 +17,7 @@ router.get('/admin', authenticateToken, requirePermission(Resource.USER, Action.
 router.get('/admin/tenants', authenticateToken, requirePermission(Resource.TENANT, Action.READ), dashboardController.getAllTenants);
 router.get('/admin/analytics', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), dashboardController.getPlatformAnalytics);
 
+// Rider Dashboard Route (Mobile)
+router.get('/rider', authenticateToken, dashboardController.getRiderDashboard);
+
 export default router;

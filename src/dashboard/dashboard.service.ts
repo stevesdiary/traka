@@ -137,4 +137,29 @@ export class DashboardService {
       }
     };
   }
+
+  async getRiderStats(userId: string): Promise<any> {
+    const [rider, packages] = await Promise.all([
+      this.riderRepository.getRiderByUserId(userId),
+      this.packageRepository.findByRiderId(userId)
+    ]);
+
+    const { RatingRepository } = await import("../rating/rating.repository.js");
+    const ratingRepo = new RatingRepository();
+    const ratings = await ratingRepo.getRiderStats(userId);
+
+    const completed = packages.filter(p => p.status === 'DELIVERED').length;
+    // Mock earnings calculation for now
+    const earnings = completed * 1500; 
+
+    return {
+      stats: {
+        total_deliveries: completed,
+        active_deliveries: packages.filter(p => p.status === 'IN_TRANSIT').length,
+        rating: ratings.avgRating,
+        total_earnings: earnings,
+        balance: earnings * 0.8 // assuming 20% platform fee
+      }
+    };
+  }
 }

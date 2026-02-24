@@ -113,4 +113,14 @@ export class DashboardController {
       res.status(500).json({ error: 'Failed to load platform analytics' });
     }
   };
+
+  getRiderDashboard = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user!.userId;
+      const stats = await this.dashboardService.getRiderStats(userId);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load rider dashboard' });
+    }
+  };
 }
