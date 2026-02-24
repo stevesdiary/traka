@@ -1,5 +1,6 @@
 import { BaseRepository } from '../repositories/base.repository.js';
 import { PackageModel } from './package.model.js';
+import { Op } from 'sequelize';
 
 export class PackageRepository extends BaseRepository<PackageModel> {
   constructor() {
@@ -43,6 +44,35 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     return this.model.update(updateData, {
       where: { id },
       returning: true
+    });
+  }
+
+  async findByUserId(userId: string): Promise<PackageModel[]> {
+    return this.model.findAll({
+      where: {
+        [Op.or]: [
+          { sender_id: userId },
+          { recipient_id: userId }
+        ]
+      },
+      include: ['sender', 'recipient'],
+      order: [['createdAt', 'DESC']]
+    });
+  }
+
+  async findAvailablePackages(): Promise<PackageModel[]> {
+    return this.model.findAll({
+      where: {
+        status: 'PENDING',
+        payment_status: 'PAID'
+      },
+      order: [['createdAt', 'DESC']]
+    });
+  }
+
+  async findByRiderId(riderId: string): Promise<PackageModel[]> {
+    return this.model.findAll({
+      where: { rider_id: riderId }
     });
   }
 

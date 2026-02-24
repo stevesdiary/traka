@@ -340,6 +340,21 @@ export class PackageService {
     return this.packageVerificationService.decodeQRCode(qr_code_data);
   }
 
+  async getPackagesForUser(userId: string): Promise<any[]> {
+    const packages = await this.packageRepository.findByUserId(userId);
+    return packages.map((pkg: any) => ({
+      id: pkg.id,
+      tracking_number: pkg.tracking_number,
+      status: pkg.status,
+      recipient_name: pkg.recipient_name,
+      delivery_address: pkg.delivery_address,
+      description: pkg.description,
+      package_size: pkg.package_size,
+      created_at: pkg.createdAt,
+      is_sender: pkg.sender_id === userId,
+    }));
+  }
+
   private async generateTrackingNumber(): Promise<string> {
     // Generate TRK-XXXX format with random alphanumeric (uppercase letters and numbers)
     const nanoid = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 4);

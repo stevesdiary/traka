@@ -118,4 +118,18 @@ export class PackageController {
       res.status(500).json({ error: 'Failed to cancel package' });
     }
   };
+
+  getMyPackages = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user_id = req.user!.userId;
+      const packages = await this.packageService.getPackagesForUser(user_id);
+
+      res.json({
+        message: 'My packages retrieved successfully',
+        packages
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: 'Failed to retrieve your packages' });
+    }
+  };
 }
