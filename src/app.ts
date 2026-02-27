@@ -5,14 +5,11 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
 import routes from './routes.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export const createApp = () => {
   const app = express();
@@ -75,14 +72,20 @@ export const createApp = () => {
     credentials: true
   }));
 
-  app.use(express.json());
+  app.use(express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = Buffer.from(buf);
+    }
+  }));
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
   app.use(requestLogger);
 
-  const swaggerPath = config.isProduction
-    ? path.join(__dirname, '../swagger.yaml')
-    : path.join(__dirname, '../../swagger.yaml');
+  const swaggerCandidates = [
+    path.resolve(process.cwd(), 'swagger.yaml'),
+    path.resolve(process.cwd(), '../swagger.yaml')
+  ];
+  const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
   const swaggerDocument = YAML.load(swaggerPath);
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 

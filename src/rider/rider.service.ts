@@ -27,6 +27,11 @@ export class RiderService {
     const { CourierPresenceService } = await import(
       "../matching/services/CourierPresenceService.js"
     );
+    const { VehicleType } = await import("../matching/config/vehicles.js");
+    const vehicleType =
+      rider.vehicle_type === "BICYCLE"
+        ? VehicleType.BICYCLE
+        : VehicleType.MOTORCYCLE;
 
     try {
       if (status === "OFFLINE") {
@@ -34,7 +39,23 @@ export class RiderService {
         return;
       }
 
-      await CourierPresenceService.updateCourierStatus(rider.id, status);
+      await CourierPresenceService.updateCourierStatus(
+        rider.id,
+        status,
+        vehicleType,
+      );
+
+      if (rider.current_latitude != null && rider.current_longitude != null) {
+        await CourierPresenceService.updateCourierLocation(
+          rider.id,
+          {
+            lat: Number(rider.current_latitude),
+            lng: Number(rider.current_longitude),
+            timestamp: Date.now(),
+          },
+          vehicleType,
+        );
+      }
     } catch (error) {
       console.error("Failed to sync courier presence", error);
     }
@@ -157,6 +178,64 @@ export class RiderService {
       latitude,
       longitude,
     );
+
+    try {
+      const { CourierPresenceService } = await import(
+        "../matching/services/CourierPresenceService.js"
+      );
+      const { VehicleType } = await import("../matching/config/vehicles.js");
+      const vehicleType =
+        rider.vehicle_type === "BICYCLE"
+          ? VehicleType.BICYCLE
+          : VehicleType.MOTORCYCLE;
+
+      await CourierPresenceService.updateCourierLocation(
+        rider.id,
+        {
+          lat: Number(latitude),
+          lng: Number(longitude),
+          timestamp: Date.now(),
+        },
+        vehicleType,
+      );
+
+      if (rider.status !== "OFFLINE") {
+        await CourierPresenceService.updateCourierStatus(
+          rider.id,
+          rider.status as RiderProfile["status"],
+          vehicleType,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to sync courier location", error);
+    }
+
+    try {
+      const { PackageRepository } = await import("../package/package.repository.js");
+      const { emitRiderLocationUpdate } = await import(
+        "../websocket/websocket.service.js"
+      );
+      const packageRepo = new PackageRepository();
+      const riderPackages = await packageRepo.findByRiderId(rider.user_id);
+      const activeStatuses = ["PENDING", "IN_TRANSIT", "OUT_FOR_DELIVERY"];
+
+      for (const pkg of riderPackages) {
+        if (!activeStatuses.includes(pkg.status)) continue;
+
+        emitRiderLocationUpdate(pkg.id, {
+          package_id: pkg.id,
+          tracking_number: pkg.tracking_number,
+          rider_id: rider.user_id,
+          latitude: Number(latitude),
+          longitude: Number(longitude),
+          timestamp: Date.now(),
+          package_status: pkg.status,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to emit rider location update", error);
+    }
+
     return await this.attachRatingStats(rider);
   }
 

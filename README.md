@@ -97,8 +97,12 @@ npm test
 ### Wallet Management
 - `GET /api/wallet/balance` - Get wallet balance
 - `GET /api/wallet/transactions` - Get transaction history
+- `POST /api/wallet/fund/initialize` - Initialize wallet funding (Monnify/Paystack/Flutterwave)
+- `GET /api/wallet/fund/verify` - Verify wallet funding by reference
 - `POST /api/wallet/cash-delivery` - Process cash delivery commission
 - `POST /api/wallet/webhook/monnify` - Monnify payment webhook
+- `POST /api/wallet/webhook/paystack` - Paystack payment webhook
+- `POST /api/wallet/webhook/flutterwave` - Flutterwave payment webhook
 
 ### Business Billing
 - `GET /api/invoices` - Get tenant invoices
@@ -205,20 +209,27 @@ npm test
 - **Redis Locks**: Atomic operations prevent double-dispatch
 
 ## Testing
-
-### Create Test Data
+### Automated Test Commands
 
 ```bash
-# Create test users
-node scripts/test-data/create-final-test-users.js
+# Run all tests
+pnpm test
 
-# Create MongoDB test data
-node scripts/test-data/create-mongo-test-data.js
+# Run integration tests only
+pnpm test:integration
+
+# Run critical end-to-end API flow tests only
+pnpm test:critical
 ```
 
-### API Testing
+### Critical E2E Flows Covered
+- Auth lifecycle: `POST /api/auth/login` -> `GET /api/auth/me` -> `POST /api/auth/refresh`
+- Wallet funding lifecycle: `POST /api/wallet/fund/initialize` -> `GET /api/wallet/fund/verify`
+- Payment webhooks: `POST /api/wallet/webhook/monnify` (invalid signature and success paths)
+
+### Manual API Testing
 - Import `TRAKA_API.postman_collection.json` into Postman
-- View API documentation at `/swagger.yaml`
+- View interactive API docs at `/api-docs`
 
 ## Project Structure
 
@@ -260,7 +271,19 @@ RIDER_CREDIT_LIMIT=-2000.00
 PLATFORM_FEE_RATE_BUSINESS=0.15
 
 # Payment Gateway
+PAYMENT_PROVIDER=MONNIFY
 MONNIFY_SECRET_KEY=your-monnify-secret
+MONNIFY_API_KEY=your-monnify-api-key
+MONNIFY_CONTRACT_CODE=your-monnify-contract-code
+MONNIFY_BASE_URL=https://sandbox.monnify.com
+PAYSTACK_SECRET_KEY=your-paystack-secret-key
+PAYSTACK_PUBLIC_KEY=your-paystack-public-key
+PAYSTACK_BASE_URL=https://api.paystack.co
+FLUTTERWAVE_SECRET_KEY=your-flutterwave-secret-key
+FLUTTERWAVE_PUBLIC_KEY=your-flutterwave-public-key
+FLUTTERWAVE_WEBHOOK_HASH=your-flutterwave-webhook-hash
+FLUTTERWAVE_BASE_URL=https://api.flutterwave.com/v3
+PAYMENT_CALLBACK_URL=https://your-frontend-or-api/callback
 
 # Email Notifications
 BREVO_API_KEY=your-brevo-api-key

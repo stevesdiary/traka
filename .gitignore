@@ -19,3 +19,4 @@ jest.config
 .vscode/settings.json
 logs/
 .qoder/
+coverage/
