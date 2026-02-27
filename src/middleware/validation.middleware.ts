@@ -22,9 +22,20 @@ export const validateInput = (schema: Joi.Schema, source: 'body' | 'query' | 'pa
       });
     }
     
-    // Replace request data with validated data
-    req[source] = value;
+    // Replace request data with validated data.
+    // In Express 5, reassigning req.query can throw because it may be getter-backed.
+    if (source === 'body') {
+      req.body = value;
+    } else {
+      const target = req[source] as Record<string, any>;
+      if (target && typeof target === 'object') {
+        Object.keys(target).forEach((key) => {
+          delete target[key];
+        });
+        Object.assign(target, value);
+      }
+    }
+
     next();
   };
 };
-

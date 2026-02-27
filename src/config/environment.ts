@@ -1,9 +1,5 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Determine environment
 const environment = process.env.NODE_ENV || 'development';
@@ -74,11 +70,23 @@ export const config = {
   },
   
   payment: {
+    defaultProvider: (process.env.PAYMENT_PROVIDER || 'MONNIFY').toUpperCase(),
     monnify: {
-      secretKey: process.env.MONNIFY_SECRET_KEY!,
-      apiKey: process.env.MONNIFY_API_KEY!,
-      contractCode: process.env.MONNIFY_CONTRACT_CODE!,
+      secretKey: process.env.MONNIFY_SECRET_KEY || '',
+      apiKey: process.env.MONNIFY_API_KEY || '',
+      contractCode: process.env.MONNIFY_CONTRACT_CODE || '',
       baseUrl: process.env.MONNIFY_BASE_URL || 'https://sandbox.monnify.com'
+    },
+    paystack: {
+      secretKey: process.env.PAYSTACK_SECRET_KEY || '',
+      publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',
+      baseUrl: process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co'
+    },
+    flutterwave: {
+      secretKey: process.env.FLUTTERWAVE_SECRET_KEY || '',
+      publicKey: process.env.FLUTTERWAVE_PUBLIC_KEY || '',
+      webhookHash: process.env.FLUTTERWAVE_WEBHOOK_HASH || '',
+      baseUrl: process.env.FLUTTERWAVE_BASE_URL || 'https://api.flutterwave.com/v3'
     }
   },
   

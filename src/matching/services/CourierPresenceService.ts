@@ -6,7 +6,11 @@ export class CourierPresenceService {
   private static readonly COURIER_KEY_PREFIX = 'courier:';
   private static readonly LOCATION_KEY_PREFIX = 'location:';
 
-  static async updateCourierLocation(courierId: string, location: CourierLocation): Promise<void> {
+  static async updateCourierLocation(
+    courierId: string,
+    location: CourierLocation,
+    vehicleType?: VehicleType
+  ): Promise<void> {
     const key = `${this.COURIER_KEY_PREFIX}${courierId}:state`;
     
     // Get existing state or create new
@@ -15,6 +19,7 @@ export class CourierPresenceService {
       ...existingState,
       id: courierId,
       location,
+      vehicleType: vehicleType ?? existingState.vehicleType,
       lastSeen: Date.now()
     };
 
@@ -41,7 +46,7 @@ export class CourierPresenceService {
         id: courierId,
         location: { lat: 0, lng: 0, timestamp: 0 },
         vehicleType: VehicleType.MOTORCYCLE,
-        status: 'AVAILABLE',
+        status: 'OFFLINE',
         currentLoad: { weight: 0, volume: 0 },
         acceptanceRate: MATCHING_CONFIG.COLD_START_ACCEPTANCE_RATE,
         idleTime: 0,
@@ -54,10 +59,12 @@ export class CourierPresenceService {
 
   static async updateCourierStatus(
     courierId: string, 
-    status: 'AVAILABLE' | 'BUSY' | 'OFFLINE'
+    status: 'AVAILABLE' | 'BUSY' | 'OFFLINE',
+    vehicleType?: VehicleType
   ): Promise<void> {
     const state = await this.getCourierState(courierId);
     state.status = status;
+    state.vehicleType = vehicleType ?? state.vehicleType;
     state.lastSeen = Date.now();
     
     const key = `${this.COURIER_KEY_PREFIX}${courierId}:state`;
