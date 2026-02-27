@@ -1,5 +1,6 @@
 import { sequelize } from '../config/database.js';
 import { WalletRepository } from './wallet.repository.js';
+import { PaymentProvider } from './payment-gateway.types.js';
 
 export class WalletService {
   private walletRepository = new WalletRepository();
@@ -86,6 +87,50 @@ export class WalletService {
 
       // Reactivate if needed
       const updatedWallet = await this.walletRepository.findByUserId(riderId);
+      if (updatedWallet && updatedWallet.balance > this.CREDIT_LIMIT && !updatedWallet.is_active) {
+        await this.walletRepository.updateStatus(wallet.id, true, t);
+      }
+
+      await t.commit();
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
+  }
+
+  async processWalletDeposit(
+    userId: string,
+    amount: number,
+    transactionReference: string,
+    provider: PaymentProvider
+  ): Promise<void> {
+    const t = await sequelize.transaction();
+
+    try {
+      if (amount <= 0) {
+        throw new Error('Deposit amount must be greater than zero');
+      }
+
+      const existingTx = await this.walletRepository.findTransactionByReference(transactionReference, t);
+      if (existingTx) {
+        await t.rollback();
+        return;
+      }
+
+      const wallet = await this.walletRepository.findByUserId(userId);
+      if (!wallet) throw new Error('Wallet not found');
+
+      await this.walletRepository.updateBalance(wallet.id, amount, t);
+
+      await this.walletRepository.createTransaction({
+        wallet_id: wallet.id,
+        amount,
+        type: 'DEPOSIT',
+        reference: transactionReference,
+        description: `Wallet funding via ${provider}: ₦${amount.toFixed(2)}`
+      }, t);
+
+      const updatedWallet = await this.walletRepository.findByUserId(userId);
       if (updatedWallet && updatedWallet.balance > this.CREDIT_LIMIT && !updatedWallet.is_active) {
         await this.walletRepository.updateStatus(wallet.id, true, t);
       }

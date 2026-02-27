@@ -518,6 +518,29 @@ export const PayCommissionSchema = Joi.object({
   payment_reference: Joi.string().optional()
 });
 
+export const InitializeWalletFundingSchema = Joi.object({
+  amount: Joi.number().positive().required().messages({
+    'number.positive': 'Amount must be a positive number',
+    'any.required': 'Amount is required'
+  }),
+  provider: Joi.string().uppercase().valid('MONNIFY', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
+    'any.only': 'Provider must be MONNIFY, PAYSTACK, or FLUTTERWAVE'
+  }),
+  callback_url: Joi.string().uri().optional().messages({
+    'string.uri': 'Callback URL must be a valid URL'
+  }),
+  currency: Joi.string().length(3).optional().default('NGN')
+});
+
+export const VerifyWalletFundingSchema = Joi.object({
+  reference: Joi.string().required().messages({
+    'any.required': 'Payment reference is required'
+  }),
+  provider: Joi.string().uppercase().valid('MONNIFY', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
+    'any.only': 'Provider must be MONNIFY, PAYSTACK, or FLUTTERWAVE'
+  })
+});
+
 // Password Reset Schemas
 export const PasswordResetRequestSchema = Joi.object({
   email: Joi.string().email().required().messages({

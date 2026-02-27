@@ -64,7 +64,8 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     return this.model.findAll({
       where: {
         status: 'PENDING',
-        payment_status: 'PAID'
+        payment_status: 'PAID',
+        rider_id: null
       },
       order: [['createdAt', 'DESC']]
     });
@@ -74,6 +75,13 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     return this.model.findAll({
       where: { rider_id: riderId }
     });
+  }
+
+  async assignRider(packageId: string, riderUserId: string): Promise<void> {
+    await this.model.update(
+      { rider_id: riderUserId },
+      { where: { id: packageId } }
+    );
   }
 
   async updatePackage(id: string, updateData: {
@@ -88,6 +96,7 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     cancelled_at?: Date;
     cancelled_by?: string;
     rider_has_package?: boolean;
+    rider_id?: string;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },

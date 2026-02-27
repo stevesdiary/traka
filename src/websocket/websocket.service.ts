@@ -60,6 +60,27 @@ export class WebSocketService {
         socket.leave(`package:${packageId}`);
       });
 
+      socket.on('join-tracking', async (packageId: string) => {
+        try {
+          const pkg = await PackageModel.findByPk(packageId);
+          if (!pkg) return;
+
+          const isAuthorized =
+            pkg.sender_id === socket.data.userId ||
+            pkg.recipient_id === socket.data.userId ||
+            pkg.rider_id === socket.data.userId;
+
+          if (!isAuthorized) return;
+          socket.join(`tracking:package:${packageId}`);
+        } catch (error) {
+          logger.error('Error joining tracking room', error);
+        }
+      });
+
+      socket.on('leave-tracking', (packageId: string) => {
+        socket.leave(`tracking:package:${packageId}`);
+      });
+
       socket.on('send-message', async (data: { packageId: string; message: string }) => {
         try {
           const { packageId, message } = data;
@@ -95,6 +116,21 @@ export class WebSocketService {
       });
     });
   }
+
+  emitRiderLocationUpdate(
+    packageId: string,
+    payload: {
+      package_id: string;
+      tracking_number: string;
+      rider_id: string;
+      latitude: number;
+      longitude: number;
+      timestamp: number;
+      package_status: string;
+    }
+  ): void {
+    this.io.to(`tracking:package:${packageId}`).emit('rider-location-update', payload);
+  }
 }
 
 let webSocketService: WebSocketService | null = null;
@@ -102,4 +138,23 @@ let webSocketService: WebSocketService | null = null;
 export const initializeWebSocket = (httpServer: HTTPServer): WebSocketService => {
   webSocketService = new WebSocketService(httpServer);
   return webSocketService;
+};
+
+export const emitRiderLocationUpdate = (
+  packageId: string,
+  payload: {
+    package_id: string;
+    tracking_number: string;
+    rider_id: string;
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+    package_status: string;
+  }
+): void => {
+  if (!webSocketService) {
+    return;
+  }
+
+  webSocketService.emitRiderLocationUpdate(packageId, payload);
 };
