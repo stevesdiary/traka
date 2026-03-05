@@ -20,18 +20,17 @@ export class DispatchService {
   static async dispatchDelivery(request: DeliveryRequest): Promise<DispatchResult> {
     // Get Redis lock for this delivery
     const lockKey = `${this.DISPATCH_LOCK_PREFIX}${request.id}`;
-    const lockAcquired = await redis.set(lockKey, '1', {
-      NX: true,
-      EX: 60 // 1 minute lock
-    });
-
-    if (!lockAcquired) {
+    const exists = await redis.exists(lockKey);
+    
+    if (exists) {
       return {
         success: false,
         attempts: 0,
         message: 'Delivery already being processed'
       };
     }
+
+    await redis.setEx(lockKey, 60, '1'); // 1 minute lock
 
     // Start tracking dispatch attempt with 10-minute timeout
     await this.timeoutService.trackDispatchAttempt(request.id);

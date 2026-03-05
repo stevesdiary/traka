@@ -15,24 +15,21 @@ export class SchedulingService {
     });
   }
 
-  // FEATURE NOT YET AVAILABLE - Scheduled dispatch is disabled
-  // Customers can opt-in to be notified when this feature becomes available
+  // Process pending deliveries (for testing)
   async processPendingDeliveries(): Promise<void> {
-    // const pendingDeliveries = await this.scheduledDeliveryModel.findPendingDeliveries();
-    // 
-    // for (const delivery of pendingDeliveries) {
-    //   try {
-    //     // Mark as dispatched - actual dispatch logic would go here
-    //     await this.scheduledDeliveryModel.updateStatus(
-    //       delivery.id, 
-    //       ScheduleStatus.DISPATCHED, 
-    //       new Date()
-    //     );
-    //   } catch (error) {
-    //     console.error(`Failed to dispatch delivery ${delivery.id}:`, error);
-    //   }
-    // }
-    console.log('Scheduled dispatch feature is not yet available');
+    const pendingDeliveries = await this.scheduledDeliveryModel.findPendingDeliveries();
+    
+    for (const delivery of pendingDeliveries) {
+      try {
+        await this.scheduledDeliveryModel.updateStatus(
+          delivery.id, 
+          ScheduleStatus.DISPATCHED, 
+          new Date()
+        );
+      } catch (error) {
+        console.error(`Failed to dispatch delivery ${delivery.id}:`, error);
+      }
+    }
   }
 
   private calculateScheduledTime(request: ScheduleRequest): Date {

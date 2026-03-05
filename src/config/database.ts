@@ -2,9 +2,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Sequelize } from 'sequelize-typescript';
-import { createClient, RedisClientType } from 'redis';
 import { MongoClient } from 'mongodb';
 import logger from '../utils/logger.js';
+import { redis } from './upstash.js';
 import { UserModel } from '../user/user.model.js';
 import { PackageModel } from '../package/package.model.js';
 import { RiderModel } from '../rider/rider.model.js';
@@ -28,7 +28,6 @@ import { FeatureOptInModel } from '../scheduling/feature-opt-in.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
-// console.log('Using database URL:', dbUrl.replace(/:[^:@]*@/, ':***@')); // Hide password
 const isProduction = dbUrl.includes('neon.tech') || process.env.NODE_ENV === 'production';
 
 export const sequelize = new Sequelize(dbUrl, {
@@ -75,13 +74,8 @@ sequelize.addModels([
   FeatureOptInModel,
 ]);
 
-// Redis Configuration
-export const redis: RedisClientType = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
-  socket: {
-    reconnectStrategy: (retries) => Math.min(retries * 50, 500)
-  }
-});
+// Export Upstash Redis
+export { redis };
 
 // MongoDB Configuration (optional)
 let mongoClient: MongoClient | null = null;
@@ -110,9 +104,9 @@ export const connectDatabases = async () => {
     await sequelize.sync({ alter: false });
     logger.info('Database models synchronized');
 
-    // Connect to Redis
+    // Initialize Upstash Redis (serverless, no connection needed)
     await redis.connect();
-    logger.info('Redis connected successfully');
+    logger.info('Upstash Redis initialized');
 
     // Connect to MongoDB (optional)
     if (mongoClient) {
