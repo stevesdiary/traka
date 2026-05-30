@@ -114,7 +114,14 @@ export const config = {
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
-  }
+  },
+
+  observability: {
+    lokiUrl: process.env.LOKI_URL,
+    otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318/v1/traces',
+    slowQueryThresholdMs: parseInt(process.env.SLOW_QUERY_THRESHOLD_MS ?? '500', 10),
+    serviceName: process.env.SERVICE_NAME ?? 'traka-api',
+  },
 };
 
 export default config;
