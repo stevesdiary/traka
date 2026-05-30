@@ -12,6 +12,7 @@ import {
   NotificationService,
   NotificationType,
 } from "../notification/notification.service.js";
+import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
@@ -330,7 +331,19 @@ export class PackageService {
       throw new Error("Package not found or unauthorized");
     }
 
-    return updatedPackages[0];
+    const updated = updatedPackages[0];
+    if (tenant_id && updated) {
+      const event = status === 'DELIVERED' ? 'order.delivered' : 'order.status_changed';
+      setImmediate(() => {
+        webhookService.dispatch(tenant_id, event, {
+          package_id: package_id,
+          status,
+          updated_at: new Date().toISOString(),
+        });
+      });
+    }
+
+    return updated;
   }
 
   async confirmPickup(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
@@ -480,6 +493,17 @@ export class PackageService {
           notificationPayload
         ),
       ]);
+
+      if (packageData.tenant_id) {
+        setImmediate(() => {
+          webhookService.dispatch(packageData.tenant_id, 'rider.assigned', {
+            package_id: packageData.id,
+            tracking_number: packageData.tracking_number,
+            rider_id: assignedRider.userId,
+            eta_seconds: dispatchResult.eta ? Math.round(dispatchResult.eta) : undefined,
+          });
+        });
+      }
 
       return {
         assigned: true,

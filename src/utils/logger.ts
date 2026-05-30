@@ -1,5 +1,7 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import LokiTransport from 'winston-loki';
+import { trace } from '@opentelemetry/api';
 
 const { combine, timestamp, errors, json, printf, colorize } = winston.format;
 
@@ -37,8 +39,19 @@ const devFormat = printf(({ level, message, timestamp, stack, ...metadata }) => 
   return log;
 });
 
+const withTraceContext = winston.format((info) => {
+  const span = trace.getActiveSpan();
+  if (span) {
+    const ctx = span.spanContext();
+    info.trace_id = ctx.traceId;
+    info.span_id = ctx.spanId;
+  }
+  return info;
+});
+
 // Production format (JSON for log aggregation services)
 const prodFormat = combine(
+  withTraceContext(),
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   errors({ stack: true }),
   json()
@@ -101,6 +114,25 @@ if (isProduction) {
       maxFiles: '7d',
       format: prodFormat,
     })
+  );
+}
+
+if (process.env.LOKI_URL) {
+  logger.add(
+    new LokiTransport({
+      host: process.env.LOKI_URL,
+      labels: {
+        service: process.env.SERVICE_NAME ?? 'traka-api',
+        env: process.env.NODE_ENV ?? 'production',
+      },
+      json: true,
+      batching: true,
+      interval: 5,
+      clearOnError: false,
+      replaceTimestamp: false,
+      onConnectionError: (err: Error) =>
+        console.error('Loki transport connection error:', err.message),
+    }) as any,
   );
 }
 
