@@ -27,6 +27,9 @@ import promotionRoutes from './promotion/promotion.routes.js';
 import businessRoutes from './business/business.routes.js';
 import messageRoutes from './message/message.routes.js';
 import queueRoutes from './queue/queue.routes.js';
+import apiKeyRoutes from './api-key/api-key.routes.js';
+import webhookRoutes from './webhook/webhook.routes.js';
+import externalRoutes from './external/external.routes.js';
 
 const router: Router = Router();
 
@@ -63,6 +66,9 @@ router.use('/cash-payments', cashPaymentRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/promotions', promotionRoutes);
 router.use('/businesses', businessRoutes);
+router.use('/businesses/:business_id/api-keys', apiKeyRoutes);
+router.use('/businesses/:business_id/webhooks', webhookRoutes);
+router.use('/v1/external', externalRoutes);
 router.use('/', messageRoutes);
 router.use('/queue', queueRoutes);
 
