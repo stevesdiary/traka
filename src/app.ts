@@ -10,8 +10,18 @@ import routes from './routes.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
+import { createMetricsRegistry, metricsMiddleware, attachSequelizeObservability } from './shared/observability/index.js';
+import { sequelize } from './config/database.js';
 
 export const createApp = () => {
+  const metrics = createMetricsRegistry(config.observability.serviceName);
+  attachSequelizeObservability(
+    sequelize,
+    logger,
+    metrics.dbQueryDuration,
+    metrics.dbQueryErrors,
+  );
+
   const app = express();
 
   app.use(helmet({
@@ -80,6 +90,7 @@ export const createApp = () => {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
   app.use(requestLogger);
+  app.use(metricsMiddleware(metrics));
 
   const swaggerCandidates = [
     path.resolve(process.cwd(), 'swagger.yaml'),
@@ -91,6 +102,11 @@ export const createApp = () => {
 
   app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'TRAKA API is running' });
+  });
+
+  app.get('/metrics', async (_req, res) => {
+    res.set('Content-Type', metrics.registry.contentType);
+    res.send(await metrics.registry.metrics());
   });
 
   app.use('/api', routes);
