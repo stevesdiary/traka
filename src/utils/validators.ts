@@ -573,3 +573,13 @@ export const UpdatePasswordSchema = Joi.object({
     'any.required': 'New password is required'
   })
 });
+
+export const ScheduleDeliverySchema = Joi.object({
+  packageId: Joi.string().uuid().required(),
+  scheduleType: Joi.string().valid('IMMEDIATE', 'SCHEDULED', 'SAME_DAY', 'NEXT_DAY').required(),
+  scheduledFor: Joi.when('scheduleType', {
+    is: 'SCHEDULED',
+    then: Joi.date().iso().greater('now').required(),
+    otherwise: Joi.date().iso().optional()
+  })
+});

@@ -26,7 +26,6 @@ if (result.error) {
 const requiredVars = [
   'POSTGRES_URL',
   'REDIS_URL',
-  'MONGO_URL',
   'JWT_SECRET',
   'PORT'
 ];
@@ -54,8 +53,7 @@ export const config = {
   
   database: {
     postgres: process.env.POSTGRES_URL!,
-    redis: process.env.REDIS_URL!,
-    mongo: process.env.MONGO_URL!
+    redis: process.env.REDIS_URL!
   },
   
   jwt: {

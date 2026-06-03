@@ -7,6 +7,7 @@ import YAML from 'yamljs';
 import path from 'path';
 import fs from 'fs';
 import routes from './routes.js';
+import { mongoSanitize } from './middleware/sanitize.middleware.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
@@ -88,6 +89,7 @@ export const createApp = () => {
     }
   }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(mongoSanitize);
   app.use(cookieParser());
   app.use(requestLogger);
   app.use(metricsMiddleware(metrics));

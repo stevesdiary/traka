@@ -1,14 +1,17 @@
 import { Router } from 'express';
 import { SchedulingController } from './scheduling.controller.js';
 import { requirePermission } from '../middleware/rolePermission.middleware.js';
+import { validateInput } from '../middleware/validation.middleware.js';
+import { ScheduleDeliverySchema } from '../utils/validators.js';
 import { Action, Resource } from '../utils/rolePermissions.js';
 
 const router: Router = Router();
 const schedulingController = new SchedulingController();
 
 // Schedule a delivery
-router.post('/schedule', 
+router.post('/schedule',
   requirePermission(Resource.PACKAGE, Action.CREATE),
+  validateInput(ScheduleDeliverySchema),
   schedulingController.scheduleDelivery
 );
 

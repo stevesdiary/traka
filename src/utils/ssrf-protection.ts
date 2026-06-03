@@ -119,7 +119,7 @@ export class SSRFProtection {
    * Validate configuration URLs on startup
    */
   static validateConfigUrls(config: Record<string, string>): void {
-    const urlFields = ['SLACK_WEBHOOK_URL', 'REDIS_URL', 'MONGO_URL', 'POSTGRES_URL'];
+    const urlFields = ['SLACK_WEBHOOK_URL', 'REDIS_URL', 'POSTGRES_URL'];
     
     for (const field of urlFields) {
       const url = config[field];

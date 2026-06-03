@@ -1,70 +1,101 @@
-import { mongoClient } from '../config/database.js';
+import { Table, Column, Model, DataType, PrimaryKey, Default } from 'sequelize-typescript';
+import { Op } from 'sequelize';
 import { DeliveryScheduleType, ScheduleStatus, ScheduledDelivery } from './scheduling.types.js';
-import { ObjectId } from 'mongodb';
 
+@Table({
+  tableName: 'scheduled_deliveries',
+  timestamps: true,
+  underscored: true
+})
+export class ScheduledDeliveryRecord extends Model {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  declare id: string;
+
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+    field: 'package_id'
+  })
+  packageId!: string;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(DeliveryScheduleType)),
+    allowNull: false,
+    field: 'schedule_type'
+  })
+  scheduleType!: DeliveryScheduleType;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    field: 'scheduled_for'
+  })
+  scheduledFor!: Date;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(ScheduleStatus)),
+    allowNull: false,
+    defaultValue: ScheduleStatus.PENDING
+  })
+  status!: ScheduleStatus;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: 'dispatched_at'
+  })
+  dispatchedAt?: Date;
+}
+
+function toScheduledDelivery(record: ScheduledDeliveryRecord): ScheduledDelivery {
+  return {
+    id: record.id,
+    packageId: record.packageId,
+    scheduleType: record.scheduleType,
+    scheduledFor: record.scheduledFor,
+    status: record.status,
+    createdAt: record.createdAt as Date,
+    dispatchedAt: record.dispatchedAt
+  };
+}
+
+// Wrapper class — keeps the same interface the service uses, now backed by Postgres.
 export class ScheduledDeliveryModel {
-  private collection = mongoClient?.db('traka').collection('scheduled_deliveries');
-
   async create(data: Omit<ScheduledDelivery, 'id' | 'createdAt'>): Promise<ScheduledDelivery> {
-    if (!this.collection) {
-      throw new Error('MongoDB not available');
-    }
-    
-    const doc = {
-      ...data,
-      createdAt: new Date()
-    };
-    
-    const result = await this.collection.insertOne(doc);
-    return { ...doc, id: result.insertedId.toString() };
+    const record = await ScheduledDeliveryRecord.create({
+      packageId: data.packageId,
+      scheduleType: data.scheduleType,
+      scheduledFor: data.scheduledFor,
+      status: data.status,
+      dispatchedAt: data.dispatchedAt
+    });
+    return toScheduledDelivery(record);
   }
 
   async findPendingDeliveries(): Promise<ScheduledDelivery[]> {
-    if (!this.collection) return [];
-    
-    const now = new Date();
-    const docs = await this.collection.find({
-      status: ScheduleStatus.PENDING,
-      scheduledFor: { $lte: now }
-    }).toArray();
-    
-    return docs.map(doc => ({
-      id: doc._id.toString(),
-      packageId: doc.packageId,
-      scheduleType: doc.scheduleType,
-      scheduledFor: doc.scheduledFor,
-      status: doc.status,
-      createdAt: doc.createdAt,
-      dispatchedAt: doc.dispatchedAt
-    }));
+    const records = await ScheduledDeliveryRecord.findAll({
+      where: {
+        status: ScheduleStatus.PENDING,
+        scheduledFor: { [Op.lte]: new Date() }
+      },
+      order: [['scheduled_for', 'ASC']]
+    });
+    return records.map(toScheduledDelivery);
   }
 
   async findByPackageId(packageId: string): Promise<ScheduledDelivery | null> {
-    if (!this.collection) return null;
-    
-    const doc = await this.collection.findOne({ packageId });
-    if (!doc) return null;
-    
-    return {
-      id: doc._id.toString(),
-      packageId: doc.packageId,
-      scheduleType: doc.scheduleType,
-      scheduledFor: doc.scheduledFor,
-      status: doc.status,
-      createdAt: doc.createdAt,
-      dispatchedAt: doc.dispatchedAt
-    };
+    const record = await ScheduledDeliveryRecord.findOne({
+      where: { packageId: String(packageId) }
+    });
+    return record ? toScheduledDelivery(record) : null;
   }
 
   async updateStatus(id: string, status: ScheduleStatus, dispatchedAt?: Date): Promise<void> {
-    if (!this.collection) return;
-    
-    const update: any = { status };
-    if (dispatchedAt) update.dispatchedAt = dispatchedAt;
-    
-    await this.collection.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: update }
+    await ScheduledDeliveryRecord.update(
+      { status, ...(dispatchedAt && { dispatchedAt }) },
+      { where: { id } }
     );
   }
 }
