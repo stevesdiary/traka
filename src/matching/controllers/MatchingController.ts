@@ -3,6 +3,7 @@ import { CourierPresenceService } from '../services/CourierPresenceService.js';
 import { MatchingEngine } from '../services/MatchingEngine.js';
 import { DispatchService } from '../services/DispatchService.js';
 import { DeliveryRequest } from '../models/CourierState.js';
+import logger from '../../utils/logger.js';
 import { VehicleType } from '../config/vehicles.js';
 
 export class MatchingController {
@@ -23,7 +24,7 @@ export class MatchingController {
         timestamp: Date.now()
       });
     } catch (error: any) {
-      console.error('Update location error:', error);
+      logger.error('Update location error', { error: (error as Error).message });
       res.status(500).json({ error: 'Failed to update location' });
     }
   };

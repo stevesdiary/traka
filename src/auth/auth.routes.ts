@@ -1,4 +1,5 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import {
   login,
   registerCustomer,
@@ -30,8 +31,32 @@ const router: Router = Router();
 const authService = new AuthService();
 const userRepository = new UserRepository();
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts, please try again later' }
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts, please try again later' }
+});
+
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many password reset attempts, please try again later' }
+});
+
 // Authentication
-router.post("/login", validateInput(LoginSchema), login);
+router.post("/login", loginLimiter, validateInput(LoginSchema), login);
 router.post("/logout", authenticateToken, logout);
 router.get("/me", authenticateToken, getMe);
 router.post("/refresh", refresh);
@@ -39,16 +64,19 @@ router.post("/refresh", refresh);
 // Registration endpoints
 router.post(
   "/register/customer",
+  registerLimiter,
   validateInput(CustomerRegistrationSchema),
   registerCustomer
 );
 router.post(
   "/register/business",
+  registerLimiter,
   validateInput(BusinessRegistrationSchema),
   registerBusiness
 );
 router.post(
   "/register/rider",
+  registerLimiter,
   validateInput(RiderRegistrationSchema),
   registerRider
 );
@@ -67,6 +95,7 @@ router.post("/register", register);
 // Password reset
 router.post(
   "/password/reset-request",
+  passwordResetLimiter,
   validateInput(PasswordResetRequestSchema),
   async (req: Request, res: Response) => {
     try {

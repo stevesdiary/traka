@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { RiderService } from './rider.service.js';
+import { BusinessMemberRepository } from '../business/business-member.repository.js';
 
 export class RiderController {
   private riderService: RiderService;
+  private memberRepository: BusinessMemberRepository;
 
   constructor() {
     this.riderService = new RiderService();
+    this.memberRepository = new BusinessMemberRepository();
   }
 
   registerRider = async (req: Request, res: Response) => {
@@ -75,6 +78,14 @@ export class RiderController {
   getBusinessRiders = async (req: Request, res: Response) => {
     try {
       const { business_id } = req.params;
+      const userId = (req as any).user?.id;
+
+      const membership = await this.memberRepository.findByUserAndTenant(userId, business_id);
+      if (!membership) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+
       const riders = await this.riderService.getBusinessRiders(business_id);
       res.json(riders);
     } catch (error) {

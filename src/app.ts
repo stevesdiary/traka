@@ -104,7 +104,15 @@ export const createApp = () => {
     res.json({ status: 'OK', message: 'TRAKA API is running' });
   });
 
-  app.get('/metrics', async (_req, res) => {
+  app.get('/metrics', (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal && config.isProduction) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  }, async (_req, res) => {
     res.set('Content-Type', metrics.registry.contentType);
     res.send(await metrics.registry.metrics());
   });
@@ -128,14 +136,12 @@ export const createApp = () => {
       stack: err.stack,
       method: req.method,
       url: req.originalUrl,
-      body: req.body,
       ip: req.ip
     });
 
     res.status(500).json({
       error: 'Internal server error',
-      message: err.message,
-      ...(config.isDevelopment && { stack: err.stack })
+      ...(config.isDevelopment && { message: err.message, stack: err.stack })
     });
   });
 

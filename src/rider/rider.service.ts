@@ -1,5 +1,6 @@
 import { RiderRepository } from "./rider.repository.js";
 import { RiderModel, RiderProfile, RiderRegistration } from "./rider.model.js";
+import logger from "../utils/logger.js";
 
 export class RiderService {
   private riderRepository: RiderRepository;
@@ -57,7 +58,7 @@ export class RiderService {
         );
       }
     } catch (error) {
-      console.error("Failed to sync courier presence", error);
+      logger.error("Failed to sync courier presence", { error: (error as Error).message });
     }
   }
 
