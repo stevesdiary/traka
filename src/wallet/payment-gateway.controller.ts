@@ -28,7 +28,8 @@ export class PaymentGatewayController {
           provider: result.provider,
           reference: result.reference,
           checkout_url: result.checkoutUrl,
-          access_code: result.accessCode
+          access_code: result.accessCode,
+          bank_details: result.bankDetails
         }
       });
     } catch (error: any) {
@@ -66,7 +67,7 @@ export class PaymentGatewayController {
     }
   };
 
-  handleWebhook = (provider: 'monnify' | 'paystack' | 'flutterwave') =>
+  handleWebhook = (provider: 'kuda' | 'monnify' | 'paystack' | 'flutterwave') =>
     async (req: Request, res: Response): Promise<void> => {
       try {
         const result = await this.paymentGatewayService.handleWebhook({

@@ -1,7 +1,8 @@
 export enum PaymentProvider {
   MONNIFY = 'MONNIFY',
   PAYSTACK = 'PAYSTACK',
-  FLUTTERWAVE = 'FLUTTERWAVE'
+  FLUTTERWAVE = 'FLUTTERWAVE',
+  KUDA = 'KUDA'
 }
 
 export interface InitializePaymentInput {
@@ -16,11 +17,19 @@ export interface InitializePaymentInput {
   metadata?: Record<string, any>;
 }
 
+export interface BankTransferDetails {
+  accountNumber: string;
+  accountName: string;
+  bankName: string;
+  bankCode?: string;
+}
+
 export interface InitializePaymentResult {
   provider: PaymentProvider;
   reference: string;
-  checkoutUrl: string;
+  checkoutUrl?: string;
   accessCode?: string;
+  bankDetails?: BankTransferDetails;
   raw?: any;
 }
 

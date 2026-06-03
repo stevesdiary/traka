@@ -70,7 +70,14 @@ export const config = {
   },
   
   payment: {
-    defaultProvider: (process.env.PAYMENT_PROVIDER || 'MONNIFY').toUpperCase(),
+    defaultProvider: (process.env.PAYMENT_PROVIDER || 'KUDA').toUpperCase(),
+    kuda: {
+      apiKey: process.env.KUDA_API_KEY || '',
+      email: process.env.KUDA_EMAIL || '',
+      webhookSecret: process.env.KUDA_WEBHOOK_SECRET || '',
+      baseUrl: process.env.KUDA_BASE_URL || 'https://kuda-openapi.kuda.com/v2.1',
+      virtualAccountName: process.env.KUDA_VIRTUAL_ACCOUNT_NAME || 'TRAKA'
+    },
     monnify: {
       secretKey: process.env.MONNIFY_SECRET_KEY || '',
       apiKey: process.env.MONNIFY_API_KEY || '',
