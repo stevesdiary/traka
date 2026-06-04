@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import type { Algorithm } from 'jsonwebtoken';
 
 // Determine environment
 const environment = process.env.NODE_ENV || 'development';
@@ -130,3 +131,10 @@ export const config = {
 };
 
 export default config;
+
+const JWT_ALGORITHM: Algorithm = 'HS256';
+
+// Pre-built option objects — use these in every jwt.sign / jwt.verify call.
+// The algorithm is defined exactly once here and never repeated elsewhere.
+export const JWT_SIGN_OPTIONS = { algorithm: JWT_ALGORITHM } as const;
+export const JWT_VERIFY_OPTIONS = { algorithms: [JWT_ALGORITHM] } as const;

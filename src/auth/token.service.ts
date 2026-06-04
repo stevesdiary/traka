@@ -7,7 +7,7 @@ import { JWTPayload } from '../types/index.js';
 
 const AUTH_COOKIE_NAME = 'traka_token';
 const REFRESH_COOKIE_NAME = 'traka_refresh';
-const ACCESS_TOKEN_EXPIRES: any = (process.env.JWT_EXPIRES_IN as any) ?? '24h';
+const ACCESS_TOKEN_EXPIRES: any = (process.env.JWT_EXPIRES_IN as any) ?? '30m';
 const REFRESH_TOKEN_EXPIRES_DAYS = Number(process.env.JWT_REFRESH_EXPIRES_DAYS || '30');
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_SECRET;
 if (!process.env.JWT_SECRET || !REFRESH_SECRET) {
@@ -58,6 +58,7 @@ export const issueRefreshToken = async (userId: string) => {
     tenant_id: null
   };
   const refreshToken = jwt.sign(payload, REFRESH_SECRET, {
+    algorithm: 'HS256',
     expiresIn: REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60
   });
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000);
@@ -77,7 +78,7 @@ export const revokeRefreshToken = async (refreshToken: string) => {
 };
 
 export const verifyRefreshToken = async (refreshToken: string) => {
-  const payload = jwt.verify(refreshToken, REFRESH_SECRET) as JWTPayload;
+  const payload = jwt.verify(refreshToken, REFRESH_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
   const tokenHash = hashToken(refreshToken);
   const existing = await RefreshTokenModel.findOne({
     where: {
@@ -101,5 +102,5 @@ export const revokeRefreshTokenRecord = async (id: string) => {
 };
 
 export const issueAccessToken = (payload: JWTPayload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: ACCESS_TOKEN_EXPIRES });
+  return jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRES });
 };

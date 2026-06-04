@@ -66,7 +66,7 @@ export class AuthService {
       tenant_id: user.tenant_id ?? null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '24h' });
 
     return {
       token,
@@ -114,7 +114,7 @@ export class AuthService {
       tenant_id: null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '24h' });
 
     return {
       token,
@@ -172,7 +172,7 @@ export class AuthService {
       tenant_id: user.tenant_id
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '24h' });
 
     return {
       token,
@@ -246,7 +246,7 @@ export class AuthService {
       tenant_id: user.tenant_id
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '24h' });
 
     return {
       token,
@@ -333,7 +333,7 @@ export class AuthService {
       tenant_id: null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET!, { algorithm: 'HS256', expiresIn: '24h' });
 
     return {
       token,
