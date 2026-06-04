@@ -73,7 +73,7 @@ export const createApp = () => {
         return;
       }
 
-      if (config.server.corsOrigin.includes('*') || config.server.corsOrigin.includes(origin)) {
+      if (config.server.corsOrigin.includes(origin)) {
         callback(null, true);
         return;
       }

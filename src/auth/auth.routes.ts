@@ -109,6 +109,7 @@ router.post(
 
 router.post(
   "/password/reset-confirm",
+  passwordResetLimiter,
   validateInput(PasswordResetConfirmSchema),
   async (req: Request, res: Response) => {
     try {

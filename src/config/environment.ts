@@ -49,7 +49,7 @@ export const config = {
   server: {
     port: parseInt(process.env.PORT || '4000', 10),
     apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
-    corsOrigin: process.env.CORS_ORIGIN?.split(',') || ['*']
+    corsOrigin: process.env.CORS_ORIGIN?.split(',').filter(Boolean) || []
   },
   
   database: {

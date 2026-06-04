@@ -11,6 +11,12 @@ export class MatchingController {
   updateLocation = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courierId } = req.params;
+
+      if (req.user!.userId !== courierId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
       const { lat, lng } = req.body;
 
       await CourierPresenceService.updateCourierLocation(courierId, {
@@ -32,6 +38,12 @@ export class MatchingController {
   updateStatus = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courierId } = req.params;
+
+      if (req.user!.userId !== courierId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
       const { status } = req.body;
 
       await CourierPresenceService.updateCourierStatus(courierId, status);
@@ -154,6 +166,12 @@ export class MatchingController {
   acceptOffer = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courierId, requestId } = req.params;
+
+      if (req.user!.userId !== courierId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
       const success = await DispatchService.acceptOffer(courierId, requestId);
 
       if (success) {
@@ -176,6 +194,12 @@ export class MatchingController {
   rejectOffer = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courierId, requestId } = req.params;
+
+      if (req.user!.userId !== courierId) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+
       await DispatchService.rejectOffer(courierId, requestId);
 
       res.json({

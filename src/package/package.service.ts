@@ -199,7 +199,8 @@ export class PackageService {
 
   async getPackageByTrackingNumber(
     tracking_number: string,
-    guest_token?: string
+    guest_token?: string,
+    requester?: { id: string; role: string }
   ): Promise<any> {
     const packageData = await this.packageRepository.findByTrackingNumber(
       tracking_number
@@ -212,6 +213,18 @@ export class PackageService {
     if (!packageData.recipient_id && packageData.guest_tracking_token) {
       if (!guest_token || guest_token !== packageData.guest_tracking_token) {
         throw new Error("Invalid tracking access");
+      }
+    }
+
+    // Enforce ownership for authenticated requests
+    if (requester) {
+      const isStaff = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(requester.role);
+      const isOwner =
+        packageData.sender_id === requester.id ||
+        packageData.recipient_id === requester.id;
+
+      if (!isStaff && !isOwner) {
+        throw new Error("Unauthorized");
       }
     }
 
