@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
 import fs from 'fs';
+import rateLimit from 'express-rate-limit';
 import routes from './routes.js';
 import { mongoSanitize } from './middleware/sanitize.middleware.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
@@ -24,6 +25,19 @@ export const createApp = () => {
   );
 
   const app = express();
+
+  // Trust first proxy so req.ip reflects the real client IP behind reverse proxies
+  app.set('trust proxy', true);
+
+  // Global rate limiter: 100 requests per 15 minutes per IP
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later',
+  });
+  app.use(globalLimiter);
 
   app.use(helmet({
     contentSecurityPolicy: false,
@@ -69,7 +83,12 @@ export const createApp = () => {
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin) {
-        callback(null, true);
+        // Allow requests with no origin only in non-production environments
+        if (!config.isProduction) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error('Not allowed by CORS'));
         return;
       }
 
@@ -84,23 +103,27 @@ export const createApp = () => {
   }));
 
   app.use(express.json({
+    limit: '1mb',
     verify: (req: any, _res, buf) => {
       req.rawBody = Buffer.from(buf);
     }
   }));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(mongoSanitize);
   app.use(cookieParser());
   app.use(requestLogger);
   app.use(metricsMiddleware(metrics));
 
-  const swaggerCandidates = [
-    path.resolve(process.cwd(), 'swagger.yaml'),
-    path.resolve(process.cwd(), '../swagger.yaml')
-  ];
-  const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
-  const swaggerDocument = YAML.load(swaggerPath);
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  // Swagger API docs — only exposed in non-production environments
+  if (!config.isProduction) {
+    const swaggerCandidates = [
+      path.resolve(process.cwd(), 'swagger.yaml'),
+      path.resolve(process.cwd(), '../swagger.yaml')
+    ];
+    const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
+    const swaggerDocument = YAML.load(swaggerPath);
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  }
 
   app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'TRAKA API is running' });
@@ -135,7 +158,7 @@ export const createApp = () => {
   app.use((err: any, req: any, res: any, next: any) => {
     logger.error('Unhandled error', {
       error: err.message,
-      stack: err.stack,
+      ...(config.isDevelopment && { stack: err.stack }),
       method: req.method,
       url: req.originalUrl,
       ip: req.ip
