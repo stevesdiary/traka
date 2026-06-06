@@ -13,6 +13,7 @@
     "start:staging": "NODE_ENV=staging node dist/src/index.js",
     "start:prod": "NODE_ENV=production node dist/src/index.js",
     "seed:admins": "tsc && node dist/scripts/seed-admins.js",
+    "seed:test": "tsc -p tsconfig.seed.json && node dist/scripts/seed-test-data.js",
     "seed:legal": "tsc -p tsconfig.seed.json && node dist/scripts/seed-legal.js",
     "migrate:up": "tsc && node dist/scripts/migrate.js up",
     "migrate:down": "tsc && node dist/scripts/migrate.js down",
