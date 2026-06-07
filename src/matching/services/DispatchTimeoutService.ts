@@ -1,6 +1,7 @@
 import { redis } from '../../config/database.js';
 import { PackageModel } from '../../package/package.model.js';
 import { EmailNotificationService } from '../../notification/email.service.js';
+import logger from '../../utils/logger.js';
 
 export class DispatchTimeoutService {
   private static readonly TIMEOUT_MINUTES = 10;
@@ -83,7 +84,7 @@ export class DispatchTimeoutService {
         htmlContent
       );
     } catch (error) {
-      console.error('Failed to send no-rider notification:', error);
+      logger.error('Failed to send no-rider notification', { error: (error as Error).message });
     }
   }
 

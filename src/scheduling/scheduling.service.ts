@@ -1,5 +1,6 @@
 import { ScheduledDeliveryModel } from './scheduling.model.js';
 import { DeliveryScheduleType, ScheduleStatus, ScheduleRequest } from './scheduling.types.js';
+import logger from '../utils/logger.js';
 
 export class SchedulingService {
   private scheduledDeliveryModel = new ScheduledDeliveryModel();
@@ -27,7 +28,7 @@ export class SchedulingService {
           new Date()
         );
       } catch (error) {
-        console.error(`Failed to dispatch delivery ${delivery.id}:`, error);
+        logger.error('Failed to dispatch delivery', { deliveryId: delivery.id, error: (error as Error).message });
       }
     }
   }

@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import config, { JWT_SIGN_OPTIONS } from '../config/environment.js';
 import { UserRepository } from '../user/user.repository.js';
 import { RiderRepository } from '../rider/rider.repository.js';
 import { TenantRepository } from '../tenant/tenant.repository.js';
@@ -66,7 +67,7 @@ export class AuthService {
       tenant_id: user.tenant_id ?? null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
     return {
       token,
@@ -114,7 +115,7 @@ export class AuthService {
       tenant_id: null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
     return {
       token,
@@ -172,7 +173,7 @@ export class AuthService {
       tenant_id: user.tenant_id
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
     return {
       token,
@@ -246,7 +247,7 @@ export class AuthService {
       tenant_id: user.tenant_id
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
     return {
       token,
@@ -333,7 +334,7 @@ export class AuthService {
       tenant_id: null
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: '24h' });
+    const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
     return {
       token,

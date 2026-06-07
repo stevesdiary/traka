@@ -57,7 +57,12 @@ export class PackageController {
   getPackageByTrackingNumber = async (req: Request, res: Response): Promise<void> => {
     try {
       const { tracking_number } = req.params;
-      const packageData = await this.packageService.getPackageByTrackingNumber(tracking_number);
+      const requester = { id: req.user!.userId, role: req.user!.role };
+      const packageData = await this.packageService.getPackageByTrackingNumber(
+        tracking_number,
+        undefined,
+        requester
+      );
 
       res.json({
         message: 'Package retrieved successfully',
@@ -66,6 +71,10 @@ export class PackageController {
     } catch (error: any) {
       if (error.message === 'Package not found') {
         res.status(404).json({ error: error.message });
+        return;
+      }
+      if (error.message === 'Unauthorized') {
+        res.status(403).json({ error: 'Access denied' });
         return;
       }
       res.status(500).json({ error: 'Failed to retrieve package' });

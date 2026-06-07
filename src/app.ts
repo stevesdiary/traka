@@ -6,13 +6,38 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
 import fs from 'fs';
+import rateLimit from 'express-rate-limit';
 import routes from './routes.js';
+import { mongoSanitize } from './middleware/sanitize.middleware.js';
 import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
+import { createMetricsRegistry, metricsMiddleware, attachSequelizeObservability } from './shared/observability/index.js';
+import { sequelize } from './config/database.js';
 
 export const createApp = () => {
+  const metrics = createMetricsRegistry(config.observability.serviceName);
+  attachSequelizeObservability(
+    sequelize,
+    logger,
+    metrics.dbQueryDuration,
+    metrics.dbQueryErrors,
+  );
+
   const app = express();
+
+  // Trust first proxy so req.ip reflects the real client IP behind reverse proxies
+  app.set('trust proxy', true);
+
+  // Global rate limiter: 100 requests per 15 minutes per IP
+  const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later',
+  });
+  app.use(globalLimiter);
 
   app.use(helmet({
     contentSecurityPolicy: false,
@@ -58,11 +83,16 @@ export const createApp = () => {
   app.use(cors({
     origin: (origin, callback) => {
       if (!origin) {
-        callback(null, true);
+        // Allow requests with no origin only in non-production environments
+        if (!config.isProduction) {
+          callback(null, true);
+          return;
+        }
+        callback(new Error('Not allowed by CORS'));
         return;
       }
 
-      if (config.server.corsOrigin.includes('*') || config.server.corsOrigin.includes(origin)) {
+      if (config.server.corsOrigin.includes(origin)) {
         callback(null, true);
         return;
       }
@@ -73,24 +103,43 @@ export const createApp = () => {
   }));
 
   app.use(express.json({
+    limit: '1mb',
     verify: (req: any, _res, buf) => {
       req.rawBody = Buffer.from(buf);
     }
   }));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  app.use(mongoSanitize);
   app.use(cookieParser());
   app.use(requestLogger);
+  app.use(metricsMiddleware(metrics));
 
-  const swaggerCandidates = [
-    path.resolve(process.cwd(), 'swagger.yaml'),
-    path.resolve(process.cwd(), '../swagger.yaml')
-  ];
-  const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
-  const swaggerDocument = YAML.load(swaggerPath);
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  // Swagger API docs — only exposed in non-production environments
+  if (!config.isProduction) {
+    const swaggerCandidates = [
+      path.resolve(process.cwd(), 'swagger.yaml'),
+      path.resolve(process.cwd(), '../swagger.yaml')
+    ];
+    const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
+    const swaggerDocument = YAML.load(swaggerPath);
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  }
 
   app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'TRAKA API is running' });
+  });
+
+  app.get('/metrics', (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal && config.isProduction) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  }, async (_req, res) => {
+    res.set('Content-Type', metrics.registry.contentType);
+    res.send(await metrics.registry.metrics());
   });
 
   app.use('/api', routes);
@@ -109,17 +158,15 @@ export const createApp = () => {
   app.use((err: any, req: any, res: any, next: any) => {
     logger.error('Unhandled error', {
       error: err.message,
-      stack: err.stack,
+      ...(config.isDevelopment && { stack: err.stack }),
       method: req.method,
       url: req.originalUrl,
-      body: req.body,
       ip: req.ip
     });
 
     res.status(500).json({
       error: 'Internal server error',
-      message: err.message,
-      ...(config.isDevelopment && { stack: err.stack })
+      ...(config.isDevelopment && { message: err.message, stack: err.stack })
     });
   });
 

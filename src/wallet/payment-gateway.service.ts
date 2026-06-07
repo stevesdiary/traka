@@ -6,6 +6,7 @@ import logger from '../utils/logger.js';
 import { UserRepository } from '../user/user.repository.js';
 import { WalletService } from './wallet.service.js';
 import {
+  BankTransferDetails,
   InitializePaymentInput,
   InitializePaymentResult,
   PaymentProvider,
@@ -432,6 +433,155 @@ class FlutterwaveGatewayClient implements PaymentGatewayClient {
   }
 }
 
+class KudaGatewayClient implements PaymentGatewayClient {
+  private readonly apiKey = config.payment.kuda.apiKey;
+  private readonly email = config.payment.kuda.email;
+  private readonly webhookSecret = config.payment.kuda.webhookSecret;
+  private readonly baseUrl = config.payment.kuda.baseUrl;
+  private readonly virtualAccountName = config.payment.kuda.virtualAccountName;
+  private accessToken = '';
+  private accessTokenExpiry = 0;
+  private http: AxiosInstance;
+
+  constructor() {
+    this.http = axios.create({
+      baseURL: this.baseUrl,
+      timeout: 15000
+    });
+  }
+
+  private async getAccessToken(): Promise<string> {
+    const now = Date.now();
+    if (this.accessToken && now < this.accessTokenExpiry) {
+      return this.accessToken;
+    }
+
+    const response = await this.http.post('/Account/GetToken', {
+      email: this.email,
+      apiKey: this.apiKey
+    });
+
+    if (!response.data?.status) {
+      throw new Error(`Kuda auth failed: ${response.data?.message || 'Unknown error'}`);
+    }
+
+    const token = response.data?.data;
+    if (!token) throw new Error('Kuda auth failed: Missing access token');
+
+    this.accessToken = token;
+    // Kuda tokens are typically valid for 24 hours; refresh 5 min early
+    this.accessTokenExpiry = now + (24 * 60 - 5) * 60 * 1000;
+    return token;
+  }
+
+  private async post<T>(endpoint: string, body: Record<string, any>): Promise<T> {
+    const token = await this.getAccessToken();
+    const response = await this.http.post(endpoint, body, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data as T;
+  }
+
+  async initializePayment(input: InitializePaymentInput): Promise<InitializePaymentResult> {
+    const response = await this.post<any>('/Collection/InitiateCollection', {
+      amount: input.amount,
+      narration: input.description,
+      clientAccountNumber: input.reference,
+      beneficiaryName: input.customerName,
+      beneficiaryEmail: input.customerEmail,
+      beneficiaryPhone: input.customerPhone || '',
+      trackingReference: input.reference,
+      currency: input.currency,
+      metadata: input.metadata || {}
+    });
+
+    if (!response?.status) {
+      throw new Error(`Kuda payment init failed: ${response?.message || 'Unknown error'}`);
+    }
+
+    const data = response?.data || {};
+    const bankDetails: BankTransferDetails = {
+      accountNumber: data.virtualAccountNumber || data.accountNumber || '',
+      accountName: data.accountName || this.virtualAccountName,
+      bankName: data.bankName || 'Kuda Microfinance Bank',
+      bankCode: data.bankCode || '090267'
+    };
+
+    return {
+      provider: PaymentProvider.KUDA,
+      reference: input.reference,
+      bankDetails,
+      raw: response
+    };
+  }
+
+  async verifyPayment(reference: string): Promise<VerifiedPayment> {
+    const response = await this.post<any>('/Transaction/RetrieveTransaction', {
+      requestReference: reference
+    });
+
+    if (!response?.status) {
+      throw new Error(`Kuda verify failed: ${response?.message || 'Unknown error'}`);
+    }
+
+    const data = response?.data || {};
+    const status = normalizePaymentStatus(
+      String(data.transactionStatus || data.status || 'FAILED')
+    );
+
+    return {
+      provider: PaymentProvider.KUDA,
+      reference: String(data.requestReference || data.transactionReference || reference),
+      status,
+      amount: numberOrZero(data.amount ?? data.transactionAmount),
+      currency: data.currency || 'NGN',
+      customerEmail: data.beneficiaryEmail || data.customerEmail,
+      metadata: parseMetadata(data.metadata),
+      paidAt: data.transactionDate ? new Date(data.transactionDate) : undefined,
+      raw: response
+    };
+  }
+
+  verifyWebhookSignature(rawBody: Buffer | undefined, headers: Record<string, any>): boolean {
+    const signatureHeader = headers['x-kuda-signature'] ?? headers['kuda-signature'];
+    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+    if (!rawBody || !signature || !this.webhookSecret) return false;
+
+    const computed = crypto
+      .createHmac('sha512', this.webhookSecret)
+      .update(rawBody)
+      .digest('hex');
+
+    return safeCompare(computed, String(signature));
+  }
+
+  parseWebhookPayload(payload: any): VerifiedPayment | null {
+    if (!payload || payload.notificationType !== 'COLLECTION') {
+      return null;
+    }
+
+    const data = payload.data || payload.transactionData || {};
+    const reference = String(data.trackingReference || data.requestReference || '');
+    if (!reference) return null;
+
+    const status = normalizePaymentStatus(
+      String(data.transactionStatus || data.status || 'SUCCESS')
+    );
+
+    return {
+      provider: PaymentProvider.KUDA,
+      reference,
+      status,
+      amount: numberOrZero(data.amount ?? data.transactionAmount),
+      currency: data.currency || 'NGN',
+      customerEmail: data.beneficiaryEmail || data.customerEmail,
+      metadata: parseMetadata(data.metadata),
+      paidAt: data.transactionDate ? new Date(data.transactionDate) : undefined,
+      raw: payload
+    };
+  }
+}
+
 export class PaymentGatewayService {
   private walletService = new WalletService();
   private userRepository = new UserRepository();
@@ -439,6 +589,7 @@ export class PaymentGatewayService {
 
   constructor() {
     this.gateways = {
+      [PaymentProvider.KUDA]: new KudaGatewayClient(),
       [PaymentProvider.MONNIFY]: new MonnifyGatewayClient(),
       [PaymentProvider.PAYSTACK]: new PaystackGatewayClient(),
       [PaymentProvider.FLUTTERWAVE]: new FlutterwaveGatewayClient()

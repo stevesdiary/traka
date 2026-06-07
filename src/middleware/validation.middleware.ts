@@ -7,14 +7,11 @@ export const validateInput = (schema: Joi.Schema, source: 'body' | 'query' | 'pa
     const { error, value } = schema.validate(data, { abortEarly: false });
     
     if (error) {
-      // Log the error for debugging
-      console.error('Validation error:', error.details);
       const validationErrors = error.details.map(detail => ({
-        // field: detail.path.join('.'),
-        message: detail.message.replace(/"/g, ''),
-        value: detail.context?.value
+        field: detail.path.join('.'),
+        message: detail.message.replace(/"/g, '')
       }));
-      
+
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Please check the following fields and try again',

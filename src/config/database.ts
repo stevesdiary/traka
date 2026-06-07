@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import { Sequelize } from 'sequelize-typescript';
-import { MongoClient } from 'mongodb';
 import logger from '../utils/logger.js';
 import { redis } from './upstash.js';
 import { UserModel } from '../user/user.model.js';
@@ -25,6 +24,9 @@ import { RefreshTokenModel } from '../auth/refresh-token.model.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
 import { MessageModel } from '../message/message.model.js';
 import { FeatureOptInModel } from '../scheduling/feature-opt-in.model.js';
+import { ScheduledDeliveryRecord } from '../scheduling/scheduling.model.js';
+import { ApiKeyModel } from '../api-key/api-key.model.js';
+import { WebhookSubscriptionModel } from '../webhook/webhook-subscription.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
@@ -72,26 +74,13 @@ sequelize.addModels([
   RefreshTokenModel,
   MessageModel,
   FeatureOptInModel,
+  ScheduledDeliveryRecord,
+  ApiKeyModel,
+  WebhookSubscriptionModel,
 ]);
 
 // Export Upstash Redis
 export { redis };
-
-// MongoDB Configuration (optional)
-let mongoClient: MongoClient | null = null;
-try {
-  mongoClient = new MongoClient(process.env.MONGO_URL || 'mongodb://localhost:27017/traka', {
-    maxPoolSize: 10,
-    minPoolSize: 2,
-    maxIdleTimeMS: 30000
-  });
-} catch (error) {
-  logger.warn('MongoDB client creation failed, running without MongoDB', {
-    error: error instanceof Error ? error.message : String(error)
-  });
-}
-
-export { mongoClient };
 
 // Database Connection Function
 export const connectDatabases = async () => {
@@ -108,20 +97,6 @@ export const connectDatabases = async () => {
     await redis.connect();
     logger.info('Upstash Redis initialized');
 
-    // Connect to MongoDB (optional)
-    if (mongoClient) {
-      try {
-        await mongoClient.connect();
-        logger.info('MongoDB connected successfully');
-      } catch (mongoError: any) {
-        logger.warn('MongoDB connection failed (optional)', {
-          error: mongoError.message
-        });
-      }
-    } else {
-      logger.warn('MongoDB client not available, skipping connection');
-    }
-
     logger.info('All databases connected and ready');
   } catch (error) {
     logger.error('Database connection failed', {
@@ -137,15 +112,6 @@ export const disconnectDatabases = async () => {
   try {
     await sequelize.close();
     await redis.disconnect();
-    try {
-      if (mongoClient) {
-        await mongoClient.close();
-      }
-    } catch (mongoError: any) {
-      logger.warn('MongoDB disconnect warning', {
-        error: mongoError.message
-      });
-    }
     logger.info('Database connections closed');
   } catch (error) {
     logger.error('Error closing database connections', {

@@ -19,7 +19,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET!, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid token' });
     req.user = user as JWTPayload;
     next();
@@ -29,11 +29,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 export const requireRole = (roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role as Role)) {
-      return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        required_roles: roles,
-        // user_role: req.user?.role
-      });
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();
   };
@@ -47,11 +43,7 @@ export const requirePermission = (permission: Permission) => {
     
     const userRole = req.user.role as Role;
     if (!PermissionService.hasPermission(userRole, permission)) {
-      return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        required_permission: permission,
-        user_role: userRole
-      });
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();
   };
@@ -65,11 +57,7 @@ export const requireAnyPermission = (permissions: Permission[]) => {
     
     const userRole = req.user.role as Role;
     if (!PermissionService.hasAnyPermission(userRole, permissions)) {
-      return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        required_permissions: permissions,
-        user_role: userRole
-      });
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();
   };
@@ -83,11 +71,7 @@ export const requireAllPermissions = (permissions: Permission[]) => {
     
     const userRole = req.user.role as Role;
     if (!PermissionService.hasAllPermissions(userRole, permissions)) {
-      return res.status(403).json({ 
-        error: 'Insufficient permissions',
-        required_permissions: permissions,
-        user_role: userRole
-      });
+      return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();
   };

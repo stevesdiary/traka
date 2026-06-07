@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { UserRepository } from '../user/user.repository.js';
 import { JWTPayload } from '../types/index.js';
+import logger from '../utils/logger.js';
 import {
   setAuthCookie,
   setRefreshCookie,
@@ -79,7 +80,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       token: result.token
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', { error: (error as Error).message });
     res.status(500).json({ error: 'Internal server error' });
   }
 };
@@ -124,14 +125,13 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
 
 export const registerCustomer = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('Customer registration attempt:', { email: req.body.email, first_name: req.body.first_name, last_name: req.body.last_name });
     const result = await authService.registerCustomer(req.body);
-    
+
     const { VerificationService } = await import('../verification/verification.service.js');
     const verificationService = new VerificationService();
     await verificationService.sendEmailVerification(req.body.email, req.body.first_name);
-    
-    console.log('Customer registration successful:', result.user.id);
+
+    logger.info('Customer registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Customer registered successfully. Please check your email for verification code.',
       token: result.token,
@@ -145,25 +145,24 @@ export const registerCustomer = async (req: Request, res: Response): Promise<voi
       verification_required: true
     });
   } catch (error: any) {
-    console.error('Customer registration error:', error);
+    logger.error('Customer registration failed', { error: error.message });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 export const registerBusiness = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('Business registration attempt:', { email: req.body.email, business_name: req.body.business_name });
     const result = await authService.registerBusiness(req.body);
-    
+
     const { VerificationService } = await import('../verification/verification.service.js');
     const verificationService = new VerificationService();
     await verificationService.sendEmailVerification(req.body.email, req.body.contact_person);
-    
-    console.log('Business registration successful:', result.user.id);
+
+    logger.info('Business registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Business registered successfully. Please check your email for verification code.',
       token: result.token,
@@ -172,25 +171,24 @@ export const registerBusiness = async (req: Request, res: Response): Promise<voi
       verification_required: true
     });
   } catch (error: any) {
-    console.error('Business registration error:', error);
+    logger.error('Business registration failed', { error: error.message });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 export const registerRider = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('Rider registration attempt:', { email: req.body.email, first_name: req.body.first_name, last_name: req.body.last_name, vehicle_type: req.body.vehicle_type });
     const result = await authService.registerRider(req.body);
-    
+
     const { VerificationService } = await import('../verification/verification.service.js');
     const verificationService = new VerificationService();
     await verificationService.sendEmailVerification(req.body.email, req.body.first_name);
-    
-    console.log('Rider registration successful:', result.user.id);
+
+    logger.info('Rider registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Rider registered successfully. Please check your email for verification code.',
       token: result.token,
@@ -199,33 +197,32 @@ export const registerRider = async (req: Request, res: Response): Promise<void> 
       verification_required: true
     });
   } catch (error: any) {
-    console.error('Rider registration error:', error);
+    logger.error('Rider registration failed', { error: error.message });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('Legacy registration attempt:', { email: req.body.email });
     const userData = req.body;
     const user = await authService.register(userData);
-    console.log('Legacy registration successful:', user.id);
+    logger.info('User registered', { userId: user.id });
     
     res.status(201).json({
       message: 'User registered successfully',
       user
     });
   } catch (error: any) {
-    console.error('Legacy registration error:', error);
+    logger.error('Legacy registration failed', { error: error.message });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 
@@ -253,11 +250,11 @@ export const registerAdmin = async (req: Request, res: Response): Promise<void> 
       user: result.user
     });
   } catch (error: any) {
-    console.error('Admin registration error:', error);
+    logger.error('Admin registration failed', { error: error.message });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 };

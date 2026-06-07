@@ -29,7 +29,7 @@ export class WebSocketService {
           return next(new Error('Authentication required'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as any;
         socket.data.userId = decoded.id;
         next();
       } catch (error) {

@@ -3,6 +3,7 @@ import { DeliveryRequest, CourierState } from '../models/CourierState.js';
 import { MatchingEngine, CourierMatch } from './MatchingEngine.js';
 import { MATCHING_CONFIG } from '../config/vehicles.js';
 import { DispatchTimeoutService } from './DispatchTimeoutService.js';
+import logger from '../../utils/logger.js';
 
 export interface DispatchResult {
   success: boolean;
@@ -127,7 +128,7 @@ export class DispatchService {
 
     // In a real implementation, this would trigger a push notification
     // or WebSocket message to the courier
-    console.log(`Offering delivery ${request.id} to courier ${match.courier.id}`);
+    logger.info("Offering delivery to courier", { deliveryId: request.id, courierId: match.courier.id });
 
     // Wait for response (in real implementation, this would be event-driven)
     return await this.waitForCourierResponse(offerKey, match.courier.id);

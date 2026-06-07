@@ -6,6 +6,7 @@
   "include": [
     "src/**/*",
     "scripts/seed-legal.ts",
+    "scripts/seed-test-data.ts",
     "migrations/**/*.ts"
   ],
   "exclude": [

@@ -2,6 +2,7 @@ import { InvoiceRepository } from './invoice.repository.js';
 import { PackageModel } from '../package/package.model.js';
 import { sequelize } from '../config/database.js';
 import { QueryTypes, Op } from 'sequelize';
+import logger from '../utils/logger.js';
 
 export class InvoiceService {
   private invoiceRepository = new InvoiceRepository();
@@ -78,7 +79,7 @@ export class InvoiceService {
       try {
         await this.generateMonthlyInvoice(tenant.tenant_id, year, month);
       } catch (error) {
-        console.error(`Failed to generate invoice for tenant ${tenant.tenant_id}:`, error);
+        logger.error('Failed to generate invoice for tenant', { tenantId: tenant.tenant_id, error: (error as Error).message });
       }
     }
   }

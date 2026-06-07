@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import type { Algorithm } from 'jsonwebtoken';
 
 // Determine environment
 const environment = process.env.NODE_ENV || 'development';
@@ -26,7 +27,6 @@ if (result.error) {
 const requiredVars = [
   'POSTGRES_URL',
   'REDIS_URL',
-  'MONGO_URL',
   'JWT_SECRET',
   'PORT'
 ];
@@ -49,13 +49,12 @@ export const config = {
   server: {
     port: parseInt(process.env.PORT || '4000', 10),
     apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:4000',
-    corsOrigin: process.env.CORS_ORIGIN?.split(',') || ['*']
+    corsOrigin: process.env.CORS_ORIGIN?.split(',').filter(Boolean) || []
   },
   
   database: {
     postgres: process.env.POSTGRES_URL!,
-    redis: process.env.REDIS_URL!,
-    mongo: process.env.MONGO_URL!
+    redis: process.env.REDIS_URL!
   },
   
   jwt: {
@@ -70,7 +69,14 @@ export const config = {
   },
   
   payment: {
-    defaultProvider: (process.env.PAYMENT_PROVIDER || 'MONNIFY').toUpperCase(),
+    defaultProvider: (process.env.PAYMENT_PROVIDER || 'KUDA').toUpperCase(),
+    kuda: {
+      apiKey: process.env.KUDA_API_KEY || '',
+      email: process.env.KUDA_EMAIL || '',
+      webhookSecret: process.env.KUDA_WEBHOOK_SECRET || '',
+      baseUrl: process.env.KUDA_BASE_URL || 'https://kuda-openapi.kuda.com/v2.1',
+      virtualAccountName: process.env.KUDA_VIRTUAL_ACCOUNT_NAME || 'TRAKA'
+    },
     monnify: {
       secretKey: process.env.MONNIFY_SECRET_KEY || '',
       apiKey: process.env.MONNIFY_API_KEY || '',
@@ -114,7 +120,21 @@ export const config = {
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
-  }
+  },
+
+  observability: {
+    lokiUrl: process.env.LOKI_URL,
+    otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318/v1/traces',
+    slowQueryThresholdMs: parseInt(process.env.SLOW_QUERY_THRESHOLD_MS ?? '500', 10),
+    serviceName: process.env.SERVICE_NAME ?? 'traka-api',
+  },
 };
 
 export default config;
+
+const JWT_ALGORITHM: Algorithm = 'HS256';
+
+// Pre-built option objects — use these in every jwt.sign / jwt.verify call.
+// The algorithm is defined exactly once here and never repeated elsewhere.
+export const JWT_SIGN_OPTIONS = { algorithm: JWT_ALGORITHM } as const;
+export const JWT_VERIFY_OPTIONS = { algorithms: [JWT_ALGORITHM] } as const;

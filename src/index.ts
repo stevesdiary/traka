@@ -1,4 +1,6 @@
-// Load environment configuration first
+// OTel SDK MUST be initialized before all other imports — patches Node.js module loaders
+import './instrument.js';
+// Load environment configuration (dotenv already loaded by instrument.ts)
 import './config/environment.js';
 
 import { connectDatabases, disconnectDatabases } from './config/database.js';

@@ -12,6 +12,7 @@ import {
   NotificationService,
   NotificationType,
 } from "../notification/notification.service.js";
+import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
@@ -198,7 +199,8 @@ export class PackageService {
 
   async getPackageByTrackingNumber(
     tracking_number: string,
-    guest_token?: string
+    guest_token?: string,
+    requester?: { id: string; role: string }
   ): Promise<any> {
     const packageData = await this.packageRepository.findByTrackingNumber(
       tracking_number
@@ -211,6 +213,18 @@ export class PackageService {
     if (!packageData.recipient_id && packageData.guest_tracking_token) {
       if (!guest_token || guest_token !== packageData.guest_tracking_token) {
         throw new Error("Invalid tracking access");
+      }
+    }
+
+    // Enforce ownership for authenticated requests
+    if (requester) {
+      const isStaff = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(requester.role);
+      const isOwner =
+        packageData.sender_id === requester.id ||
+        packageData.recipient_id === requester.id;
+
+      if (!isStaff && !isOwner) {
+        throw new Error("Unauthorized");
       }
     }
 
@@ -330,7 +344,19 @@ export class PackageService {
       throw new Error("Package not found or unauthorized");
     }
 
-    return updatedPackages[0];
+    const updated = updatedPackages[0];
+    if (tenant_id && updated) {
+      const event = status === 'DELIVERED' ? 'order.delivered' : 'order.status_changed';
+      setImmediate(() => {
+        webhookService.dispatch(tenant_id, event, {
+          package_id: package_id,
+          status,
+          updated_at: new Date().toISOString(),
+        });
+      });
+    }
+
+    return updated;
   }
 
   async confirmPickup(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
@@ -480,6 +506,17 @@ export class PackageService {
           notificationPayload
         ),
       ]);
+
+      if (packageData.tenant_id) {
+        setImmediate(() => {
+          webhookService.dispatch(packageData.tenant_id, 'rider.assigned', {
+            package_id: packageData.id,
+            tracking_number: packageData.tracking_number,
+            rider_id: assignedRider.userId,
+            eta_seconds: dispatchResult.eta ? Math.round(dispatchResult.eta) : undefined,
+          });
+        });
+      }
 
       return {
         assigned: true,

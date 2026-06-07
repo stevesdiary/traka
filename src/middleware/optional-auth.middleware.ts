@@ -16,12 +16,11 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
     return;
   }
 
-  jwt.verify(token, process.env.JWT_SECRET!, (err: VerifyErrors | null, user: string | JwtPayload | undefined) => {
+  jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }, (err: VerifyErrors | null, user: string | JwtPayload | undefined) => {
     if (!err && user) {
-      // Valid token - attach user
       req.user = user as JWTPayload;
     }
-    // Continue regardless of token validity
+    // Invalid/expired tokens are treated as anonymous, not rejected — this is intentional for optional-auth routes
     next();
   });
 };
