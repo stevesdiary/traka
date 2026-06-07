@@ -1,3 +1,0 @@
--- Add email verification status to users table
-ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE;
-ALTER TABLE users ADD COLUMN phone_verified BOOLEAN DEFAULT FALSE;
