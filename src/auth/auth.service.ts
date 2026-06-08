@@ -86,7 +86,7 @@ export class AuthService {
     email: string;
     password: string;
     first_name: string;
-    last_name: string;
+    surname: string;
     phone: string;
   }): Promise<{ token: string; user: any }> {
     const existingUser = await this.userRepository.findByEmail(userData.email);
@@ -102,7 +102,7 @@ export class AuthService {
       type: 'USER',
       tenant_id: null, // Recipients are not tied to any tenant
       first_name: userData.first_name,
-      last_name: userData.last_name,
+      surname: userData.surname,
       phone: userData.phone
     });
 
@@ -125,7 +125,7 @@ export class AuthService {
         role: user.role,
         type: user.type,
         first_name: userData.first_name,
-        last_name: userData.last_name,
+        surname: userData.surname,
         phone: userData.phone
       }
     };
@@ -156,12 +156,18 @@ export class AuthService {
 
     // Create business owner user
     const password_hash = await bcrypt.hash(businessData.password, 10);
+    const nameParts = businessData.contact_person.trim().split(/\s+/);
+    const first_name = nameParts[0];
+    const surname = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0];
     const user = await this.userRepository.createUser({
       email: businessData.email,
       password_hash,
       role: 'BUSINESS_OWNER',
       type: 'BUSINESS_OWNER',
-      tenant_id: tenant.id
+      tenant_id: tenant.id,
+      first_name,
+      surname,
+      phone: businessData.phone
     });
 
     const payload: JWTPayload = {
@@ -197,7 +203,7 @@ export class AuthService {
     email: string;
     password: string;
     first_name: string;
-    last_name: string;
+    surname: string;
     phone: string;
     license_number: string;
     vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
@@ -221,7 +227,7 @@ export class AuthService {
       type: 'RIDER',
       tenant_id,
       first_name: riderData.first_name,
-      last_name: riderData.last_name,
+      surname: riderData.surname,
       phone: riderData.phone
     });
 
@@ -299,7 +305,7 @@ export class AuthService {
     email: string;
     password: string;
     first_name: string;
-    last_name: string;
+    surname: string;
     phone: string;
     role: 'ADMIN' | 'SUPER_ADMIN' | 'MANAGER';
   }): Promise<{ token: string; user: any }> {
@@ -316,7 +322,7 @@ export class AuthService {
       type: adminData.role,
       tenant_id: null,
       first_name: adminData.first_name,
-      last_name: adminData.last_name,
+      surname: adminData.surname,
       phone: adminData.phone
     });
 
@@ -344,7 +350,7 @@ export class AuthService {
         role: user.role,
         type: user.type,
         first_name: adminData.first_name,
-        last_name: adminData.last_name,
+        surname: adminData.surname,
         phone: adminData.phone,
         email_verified: true,
         phone_verified: true

@@ -58,7 +58,7 @@ export class DashboardService {
     const riders = await this.riderRepository.getBusinessRiders(tenant_id);
     return riders.map(rider => ({
       id: rider.id,
-      full_name: `${rider.user.first_name} ${rider.user.last_name}`,
+      full_name: `${rider.user.first_name} ${rider.user.surname}`,
       phone: rider.user.phone,
       vehicle_type: rider.vehicle_type,
       vehicle_plate: rider.vehicle_plate,
@@ -81,7 +81,10 @@ export class DashboardService {
       status: pkg.status,
       delivery_address: pkg.delivery_address,
       description: pkg.description,
-      created_at: pkg.createdAt
+      created_at: pkg.createdAt,
+      cancellation_reason: pkg.cancellation_reason ?? null,
+      cancellation_note: pkg.cancellation_note ?? null,
+      cancelled_at: pkg.cancelled_at ?? null
     }));
   }
 

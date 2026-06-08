@@ -735,7 +735,7 @@ export class PaymentGatewayService {
       currency,
       reference,
       customerEmail: user.email,
-      customerName: `${user.first_name} ${user.last_name}`.trim(),
+      customerName: `${user.first_name} ${user.surname}`.trim(),
       customerPhone: user.phone || undefined,
       callbackUrl,
       description: `TRAKA wallet funding for ${user.email}`,

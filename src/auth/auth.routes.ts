@@ -22,6 +22,7 @@ import {
   PasswordResetConfirmSchema,
   UpdatePasswordSchema,
   ProfilePhotoUpdateSchema,
+  ProfileUpdateSchema,
 } from "../utils/validators.js";
 import { AuthService } from "./auth.service.js";
 import { Request, Response } from "express";
@@ -42,6 +43,14 @@ const loginLimiter = rateLimit({
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many registration attempts, please try again later' }
+});
+
+const businessRegisterLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many registration attempts, please try again later' }
@@ -70,7 +79,7 @@ router.post(
 );
 router.post(
   "/register/business",
-  registerLimiter,
+  businessRegisterLimiter,
   validateInput(BusinessRegistrationSchema),
   registerBusiness
 );
@@ -135,6 +144,39 @@ router.put(
       res.json({ message: 'Password updated successfully' });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// Profile update (name, phone)
+router.patch(
+  "/me",
+  authenticateToken,
+  validateInput(ProfileUpdateSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const { first_name, surname, phone } = req.body;
+      const updates: Record<string, string> = {};
+      if (first_name) updates.first_name = first_name;
+      if (surname) updates.surname = surname;
+      if (phone) updates.phone = phone;
+      await userRepository.updateById(userId, updates);
+      const user = await userRepository.findById(userId);
+      res.json({
+        message: 'Profile updated successfully',
+        user: {
+          id: user!.id,
+          email: user!.email,
+          first_name: user!.first_name,
+          surname: user!.surname,
+          phone: user!.phone,
+          role: user!.role,
+          type: user!.type,
+        }
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Failed to update profile' });
     }
   }
 );

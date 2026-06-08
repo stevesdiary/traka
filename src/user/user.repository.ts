@@ -21,7 +21,7 @@ export class UserRepository extends BaseRepository<UserModel> {
     type: string;
     tenant_id: string | null;
     first_name?: string;
-    last_name?: string;
+    surname?: string;
     phone?: string;
   }): Promise<UserModel> {
     return this.model.create(userData as any);

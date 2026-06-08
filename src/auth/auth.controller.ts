@@ -49,7 +49,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         type: user.type,
         tenant_id: user.tenant_id,
         first_name: user.first_name,
-        last_name: user.last_name,
+        surname: user.surname,
         phone: user.phone,
         email_verified: user.email_verified,
         phone_verified: user.phone_verified,
@@ -123,29 +123,35 @@ export const refresh = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+const sendVerificationAsync = (email: string, name: string): void => {
+  import('../verification/verification.service.js').then(({ VerificationService }) => {
+    new VerificationService().sendEmailVerification(email, name).catch((err) => {
+      logger.error('Background email verification failed', { email, error: err.message });
+    });
+  });
+};
+
 export const registerCustomer = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await authService.registerCustomer(req.body);
-
-    const { VerificationService } = await import('../verification/verification.service.js');
-    const verificationService = new VerificationService();
-    await verificationService.sendEmailVerification(req.body.email, req.body.first_name);
 
     logger.info('Customer registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Customer registered successfully. Please check your email for verification code.',
       token: result.token,
       user: {
-        id: result.user.id,  
+        id: result.user.id,
         email: result.user.email,
         tenant_id: result.user.tenant_id,
         first_name: result.user.first_name,
-        last_name: result.user.last_name
+        surname: result.user.surname
       },
       verification_required: true
     });
+
+    sendVerificationAsync(req.body.email, req.body.first_name);
   } catch (error: any) {
-    logger.error('Customer registration failed', { error: error.message });
+    logger.error('Customer registration failed', { error: error.message, stack: error.stack });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
@@ -158,10 +164,6 @@ export const registerBusiness = async (req: Request, res: Response): Promise<voi
   try {
     const result = await authService.registerBusiness(req.body);
 
-    const { VerificationService } = await import('../verification/verification.service.js');
-    const verificationService = new VerificationService();
-    await verificationService.sendEmailVerification(req.body.email, req.body.contact_person);
-
     logger.info('Business registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Business registered successfully. Please check your email for verification code.',
@@ -170,8 +172,10 @@ export const registerBusiness = async (req: Request, res: Response): Promise<voi
       business: result.business,
       verification_required: true
     });
+
+    sendVerificationAsync(req.body.email, req.body.contact_person);
   } catch (error: any) {
-    logger.error('Business registration failed', { error: error.message });
+    logger.error('Business registration failed', { error: error.message, stack: error.stack });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
@@ -184,10 +188,6 @@ export const registerRider = async (req: Request, res: Response): Promise<void> 
   try {
     const result = await authService.registerRider(req.body);
 
-    const { VerificationService } = await import('../verification/verification.service.js');
-    const verificationService = new VerificationService();
-    await verificationService.sendEmailVerification(req.body.email, req.body.first_name);
-
     logger.info('Rider registered', { userId: result.user.id });
     res.status(201).json({
       message: 'Rider registered successfully. Please check your email for verification code.',
@@ -196,8 +196,10 @@ export const registerRider = async (req: Request, res: Response): Promise<void> 
       rider_profile: result.rider_profile,
       verification_required: true
     });
+
+    sendVerificationAsync(req.body.email, req.body.first_name);
   } catch (error: any) {
-    logger.error('Rider registration failed', { error: error.message });
+    logger.error('Rider registration failed', { error: error.message, stack: error.stack });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
@@ -217,7 +219,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       user
     });
   } catch (error: any) {
-    logger.error('Legacy registration failed', { error: error.message });
+    logger.error('Legacy registration failed', { error: error.message, stack: error.stack });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;
@@ -228,7 +230,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const registerAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password, first_name, last_name, phone, role } = req.body;
+    const { email, password, first_name, surname, phone, role } = req.body;
     
     if (!['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(role)) {
       res.status(400).json({ error: 'Invalid role. Must be ADMIN, SUPER_ADMIN, or MANAGER' });
@@ -239,7 +241,7 @@ export const registerAdmin = async (req: Request, res: Response): Promise<void> 
       email,
       password,
       first_name,
-      last_name,
+      surname,
       phone,
       role
     });
@@ -250,7 +252,7 @@ export const registerAdmin = async (req: Request, res: Response): Promise<void> 
       user: result.user
     });
   } catch (error: any) {
-    logger.error('Admin registration failed', { error: error.message });
+    logger.error('Admin registration failed', { error: error.message, stack: error.stack });
     if (error.message === 'User already exists') {
       res.status(409).json({ error: error.message });
       return;

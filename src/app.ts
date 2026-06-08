@@ -27,7 +27,7 @@ export const createApp = () => {
   const app = express();
 
   // Trust first proxy so req.ip reflects the real client IP behind reverse proxies
-  app.set('trust proxy', true);
+  app.set('trust proxy', 1);
 
   // Global rate limiter: 100 requests per 15 minutes per IP
   const globalLimiter = rateLimit({
@@ -36,6 +36,7 @@ export const createApp = () => {
     standardHeaders: true,
     legacyHeaders: false,
     message: 'Too many requests from this IP, please try again later',
+    validate: { trustProxy: false },
   });
   app.use(globalLimiter);
 

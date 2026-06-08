@@ -133,7 +133,7 @@ export class PackageService {
 
     // Get sender information
     const sender = await this.userRepository.findById(sender_id);
-    const sender_name = sender ? `${sender.first_name} ${sender.last_name}` : 'Sender';
+    const sender_name = sender ? `${sender.first_name} ${sender.surname}` : 'Sender';
 
     // Generate verification codes and QR code
     const verification = this.packageVerificationService.generatePackageVerification({
@@ -560,7 +560,7 @@ export class PackageService {
     }
 
     const fullName = rider.user
-      ? `${rider.user.first_name} ${rider.user.last_name}`.trim()
+      ? `${rider.user.first_name} ${rider.user.surname}`.trim()
       : "Rider";
 
     return {

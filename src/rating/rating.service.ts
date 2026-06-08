@@ -50,7 +50,7 @@ export class RatingService {
         rating: r.rating,
         review: r.review,
         created_at: r.createdAt,
-        rater_name: r.rater ? `${r.rater.first_name} ${r.rater.last_name}` : 'Anonymous'
+        rater_name: r.rater ? `${r.rater.first_name} ${r.rater.surname}` : 'Anonymous'
       }))
     };
   }

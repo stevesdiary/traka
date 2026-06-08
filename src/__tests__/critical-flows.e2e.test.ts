@@ -124,7 +124,7 @@ describe('Critical API Flows (E2E)', () => {
         type: 'USER',
         tenant_id: null,
         first_name: 'Test',
-        last_name: 'User',
+        surname: 'User',
         phone: '+2348000000000',
         email_verified: true,
         phone_verified: false,

@@ -24,7 +24,7 @@ export class UserModel extends Model <UserModel> {
     type: DataType.STRING,
     allowNull: false
   })
-  declare last_name: string;
+  declare surname: string;
 
   @Column({
     type: DataType.STRING,
