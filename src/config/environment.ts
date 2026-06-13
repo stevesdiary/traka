@@ -103,9 +103,18 @@ export const config = {
   },
   
   sms: {
-    kudiSmsToken: process.env.KUDISMS_API_TOKEN!,
-    senderId: process.env.KUDISMS_SENDER_ID || 'TRAKA',
-    gateway: process.env.KUDISMS_GATEWAY || '2'
+    provider: (process.env.SMS_PROVIDER || 'kudisms') as 'kudisms' | 'vtpass',
+    kudisms: {
+      apiToken: process.env.KUDISMS_API_TOKEN || '',
+      senderId: process.env.KUDISMS_SENDER_ID || 'TRAKA',
+      gateway: process.env.KUDISMS_GATEWAY || '2'
+    },
+    vtpass: {
+      publicKey: process.env.VTPASS_SMS_PUBLIC_KEY || '',
+      secretKey: process.env.VTPASS_SMS_SECRET_KEY || '',
+      senderId: process.env.VTPASS_SMS_SENDER_ID || 'TRAKA',
+      useDnd: process.env.VTPASS_SMS_USE_DND === 'true'
+    }
   },
   
   slack: {

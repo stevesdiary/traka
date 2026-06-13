@@ -12,6 +12,8 @@ import {
   NotificationService,
   NotificationType,
 } from "../notification/notification.service.js";
+import { EmailNotificationService } from "../notification/email.service.js";
+import { SMSService } from "../notification/sms.service.js";
 import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
@@ -26,6 +28,8 @@ export class PackageService {
   private geocodingService: GeocodingService;
   private riderRepository: RiderRepository;
   private notificationService: NotificationService;
+  private emailService: EmailNotificationService;
+  private smsService: SMSService;
 
   constructor() {
     this.packageRepository = new PackageRepository();
@@ -36,6 +40,8 @@ export class PackageService {
     this.geocodingService = new GeocodingService();
     this.riderRepository = new RiderRepository();
     this.notificationService = new NotificationService();
+    this.emailService = new EmailNotificationService();
+    this.smsService = new SMSService();
   }
 
   async createPackage(
@@ -775,21 +781,15 @@ export class PackageService {
   }
 
   private async sendSMS(phone: string, message: string): Promise<void> {
-    // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
-    console.log(`SMS sent to ${phone}: ${message}`);
+    await this.smsService.sendSMS(phone, message);
   }
 
   private async sendWhatsApp(phone: string, message: string): Promise<void> {
-    // TODO: Integrate with WhatsApp Business API
-    console.log(`WhatsApp sent to ${phone}: ${message}`);
+    // WhatsApp Business API not yet integrated — fall back to SMS
+    await this.smsService.sendSMS(phone, message);
   }
 
-  private async sendEmail(
-    email: string,
-    subject: string,
-    message: string
-  ): Promise<void> {
-    // TODO: Integrate with email service
-    console.log(`Email sent to ${email}: ${subject} - ${message}`);
+  private async sendEmail(email: string, subject: string, message: string): Promise<void> {
+    await this.emailService.sendNotification(email, subject, message);
   }
 }
