@@ -62,178 +62,6 @@ function numberOrZero(value: any): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function isMonnifyTransactionReference(reference: string): boolean {
-  return /^MNFY\|/i.test(reference);
-}
-
-class MonnifyGatewayClient implements PaymentGatewayClient {
-  private readonly apiKey = config.payment.monnify.apiKey;
-  private readonly secretKey = config.payment.monnify.secretKey;
-  private readonly contractCode = config.payment.monnify.contractCode;
-  private readonly baseUrl = config.payment.monnify.baseUrl;
-  private accessToken = '';
-  private accessTokenExpiry = 0;
-  private http: AxiosInstance;
-
-  constructor() {
-    this.http = axios.create({
-      baseURL: this.baseUrl,
-      timeout: 15000
-    });
-  }
-
-  private async getAccessToken(): Promise<string> {
-    const now = Date.now();
-    if (this.accessToken && now < this.accessTokenExpiry) {
-      return this.accessToken;
-    }
-
-    const auth = Buffer.from(`${this.apiKey}:${this.secretKey}`).toString('base64');
-    const response = await this.http.post('/api/v1/auth/login', undefined, {
-      headers: {
-        Authorization: `Basic ${auth}`
-      }
-    });
-
-    if (!response.data?.requestSuccessful) {
-      throw new Error(`Monnify auth failed: ${response.data?.responseMessage || 'Unknown error'}`);
-    }
-
-    const token = response.data?.responseBody?.accessToken;
-    const expiresIn = Number(response.data?.responseBody?.expiresIn || 300);
-    if (!token) {
-      throw new Error('Monnify auth failed: Missing access token');
-    }
-
-    this.accessToken = token;
-    this.accessTokenExpiry = now + Math.max(expiresIn - 30, 60) * 1000;
-    return token;
-  }
-
-  private async authorizedRequest<T>(callback: (token: string) => Promise<T>): Promise<T> {
-    const token = await this.getAccessToken();
-    return callback(token);
-  }
-
-  async initializePayment(input: InitializePaymentInput): Promise<InitializePaymentResult> {
-    return this.authorizedRequest(async (token) => {
-      const response = await this.http.post(
-        '/api/v1/merchant/transactions/init-transaction',
-        {
-          amount: input.amount,
-          customerName: input.customerName,
-          customerEmail: input.customerEmail,
-          paymentReference: input.reference,
-          paymentDescription: input.description,
-          currencyCode: input.currency,
-          contractCode: this.contractCode,
-          redirectUrl: input.callbackUrl,
-          paymentMethods: ['CARD', 'ACCOUNT_TRANSFER'],
-          metaData: input.metadata || {}
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.data?.requestSuccessful) {
-        throw new Error(`Monnify init failed: ${response.data?.responseMessage || 'Unknown error'}`);
-      }
-
-      return {
-        provider: PaymentProvider.MONNIFY,
-        reference: input.reference,
-        checkoutUrl: response.data?.responseBody?.checkoutUrl,
-        raw: response.data
-      };
-    });
-  }
-
-  async verifyPayment(reference: string): Promise<VerifiedPayment> {
-    return this.authorizedRequest(async (token) => {
-      const query = isMonnifyTransactionReference(reference)
-        ? { transactionReference: reference }
-        : { paymentReference: reference };
-
-      const response = await this.http.get('/api/v2/merchant/transactions/query', {
-        params: query,
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!response.data?.requestSuccessful) {
-        throw new Error(`Monnify verify failed: ${response.data?.responseMessage || 'Unknown error'}`);
-      }
-
-      const body = response.data?.responseBody || {};
-      const status = normalizePaymentStatus(
-        String(body.paymentStatus || body.transactionStatus || body.status || 'FAILED')
-      );
-
-      return {
-        provider: PaymentProvider.MONNIFY,
-        reference: String(body.paymentReference || body.transactionReference || reference),
-        status,
-        amount: numberOrZero(body.amountPaid ?? body.paidAmount ?? body.amount),
-        currency: body.currencyCode || body.currency,
-        customerEmail: body.customer?.email || body.customerEmail,
-        metadata: parseMetadata(body.metaData),
-        paidAt: body.paidOn ? new Date(body.paidOn) : undefined,
-        raw: response.data
-      };
-    });
-  }
-
-  verifyWebhookSignature(rawBody: Buffer | undefined, headers: Record<string, any>): boolean {
-    const signatureHeader =
-      headers['monnify-signature'] ??
-      headers['Monnify-Signature'] ??
-      headers['x-monnify-signature'];
-    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
-    if (!rawBody || !signature || !this.secretKey) return false;
-
-    // Docs show HMAC-SHA512 examples and a SHA-512(secret + body) formula text.
-    // Support both formats to avoid rejecting valid notifications.
-    const computedHmac = crypto
-      .createHmac('sha512', this.secretKey)
-      .update(rawBody)
-      .digest('hex');
-    const computedSha512 = crypto
-      .createHash('sha512')
-      .update(`${this.secretKey}${rawBody.toString('utf8')}`)
-      .digest('hex');
-
-    const provided = String(signature);
-    return safeCompare(computedHmac, provided) || safeCompare(computedSha512, provided);
-  }
-
-  parseWebhookPayload(payload: any): VerifiedPayment | null {
-    if (!payload || payload.eventType !== 'SUCCESSFUL_TRANSACTION') {
-      return null;
-    }
-
-    const eventData = payload.eventData || {};
-    const status = normalizePaymentStatus(String(eventData.paymentStatus || eventData.status || 'SUCCESS'));
-    const reference = String(eventData.paymentReference || eventData.transactionReference || '');
-    if (!reference) return null;
-
-    return {
-      provider: PaymentProvider.MONNIFY,
-      reference,
-      status,
-      amount: numberOrZero(eventData.amountPaid ?? eventData.amount),
-      currency: eventData.currency || eventData.currencyCode,
-      customerEmail: eventData.customer?.email || eventData.customerEmail,
-      metadata: parseMetadata(eventData.metaData),
-      paidAt: eventData.paidOn ? new Date(eventData.paidOn) : undefined,
-      raw: payload,
-      fallbackUserId: eventData.product?.reference
-    };
-  }
-}
 
 class PaystackGatewayClient implements PaymentGatewayClient {
   private readonly secretKey = config.payment.paystack.secretKey;
@@ -590,7 +418,6 @@ export class PaymentGatewayService {
   constructor() {
     this.gateways = {
       [PaymentProvider.KUDA]: new KudaGatewayClient(),
-      [PaymentProvider.MONNIFY]: new MonnifyGatewayClient(),
       [PaymentProvider.PAYSTACK]: new PaystackGatewayClient(),
       [PaymentProvider.FLUTTERWAVE]: new FlutterwaveGatewayClient()
     };
@@ -651,19 +478,6 @@ export class PaymentGatewayService {
   ): Promise<{ processed: boolean; message: string }> {
     const intent = await this.getFundingIntent(payment.reference);
     const walletOwnerId = await this.resolveWalletOwner(payment, intent);
-
-    if (!walletOwnerId && payment.provider === PaymentProvider.MONNIFY && payment.fallbackUserId) {
-      await this.walletService.processPayment(
-        payment.fallbackUserId,
-        payment.amount,
-        payment.reference
-      );
-
-      return {
-        processed: true,
-        message: 'Payment processed via legacy Monnify rider flow'
-      };
-    }
 
     if (!walletOwnerId) {
       return {

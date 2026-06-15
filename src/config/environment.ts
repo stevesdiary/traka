@@ -77,12 +77,6 @@ export const config = {
       baseUrl: process.env.KUDA_BASE_URL || 'https://kuda-openapi.kuda.com/v2.1',
       virtualAccountName: process.env.KUDA_VIRTUAL_ACCOUNT_NAME || 'TRAKA'
     },
-    monnify: {
-      secretKey: process.env.MONNIFY_SECRET_KEY || '',
-      apiKey: process.env.MONNIFY_API_KEY || '',
-      contractCode: process.env.MONNIFY_CONTRACT_CODE || '',
-      baseUrl: process.env.MONNIFY_BASE_URL || 'https://sandbox.monnify.com'
-    },
     paystack: {
       secretKey: process.env.PAYSTACK_SECRET_KEY || '',
       publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',

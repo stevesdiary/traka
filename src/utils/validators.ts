@@ -535,8 +535,8 @@ export const InitializeWalletFundingSchema = Joi.object({
     'number.positive': 'Amount must be a positive number',
     'any.required': 'Amount is required'
   }),
-  provider: Joi.string().uppercase().valid('MONNIFY', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
-    'any.only': 'Provider must be MONNIFY, PAYSTACK, or FLUTTERWAVE'
+  provider: Joi.string().uppercase().valid('KUDA', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
+    'any.only': 'Provider must be KUDA, PAYSTACK, or FLUTTERWAVE'
   }),
   callback_url: Joi.string().uri().optional().messages({
     'string.uri': 'Callback URL must be a valid URL'
@@ -548,8 +548,8 @@ export const VerifyWalletFundingSchema = Joi.object({
   reference: Joi.string().required().messages({
     'any.required': 'Payment reference is required'
   }),
-  provider: Joi.string().uppercase().valid('MONNIFY', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
-    'any.only': 'Provider must be MONNIFY, PAYSTACK, or FLUTTERWAVE'
+  provider: Joi.string().uppercase().valid('KUDA', 'PAYSTACK', 'FLUTTERWAVE').optional().messages({
+    'any.only': 'Provider must be KUDA, PAYSTACK, or FLUTTERWAVE'
   })
 });
 
