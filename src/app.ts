@@ -82,24 +82,7 @@ export const createApp = () => {
   });
 
   app.use(cors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        // Allow requests with no origin only in non-production environments
-        if (!config.isProduction) {
-          callback(null, true);
-          return;
-        }
-        callback(new Error('Not allowed by CORS'));
-        return;
-      }
-
-      if (config.server.corsOrigin.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error('Not allowed by CORS'));
-    },
+    origin: true,
     credentials: true
   }));
 
