@@ -26,7 +26,8 @@ if (result.error) {
 // Validate required environment variables
 const requiredVars = [
   'POSTGRES_URL',
-  'REDIS_URL',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
   'JWT_SECRET',
   'PORT'
 ];
@@ -54,7 +55,8 @@ export const config = {
   
   database: {
     postgres: process.env.POSTGRES_URL!,
-    redis: process.env.REDIS_URL!
+    upstashRedisUrl: process.env.UPSTASH_REDIS_REST_URL!,
+    upstashRedisToken: process.env.UPSTASH_REDIS_REST_TOKEN!,
   },
   
   jwt: {
