@@ -11,9 +11,8 @@ const router: Router = Router();
 const walletController = new WalletController();
 const paymentGatewayController = new PaymentGatewayController();
 
-// Webhook endpoint (no auth required)
+// Webhook endpoints (no auth required)
 router.post('/webhook/kuda', paymentGatewayController.handleWebhook('kuda'));
-router.post('/webhook/monnify', paymentGatewayController.handleWebhook('monnify'));
 router.post('/webhook/paystack', paymentGatewayController.handleWebhook('paystack'));
 router.post('/webhook/flutterwave', paymentGatewayController.handleWebhook('flutterwave'));
 
@@ -25,6 +24,11 @@ router.post(
   '/fund/initialize',
   validateInput(InitializeWalletFundingSchema),
   paymentGatewayController.initializeWalletFunding
+);
+router.post(
+  '/business/fund/initialize',
+  validateInput(InitializeWalletFundingSchema),
+  paymentGatewayController.initializeBusinessWalletFunding
 );
 router.get(
   '/fund/verify',

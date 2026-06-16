@@ -72,6 +72,12 @@ export class PackageModel extends Model {
 
   @Column({
     type: DataType.STRING,
+    allowNull: true
+  })
+  pickup_address?: string;
+
+  @Column({
+    type: DataType.STRING,
     allowNull: false
   })
   delivery_address!: string;

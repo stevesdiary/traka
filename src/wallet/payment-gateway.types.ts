@@ -1,5 +1,4 @@
 export enum PaymentProvider {
-  MONNIFY = 'MONNIFY',
   PAYSTACK = 'PAYSTACK',
   FLUTTERWAVE = 'FLUTTERWAVE',
   KUDA = 'KUDA'

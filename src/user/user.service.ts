@@ -32,7 +32,7 @@ export class UserManagementService {
 
   async createUser(userData: {
     first_name: string;
-    last_name: string;
+    surname: string;
     phone: string;
     email: string;
     password: string;
@@ -55,7 +55,7 @@ export class UserManagementService {
     return {
       // id: user.id,
       first_name: user.first_name,
-      last_name: user.last_name,
+      surname: user.surname,
       phone: user.phone,
       email: user.email,
       // role: user.role,

@@ -296,7 +296,7 @@ export class RiderService {
       const { EmailNotificationService } =
         await import("../notification/email.service.js");
       const emailService = new EmailNotificationService();
-      const fullName = `${rider.user.first_name} ${rider.user.last_name}`;
+      const fullName = `${rider.user.first_name} ${rider.user.surname}`;
       await emailService.sendNotification(
         rider.user.email,
         "Account Deactivated",

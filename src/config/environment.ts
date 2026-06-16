@@ -26,7 +26,8 @@ if (result.error) {
 // Validate required environment variables
 const requiredVars = [
   'POSTGRES_URL',
-  'REDIS_URL',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
   'JWT_SECRET',
   'PORT'
 ];
@@ -54,7 +55,8 @@ export const config = {
   
   database: {
     postgres: process.env.POSTGRES_URL!,
-    redis: process.env.REDIS_URL!
+    upstashRedisUrl: process.env.UPSTASH_REDIS_REST_URL!,
+    upstashRedisToken: process.env.UPSTASH_REDIS_REST_TOKEN!,
   },
   
   jwt: {
@@ -77,12 +79,6 @@ export const config = {
       baseUrl: process.env.KUDA_BASE_URL || 'https://kuda-openapi.kuda.com/v2.1',
       virtualAccountName: process.env.KUDA_VIRTUAL_ACCOUNT_NAME || 'TRAKA'
     },
-    monnify: {
-      secretKey: process.env.MONNIFY_SECRET_KEY || '',
-      apiKey: process.env.MONNIFY_API_KEY || '',
-      contractCode: process.env.MONNIFY_CONTRACT_CODE || '',
-      baseUrl: process.env.MONNIFY_BASE_URL || 'https://sandbox.monnify.com'
-    },
     paystack: {
       secretKey: process.env.PAYSTACK_SECRET_KEY || '',
       publicKey: process.env.PAYSTACK_PUBLIC_KEY || '',
@@ -103,9 +99,18 @@ export const config = {
   },
   
   sms: {
-    kudiSmsToken: process.env.KUDISMS_API_TOKEN!,
-    senderId: process.env.KUDISMS_SENDER_ID || 'TRAKA',
-    gateway: process.env.KUDISMS_GATEWAY || '2'
+    provider: (process.env.SMS_PROVIDER || 'kudisms') as 'kudisms' | 'vtpass',
+    kudisms: {
+      apiToken: process.env.KUDISMS_API_TOKEN || '',
+      senderId: process.env.KUDISMS_SENDER_ID || 'TRAKA',
+      gateway: process.env.KUDISMS_GATEWAY || '2'
+    },
+    vtpass: {
+      publicKey: process.env.VTPASS_SMS_PUBLIC_KEY || '',
+      secretKey: process.env.VTPASS_SMS_SECRET_KEY || '',
+      senderId: process.env.VTPASS_SMS_SENDER_ID || 'TRAKA',
+      useDnd: process.env.VTPASS_SMS_USE_DND === 'true'
+    }
   },
   
   slack: {

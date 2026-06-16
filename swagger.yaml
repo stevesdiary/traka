@@ -177,7 +177,7 @@ components:
           properties:
             first_name:
               type: string
-            last_name:
+            surname:
               type: string
             phone:
               type: string
@@ -296,7 +296,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password, first_name, last_name, phone]
+              required: [email, password, first_name, surname, phone]
               properties:
                 email:
                   type: string
@@ -306,7 +306,7 @@ paths:
                   minLength: 6
                 first_name:
                   type: string
-                last_name:
+                surname:
                   type: string
                 phone:
                   type: string
@@ -357,7 +357,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password, first_name, last_name, phone, license_number, vehicle_type, vehicle_plate]
+              required: [email, password, first_name, surname, phone, license_number, vehicle_type, vehicle_plate]
               properties:
                 email:
                   type: string
@@ -370,7 +370,7 @@ paths:
                 first_name:
                   type: string
                   example: John
-                last_name:
+                surname:
                   type: string
                   example: Doe
                 phone:
@@ -601,7 +601,7 @@ paths:
               properties:
                 first_name:
                   type: string
-                last_name:
+                surname:
                   type: string
                 phone:
                   type: string
@@ -1629,7 +1629,7 @@ paths:
                         nullable: true
                       first_name:
                         type: string
-                      last_name:
+                      surname:
                         type: string
                       phone:
                         type: string

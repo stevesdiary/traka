@@ -1,0 +1,12 @@
+node_modules
+dist
+.env*
+logs
+coverage
+.git
+*.md
+tests
+postman
+.github
+.claude
+.qoder

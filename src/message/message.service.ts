@@ -29,7 +29,7 @@ export class MessageService {
       include: [{ 
         model: UserModel, 
         as: 'sender',
-        attributes: ['id', 'first_name', 'last_name', 'email']
+        attributes: ['id', 'first_name', 'surname', 'email']
       }],
       order: [['created_at', 'ASC']]
     });

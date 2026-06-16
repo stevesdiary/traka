@@ -9,7 +9,8 @@ export const upstashRedis = new Redis({
 // Compatibility wrapper to match redis client interface
 export const redis = {
   async get(key: string): Promise<string | null> {
-    return await upstashRedis.get(key);
+    const value = await upstashRedis.get(key);
+    return value !== null && value !== undefined ? String(value) : null;
   },
 
   async set(key: string, value: string): Promise<void> {

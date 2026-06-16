@@ -124,7 +124,7 @@ describe('Critical API Flows (E2E)', () => {
         type: 'USER',
         tenant_id: null,
         first_name: 'Test',
-        last_name: 'User',
+        surname: 'User',
         phone: '+2348000000000',
         email_verified: true,
         phone_verified: false,
@@ -180,9 +180,14 @@ describe('Critical API Flows (E2E)', () => {
   describe('Wallet funding lifecycle', () => {
     it('initializes funding through payment gateway for authenticated user', async () => {
       mockPaymentGatewayService.initializeWalletFunding.mockResolvedValue({
-        provider: 'MONNIFY',
-        reference: 'WLT-MONNIFY-123',
-        checkoutUrl: 'https://sandbox.monnify.com/checkout/mock',
+        provider: 'KUDA',
+        reference: 'WLT-KUDA-123',
+        bankDetails: {
+          accountNumber: '2000000001',
+          accountName: 'TRAKA',
+          bankName: 'Kuda Microfinance Bank',
+          bankCode: '090267'
+        },
         accessCode: undefined
       });
 
@@ -191,7 +196,7 @@ describe('Critical API Flows (E2E)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           amount: 5000,
-          provider: 'MONNIFY',
+          provider: 'KUDA',
           currency: 'NGN'
         });
 
@@ -199,17 +204,23 @@ describe('Critical API Flows (E2E)', () => {
       expect(response.body).toEqual({
         message: 'Payment initialized successfully',
         payment: {
-          provider: 'MONNIFY',
-          reference: 'WLT-MONNIFY-123',
-          checkout_url: 'https://sandbox.monnify.com/checkout/mock',
-          access_code: undefined
+          provider: 'KUDA',
+          reference: 'WLT-KUDA-123',
+          checkout_url: undefined,
+          access_code: undefined,
+          bank_details: {
+            accountNumber: '2000000001',
+            accountName: 'TRAKA',
+            bankName: 'Kuda Microfinance Bank',
+            bankCode: '090267'
+          }
         }
       });
       expect(mockPaymentGatewayService.initializeWalletFunding).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'user-123',
           amount: 5000,
-          provider: 'MONNIFY',
+          provider: 'KUDA',
           currency: 'NGN'
         })
       );
@@ -217,8 +228,8 @@ describe('Critical API Flows (E2E)', () => {
 
     it('verifies funding reference for authenticated user', async () => {
       mockPaymentGatewayService.verifyWalletFunding.mockResolvedValue({
-        reference: 'WLT-MONNIFY-123',
-        provider: 'MONNIFY',
+        reference: 'WLT-KUDA-123',
+        provider: 'KUDA',
         status: 'SUCCESS',
         amount: 5000,
         processed: true,
@@ -229,16 +240,16 @@ describe('Critical API Flows (E2E)', () => {
         .get('/api/wallet/fund/verify')
         .set('Authorization', `Bearer ${accessToken}`)
         .query({
-          reference: 'WLT-MONNIFY-123',
-          provider: 'MONNIFY'
+          reference: 'WLT-KUDA-123',
+          provider: 'KUDA'
         });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         message: 'Wallet funded successfully',
         payment: {
-          reference: 'WLT-MONNIFY-123',
-          provider: 'MONNIFY',
+          reference: 'WLT-KUDA-123',
+          provider: 'KUDA',
           status: 'SUCCESS',
           amount: 5000,
           processed: true,
@@ -254,12 +265,12 @@ describe('Critical API Flows (E2E)', () => {
       });
 
       const response = await request(app)
-        .post('/api/wallet/webhook/monnify')
+        .post('/api/wallet/webhook/kuda')
         .send({
-          eventType: 'SUCCESSFUL_TRANSACTION',
-          eventData: {
-            paymentReference: 'WLT-MONNIFY-123',
-            amountPaid: 5000
+          notificationType: 'COLLECTION',
+          data: {
+            trackingReference: 'WLT-KUDA-123',
+            amount: 5000
           }
         });
 
@@ -274,12 +285,12 @@ describe('Critical API Flows (E2E)', () => {
       });
 
       const response = await request(app)
-        .post('/api/wallet/webhook/monnify')
+        .post('/api/wallet/webhook/kuda')
         .send({
-          eventType: 'SUCCESSFUL_TRANSACTION',
-          eventData: {
-            paymentReference: 'WLT-MONNIFY-123',
-            amountPaid: 5000
+          notificationType: 'COLLECTION',
+          data: {
+            trackingReference: 'WLT-KUDA-123',
+            amount: 5000
           }
         });
 

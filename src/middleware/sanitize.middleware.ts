@@ -25,12 +25,25 @@ export const mongoSanitize = (req: Request, _res: Response, next: NextFunction):
     req.body = stripMongoOperators(req.body);
   }
 
+  // In Express 5, req.query is a read-only getter. Sanitize values in-place instead of reassigning.
   if (req.query && typeof req.query === 'object') {
-    req.query = stripMongoOperators(req.query) as typeof req.query;
+    for (const key of Object.keys(req.query)) {
+      if (key.startsWith('$')) {
+        delete (req.query as Record<string, unknown>)[key];
+      } else {
+        (req.query as Record<string, unknown>)[key] = stripMongoOperators(req.query[key]);
+      }
+    }
   }
 
   if (req.params && typeof req.params === 'object') {
-    req.params = stripMongoOperators(req.params) as typeof req.params;
+    for (const key of Object.keys(req.params)) {
+      if (key.startsWith('$')) {
+        delete (req.params as Record<string, unknown>)[key];
+      } else {
+        (req.params as Record<string, unknown>)[key] = stripMongoOperators(req.params[key]) as string;
+      }
+    }
   }
 
   next();

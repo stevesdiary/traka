@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { PaymentGatewayService } from './payment-gateway.service.js';
+import { BusinessWalletService } from './business-wallet.service.js';
 import logger from '../utils/logger.js';
 
 export class PaymentGatewayController {
   private paymentGatewayService = new PaymentGatewayService();
+  private businessWalletService = new BusinessWalletService();
 
   initializeWalletFunding = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -67,7 +69,7 @@ export class PaymentGatewayController {
     }
   };
 
-  handleWebhook = (provider: 'kuda' | 'monnify' | 'paystack' | 'flutterwave') =>
+  handleWebhook = (provider: 'kuda' | 'paystack' | 'flutterwave') =>
     async (req: Request, res: Response): Promise<void> => {
       try {
         const result = await this.paymentGatewayService.handleWebhook({
@@ -91,4 +93,40 @@ export class PaymentGatewayController {
         res.status(500).json({ error: 'Internal server error' });
       }
     };
+
+  initializeBusinessWalletFunding = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const tenantId = req.user?.tenant_id;
+      if (!userId || !tenantId) {
+        res.status(401).json({ error: 'Unauthorized or no business associated' });
+        return;
+      }
+
+      const { amount, provider, callback_url, currency } = req.body;
+      const result = await this.paymentGatewayService.initializeWalletFunding({
+        userId,
+        amount: Number(amount),
+        provider,
+        callbackUrl: callback_url,
+        currency
+      });
+
+      res.status(201).json({
+        message: 'Business wallet funding initialized',
+        payment: {
+          provider: result.provider,
+          reference: result.reference,
+          checkout_url: result.checkoutUrl,
+          access_code: result.accessCode,
+          bank_details: result.bankDetails
+        }
+      });
+    } catch (error: any) {
+      logger.error('Failed to initialize business wallet funding', {
+        error: error?.message
+      });
+      res.status(400).json({ error: error.message || 'Failed to initialize payment' });
+    }
+  };
 }

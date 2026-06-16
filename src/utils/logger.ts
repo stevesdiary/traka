@@ -26,14 +26,20 @@ const safeStringify = (value: unknown) => {
 const devFormat = printf(({ level, message, timestamp, stack, ...metadata }) => {
   let log = `${timestamp} [${level}]: ${message}`;
 
-  // Add metadata if present
-  if (Object.keys(metadata).length > 0) {
-    log += `\n${safeStringify(metadata)}`;
+  // Pull stack from metadata.stack if not at top level
+  const metaStack: string | undefined =
+    (typeof stack === 'string' ? stack : undefined) ??
+    (typeof metadata.stack === 'string' ? metadata.stack : undefined);
+
+  // Print remaining metadata (drop redundant stack key)
+  const { stack: _s, ...printMeta } = metadata as any;
+  if (Object.keys(printMeta).length > 0) {
+    log += `\n${safeStringify(printMeta)}`;
   }
 
-  // Add stack trace for errors
-  if (stack) {
-    log += `\n${stack}`;
+  // Always print stack trace when present
+  if (metaStack) {
+    log += `\n${metaStack}`;
   }
 
   return log;
@@ -90,6 +96,15 @@ if (!isTest) {
     })
   );
 }
+
+// Always write errors to stderr so they're visible in every environment (including test)
+logger.add(
+  new winston.transports.Console({
+    level: 'error',
+    stderrLevels: ['error'],
+    format: developmentFormat,
+  })
+);
 
 // File transports (production only)
 if (isProduction) {
@@ -158,10 +173,7 @@ export const logWithContext = (level: string, message: string, context?: any) =>
 };
 
 export const logError = (error: Error, context?: any) => {
-  logger.error(error.message, {
-    stack: error.stack,
-    ...context
-  });
+  logger.error(error.message, { error, ...context });
 };
 
 export const logRequest = (method: string, url: string, statusCode: number, duration: number) => {

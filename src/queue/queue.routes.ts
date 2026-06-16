@@ -1,6 +1,13 @@
 import { Request, Response, Router } from 'express';
 import { queueService } from '../config/qstash.js';
 import logger from '../utils/logger.js';
+import { EmailNotificationService } from '../notification/email.service.js';
+import { SMSService } from '../notification/sms.service.js';
+import { NotificationService, NotificationType } from '../notification/notification.service.js';
+
+const emailService = new EmailNotificationService();
+const smsService = new SMSService();
+const notificationService = new NotificationService();
 
 const router = Router();
 
@@ -29,9 +36,8 @@ router.post('/email', verifyQStashSignature, async (req: Request, res: Response)
   try {
     const { to, subject, html } = req.body;
     logger.info('Processing email queue message', { to, subject });
-    
-    // Process email sending here
-    // await emailService.sendEmail(to, subject, html);
+
+    await emailService.sendEmail(to, subject, html);
     
     res.json({ success: true });
   } catch (error) {
@@ -45,9 +51,8 @@ router.post('/sms', verifyQStashSignature, async (req: Request, res: Response) =
   try {
     const { phone, message } = req.body;
     logger.info('Processing SMS queue message', { phone });
-    
-    // Process SMS sending here
-    // await smsService.sendSMS(phone, message);
+
+    await smsService.sendSMS(phone, message);
     
     res.json({ success: true });
   } catch (error) {
@@ -61,9 +66,13 @@ router.post('/notification', verifyQStashSignature, async (req: Request, res: Re
   try {
     const { userId, title, message, type } = req.body;
     logger.info('Processing notification queue message', { userId, type });
-    
-    // Process notification here
-    // await notificationService.sendNotification(userId, title, message, type);
+
+    await notificationService.sendNotification({
+      userId,
+      type: type as NotificationType,
+      title,
+      message
+    });
     
     res.json({ success: true });
   } catch (error) {
