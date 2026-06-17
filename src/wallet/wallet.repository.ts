@@ -10,9 +10,10 @@ export class WalletRepository {
     return await WalletModel.create(data);
   }
 
-  async findByUserId(userId: string): Promise<WalletModel | null> {
+  async findByUserId(userId: string, transaction?: Transaction): Promise<WalletModel | null> {
     return await WalletModel.findOne({
-      where: { user_id: userId }
+      where: { user_id: userId },
+      transaction
     });
   }
 

@@ -45,10 +45,27 @@ export interface VerifiedPayment {
   fallbackUserId?: string;
 }
 
+export type WalletType = 'PERSONAL' | 'BUSINESS';
+
 export interface WalletFundingIntent {
   userId: string;
   provider: PaymentProvider;
   amount: number;
   currency: string;
   createdAt: number;
+  walletType?: WalletType;
+  tenantId?: string;
+}
+
+export type WebhookResultCode =
+  | 'OK'
+  | 'IGNORED'
+  | 'INVALID_SIGNATURE'
+  | 'MISSING_INTENT'
+  | 'PENDING';
+
+export interface WebhookProcessResult {
+  processed: boolean;
+  message: string;
+  code: WebhookResultCode;
 }

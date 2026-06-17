@@ -1,5 +1,6 @@
 import { PackageModel } from '../package/package.model.js';
 import { WalletService } from '../wallet/wallet.service.js';
+import { sequelize } from '../config/database.js';
 import logger from '../utils/logger.js';
 
 export class CashPaymentService {
@@ -20,56 +21,60 @@ export class CashPaymentService {
     rider_id: string,
     amount_collected: number
   ): Promise<any> {
-    const packageData = await PackageModel.findByPk(package_id);
-    
-    if (!packageData) {
-      throw new Error('Package not found');
-    }
+    const t = await sequelize.transaction();
 
-    if (packageData.payment_method !== 'CASH') {
-      throw new Error('Package is not a cash payment');
-    }
-
-    if (packageData.payment_status === 'PAID') {
-      throw new Error('Payment already confirmed');
-    }
-
-    // Verify amount matches
-    const expectedAmount = Number(packageData.total_amount);
-    if (amount_collected !== expectedAmount) {
-      logger.warn('Cash payment amount mismatch', {
-        package_id,
-        expected: expectedAmount,
-        collected: amount_collected
+    try {
+      // Lock the row to prevent concurrent double-confirmation.
+      const packageData = await PackageModel.findByPk(package_id, {
+        lock: t.LOCK.UPDATE,
+        transaction: t
       });
+
+      if (!packageData) throw new Error('Package not found');
+      if (packageData.payment_method !== 'CASH') throw new Error('Package is not a cash payment');
+      if (packageData.payment_status === 'PAID') {
+        await t.rollback();
+        throw new Error('Payment already confirmed');
+      }
+
+      const expectedAmount = Number(packageData.total_amount);
+      if (amount_collected !== expectedAmount) {
+        logger.warn('Cash payment amount mismatch', {
+          package_id,
+          expected: expectedAmount,
+          collected: amount_collected
+        });
+      }
+
+      // Debit commission FIRST inside the same transaction.
+      // If this fails the package stays unpaid and the caller can retry safely.
+      await this.walletService.processCashDelivery(rider_id, expectedAmount, package_id, t);
+
+      // Mark PAID only after the commission debit has been recorded.
+      await packageData.update(
+        { payment_status: 'PAID', paid_at: new Date() },
+        { transaction: t }
+      );
+
+      await t.commit();
+
+      logger.info('Cash payment confirmed', {
+        package_id,
+        rider_id,
+        amount: expectedAmount,
+        payment_by: packageData.payment_by
+      });
+
+      return {
+        message: 'Cash payment confirmed',
+        amount_collected: expectedAmount,
+        payment_by: packageData.payment_by,
+        rider_debt_created: true
+      };
+    } catch (error) {
+      await t.rollback();
+      throw error;
     }
-
-    // Update package payment status
-    await packageData.update({
-      payment_status: 'PAID',
-      paid_at: new Date()
-    });
-
-    // Deduct cash from rider's wallet (creates debt)
-    await this.walletService.processCashDelivery(
-      rider_id,
-      expectedAmount,
-      package_id
-    );
-
-    logger.info('Cash payment confirmed', {
-      package_id,
-      rider_id,
-      amount: expectedAmount,
-      payment_by: packageData.payment_by
-    });
-
-    return {
-      message: 'Cash payment confirmed',
-      amount_collected: expectedAmount,
-      payment_by: packageData.payment_by,
-      rider_debt_created: true
-    };
   }
 
   /**

@@ -5,13 +5,16 @@ import { redis } from '../config/database.js';
 import logger from '../utils/logger.js';
 import { UserRepository } from '../user/user.repository.js';
 import { WalletService } from './wallet.service.js';
+import { BusinessWalletService } from './business-wallet.service.js';
 import {
   BankTransferDetails,
   InitializePaymentInput,
   InitializePaymentResult,
   PaymentProvider,
   VerifiedPayment,
-  WalletFundingIntent
+  WalletFundingIntent,
+  WebhookProcessResult,
+  WalletType
 } from './payment-gateway.types.js';
 
 interface PaymentGatewayClient {
@@ -412,6 +415,7 @@ class KudaGatewayClient implements PaymentGatewayClient {
 
 export class PaymentGatewayService {
   private walletService = new WalletService();
+  private businessWalletService = new BusinessWalletService();
   private userRepository = new UserRepository();
   private gateways: Record<PaymentProvider, PaymentGatewayClient>;
 
@@ -475,13 +479,19 @@ export class PaymentGatewayService {
   private async processSuccessfulPayment(
     payment: VerifiedPayment,
     expectedUserId?: string
-  ): Promise<{ processed: boolean; message: string }> {
+  ): Promise<WebhookProcessResult> {
     const intent = await this.getFundingIntent(payment.reference);
     const walletOwnerId = await this.resolveWalletOwner(payment, intent);
 
     if (!walletOwnerId) {
+      logger.error('No payment intent found for reference — payment cannot be credited', {
+        reference: payment.reference,
+        provider: payment.provider,
+        amount: payment.amount
+      });
       return {
         processed: false,
+        code: 'MISSING_INTENT',
         message: `No payment intent found for reference ${payment.reference}`
       };
     }
@@ -490,27 +500,41 @@ export class PaymentGatewayService {
       throw new Error('Unauthorized payment reference');
     }
 
-    if (intent && payment.amount > 0 && payment.amount < intent.amount) {
-      logger.warn('Payment amount lower than initialized amount', {
+    // Reject under-payments: do not credit and do not clear the intent so the
+    // provider can retry or ops can investigate.
+    if (intent && payment.amount < intent.amount) {
+      logger.error('Payment amount below initialized amount — not crediting wallet', {
         reference: payment.reference,
         expected: intent.amount,
         paid: payment.amount,
         provider: payment.provider
       });
+      return {
+        processed: false,
+        code: 'PENDING',
+        message: `Payment amount ₦${payment.amount} is below the required ₦${intent.amount}`
+      };
     }
 
     const reference = this.buildWalletTransactionReference(payment.provider, payment.reference);
-    await this.walletService.processWalletDeposit(
-      walletOwnerId,
-      payment.amount,
-      reference,
-      payment.provider
-    );
+    const walletType: WalletType = intent?.walletType ?? 'PERSONAL';
+
+    if (walletType === 'BUSINESS' && intent?.tenantId) {
+      await this.businessWalletService.rechargeWallet(intent.tenantId, payment.amount, reference);
+    } else {
+      await this.walletService.processWalletDeposit(
+        walletOwnerId,
+        payment.amount,
+        reference,
+        payment.provider
+      );
+    }
 
     await this.clearFundingIntent(payment.reference);
 
     return {
       processed: true,
+      code: 'OK',
       message: 'Wallet funded successfully'
     };
   }
@@ -604,24 +628,73 @@ export class PaymentGatewayService {
     payload: any;
     rawBody?: Buffer;
     headers: Record<string, any>;
-  }): Promise<{ processed: boolean; message: string }> {
+  }): Promise<WebhookProcessResult> {
     const provider = this.resolveProvider(data.provider);
     const gateway = this.getGateway(provider);
 
     const valid = gateway.verifyWebhookSignature(data.rawBody, data.headers);
     if (!valid) {
-      return { processed: false, message: 'Invalid webhook signature' };
+      return { processed: false, code: 'INVALID_SIGNATURE', message: 'Invalid webhook signature' };
     }
 
     const payment = gateway.parseWebhookPayload(data.payload);
     if (!payment) {
-      return { processed: false, message: 'Webhook event ignored' };
+      return { processed: false, code: 'IGNORED', message: 'Webhook event ignored' };
     }
 
     if (payment.status !== 'SUCCESS') {
-      return { processed: false, message: `Payment status is ${payment.status}` };
+      return { processed: false, code: 'PENDING', message: `Payment status is ${payment.status}` };
     }
 
     return this.processSuccessfulPayment(payment);
+  }
+
+  async initializeBusinessWalletFunding(data: {
+    userId: string;
+    tenantId: string;
+    amount: number;
+    provider?: string;
+    callbackUrl?: string;
+    currency?: string;
+  }): Promise<InitializePaymentResult> {
+    const user = await this.userRepository.findById(data.userId);
+    if (!user) throw new Error('User not found');
+    if (!user.email) throw new Error('User email is required for payment');
+    if (data.amount <= 0) throw new Error('Amount must be greater than zero');
+
+    const provider = this.resolveProvider(data.provider);
+    const gateway = this.getGateway(provider);
+    const reference = this.generateReference(provider);
+    const callbackUrl =
+      data.callbackUrl ||
+      process.env.PAYMENT_CALLBACK_URL ||
+      `${config.server.apiBaseUrl}/api/wallet/fund/verify`;
+    const currency = data.currency || 'NGN';
+
+    await this.saveFundingIntent(reference, {
+      userId: data.userId,
+      tenantId: data.tenantId,
+      walletType: 'BUSINESS',
+      provider,
+      amount: data.amount,
+      currency,
+      createdAt: Date.now()
+    });
+
+    return gateway.initializePayment({
+      amount: data.amount,
+      currency,
+      reference,
+      customerEmail: user.email,
+      customerName: `${user.first_name} ${user.surname}`.trim(),
+      customerPhone: user.phone || undefined,
+      callbackUrl,
+      description: `TRAKA business wallet funding for tenant ${data.tenantId}`,
+      metadata: {
+        userId: data.userId,
+        tenantId: data.tenantId,
+        purpose: 'BUSINESS_WALLET_TOPUP'
+      }
+    });
   }
 }

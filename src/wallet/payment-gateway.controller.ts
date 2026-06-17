@@ -1,11 +1,9 @@
 import { Request, Response } from 'express';
 import { PaymentGatewayService } from './payment-gateway.service.js';
-import { BusinessWalletService } from './business-wallet.service.js';
 import logger from '../utils/logger.js';
 
 export class PaymentGatewayController {
   private paymentGatewayService = new PaymentGatewayService();
-  private businessWalletService = new BusinessWalletService();
 
   initializeWalletFunding = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -79,8 +77,17 @@ export class PaymentGatewayController {
           headers: req.headers as Record<string, any>
         });
 
-        if (!result.processed && result.message === 'Invalid webhook signature') {
+        if (result.code === 'INVALID_SIGNATURE') {
           res.status(401).json({ error: result.message });
+          return;
+        }
+
+        // Real payment received but intent missing — return 500 so the provider retries.
+        if (result.code === 'MISSING_INTENT') {
+          logger.error('Webhook unprocessable — no intent found, returning 500 to trigger retry', {
+            provider, message: result.message
+          });
+          res.status(500).json({ error: result.message });
           return;
         }
 
@@ -104,8 +111,9 @@ export class PaymentGatewayController {
       }
 
       const { amount, provider, callback_url, currency } = req.body;
-      const result = await this.paymentGatewayService.initializeWalletFunding({
+      const result = await this.paymentGatewayService.initializeBusinessWalletFunding({
         userId,
+        tenantId,
         amount: Number(amount),
         provider,
         callbackUrl: callback_url,
