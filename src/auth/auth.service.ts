@@ -6,6 +6,11 @@ import { RiderRepository } from '../rider/rider.repository.js';
 import { TenantRepository } from '../tenant/tenant.repository.js';
 import { VerificationService } from '../verification/verification.service.js';
 import { JWTPayload } from '../types/index.js';
+import { EmailNotificationService } from '../notification/email.service.js';
+import { welcomeCustomerEmail, welcomeBusinessEmail, welcomeRiderEmail } from '../notification/email-templates.js';
+import logger from '../utils/logger.js';
+
+const emailService = new EmailNotificationService();
 
 export class AuthService {
   private userRepository: UserRepository;
@@ -119,6 +124,12 @@ export class AuthService {
 
     const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
 
+    emailService.sendEmail(
+      { email: user.email, name: userData.first_name },
+      'Welcome to TRAKA 🎉',
+      welcomeCustomerEmail(userData.first_name),
+    ).catch(err => logger.error('Failed to send customer welcome email', { error: err?.message, email: user.email }));
+
     return {
       token,
       user: {
@@ -184,6 +195,12 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
+
+    emailService.sendEmail(
+      { email: user.email, name: businessData.contact_person },
+      `Welcome to TRAKA, ${businessData.business_name}! 🎉`,
+      welcomeBusinessEmail(businessData.contact_person, businessData.business_name),
+    ).catch(err => logger.error('Failed to send business welcome email', { error: err?.message, email: user.email }));
 
     return {
       token,
@@ -260,6 +277,12 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
+
+    emailService.sendEmail(
+      { email: user.email, name: riderData.first_name },
+      'Welcome to the TRAKA Rider Network! 🏍️',
+      welcomeRiderEmail(riderData.first_name),
+    ).catch(err => logger.error('Failed to send rider welcome email', { error: err?.message, email: user.email }));
 
     return {
       token,

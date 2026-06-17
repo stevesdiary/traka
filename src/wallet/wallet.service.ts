@@ -1,4 +1,5 @@
 import { sequelize } from '../config/database.js';
+import { Transaction } from 'sequelize';
 import { WalletRepository } from './wallet.repository.js';
 import { PaymentProvider } from './payment-gateway.types.js';
 
@@ -19,39 +20,44 @@ export class WalletService {
     return await this.walletRepository.findByUserId(userId);
   }
 
-  async processCashDelivery(riderId: string, totalFare: number, packageId: string): Promise<void> {
-    const t = await sequelize.transaction();
+  // outerTx allows the caller to wrap this operation in a larger atomic transaction.
+  // When provided, commit/rollback are the caller's responsibility.
+  async processCashDelivery(riderId: string, totalFare: number, packageId: string, outerTx?: Transaction): Promise<void> {
+    const managed = !outerTx;
+    const t = outerTx ?? await sequelize.transaction();
 
     try {
-      const commission = totalFare * this.COMMISSION_RATE;
-      const wallet = await this.walletRepository.findByUserId(riderId);
-
-      if (!wallet) {
-        throw new Error('Wallet not found');
+      const reference = `COMM-${packageId}`;
+      const existingTx = await this.walletRepository.findTransactionByReference(reference, t);
+      if (existingTx) {
+        if (managed) await t.rollback();
+        return;
       }
 
-      // Deduct commission
-      await this.walletRepository.updateBalance(wallet.id, -commission, t);
+      const wallet = await this.walletRepository.findByUserId(riderId, t);
+      if (!wallet) throw new Error('Wallet not found');
 
-      // Log transaction
+      const commission = totalFare * this.COMMISSION_RATE;
+
+      await this.walletRepository.updateBalance(wallet.id, -commission, t);
       await this.walletRepository.createTransaction({
         wallet_id: wallet.id,
         amount: -commission,
         type: 'COMMISSION_DEBIT',
-        reference: `COMM-${packageId}`,
+        reference,
         description: `Commission for package ${packageId}`,
         package_id: packageId
       }, t);
 
-      // Check suspension
-      const updatedWallet = await this.walletRepository.findByUserId(riderId);
-      if (updatedWallet && updatedWallet.balance <= this.CREDIT_LIMIT) {
+      // Compute new balance arithmetically — avoids a stale out-of-transaction read.
+      const newBalance = Number(wallet.balance) - commission;
+      if (newBalance <= this.CREDIT_LIMIT) {
         await this.walletRepository.updateStatus(wallet.id, false, t);
       }
 
-      await t.commit();
+      if (managed) await t.commit();
     } catch (error) {
-      await t.rollback();
+      if (managed) await t.rollback();
       throw error;
     }
   }
@@ -67,16 +73,13 @@ export class WalletService {
         return;
       }
 
-      const wallet = await this.walletRepository.findByUserId(riderId);
+      const wallet = await this.walletRepository.findByUserId(riderId, t);
       if (!wallet) throw new Error('Wallet not found');
 
       const commission = amountPaid * this.COMMISSION_RATE;
       const netEarnings = amountPaid - commission;
 
-      // Credit earnings
       await this.walletRepository.updateBalance(wallet.id, netEarnings, t);
-
-      // Log transaction
       await this.walletRepository.createTransaction({
         wallet_id: wallet.id,
         amount: netEarnings,
@@ -85,9 +88,8 @@ export class WalletService {
         description: `Payment: ₦${amountPaid} (Net: ₦${netEarnings})`
       }, t);
 
-      // Reactivate if needed
-      const updatedWallet = await this.walletRepository.findByUserId(riderId);
-      if (updatedWallet && updatedWallet.balance > this.CREDIT_LIMIT && !updatedWallet.is_active) {
+      const newBalance = Number(wallet.balance) + netEarnings;
+      if (newBalance > this.CREDIT_LIMIT && !wallet.is_active) {
         await this.walletRepository.updateStatus(wallet.id, true, t);
       }
 
@@ -117,11 +119,10 @@ export class WalletService {
         return;
       }
 
-      const wallet = await this.walletRepository.findByUserId(userId);
+      const wallet = await this.walletRepository.findByUserId(userId, t);
       if (!wallet) throw new Error('Wallet not found');
 
       await this.walletRepository.updateBalance(wallet.id, amount, t);
-
       await this.walletRepository.createTransaction({
         wallet_id: wallet.id,
         amount,
@@ -130,8 +131,8 @@ export class WalletService {
         description: `Wallet funding via ${provider}: ₦${amount.toFixed(2)}`
       }, t);
 
-      const updatedWallet = await this.walletRepository.findByUserId(userId);
-      if (updatedWallet && updatedWallet.balance > this.CREDIT_LIMIT && !updatedWallet.is_active) {
+      const newBalance = Number(wallet.balance) + amount;
+      if (newBalance > this.CREDIT_LIMIT && !wallet.is_active) {
         await this.walletRepository.updateStatus(wallet.id, true, t);
       }
 
