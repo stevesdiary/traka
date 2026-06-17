@@ -23,6 +23,7 @@ export class UserRepository extends BaseRepository<UserModel> {
     first_name?: string;
     surname?: string;
     phone?: string;
+    terms_accepted_at?: Date | null;
   }): Promise<UserModel> {
     return this.model.create(userData as any);
   }

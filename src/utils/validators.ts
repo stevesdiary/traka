@@ -33,6 +33,10 @@ export const CustomerRegistrationSchema = Joi.object({
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({
     'string.pattern.base': 'Please provide a valid phone number',
     'any.required': 'Phone number is required'
+  }),
+  terms_accepted: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the Terms of Service',
+    'any.required': 'You must accept the Terms of Service'
   })
 });
 
@@ -59,6 +63,10 @@ export const BusinessRegistrationSchema = Joi.object({
   phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({
     'string.pattern.base': 'Please provide a valid phone number',
     'any.required': 'Phone number is required'
+  }),
+  terms_accepted: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the Terms of Service',
+    'any.required': 'You must accept the Terms of Service'
   })
 });
 
@@ -101,7 +109,11 @@ export const RiderRegistrationSchema = Joi.object({
       'any.required': 'Vehicle plate number is required for non-bicycle vehicles'
     })
   }),
-  business_id: Joi.string().optional()
+  business_id: Joi.string().optional(),
+  terms_accepted: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the Terms of Service',
+    'any.required': 'You must accept the Terms of Service'
+  })
 });
 
 export const RiderProfileCreationSchema = Joi.object({

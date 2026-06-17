@@ -81,4 +81,10 @@ export class UserModel extends Model <UserModel> {
     allowNull: true
   })
   declare profile_photo?: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  declare terms_accepted_at: Date | null;
 }

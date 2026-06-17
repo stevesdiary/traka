@@ -88,6 +88,7 @@ export class AuthService {
     first_name: string;
     surname: string;
     phone: string;
+    terms_accepted: true;
   }): Promise<{ token: string; user: any }> {
     const existingUser = await this.userRepository.findByEmail(userData.email);
     if (existingUser) {
@@ -103,7 +104,8 @@ export class AuthService {
       tenant_id: null, // Recipients are not tied to any tenant
       first_name: userData.first_name,
       surname: userData.surname,
-      phone: userData.phone
+      phone: userData.phone,
+      terms_accepted_at: new Date()
     });
 
     const payload: JWTPayload = {
@@ -139,6 +141,7 @@ export class AuthService {
     business_address: string;
     contact_person: string;
     phone: string;
+    terms_accepted: true;
   }): Promise<{ token: string; user: any; business: any }> {
     const existingUser = await this.userRepository.findByEmail(businessData.email);
     if (existingUser) {
@@ -167,7 +170,8 @@ export class AuthService {
       tenant_id: tenant.id,
       first_name,
       surname,
-      phone: businessData.phone
+      phone: businessData.phone,
+      terms_accepted_at: new Date()
     });
 
     const payload: JWTPayload = {
@@ -209,6 +213,7 @@ export class AuthService {
     vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
     vehicle_plate: string;
     business_id?: string;
+    terms_accepted: true;
   }): Promise<{ token: string; user: any; rider_profile: any }> {
     const existingUser = await this.userRepository.findByEmail(riderData.email);
     if (existingUser) {
@@ -228,7 +233,8 @@ export class AuthService {
       tenant_id,
       first_name: riderData.first_name,
       surname: riderData.surname,
-      phone: riderData.phone
+      phone: riderData.phone,
+      terms_accepted_at: new Date()
     });
 
     // Create rider profile
