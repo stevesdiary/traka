@@ -13,7 +13,7 @@ import { requestLogger, errorLogger } from './middleware/logging.middleware.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
 import { createMetricsRegistry, metricsMiddleware, attachSequelizeObservability } from './shared/observability/index.js';
-import { sequelize } from './config/database.js';
+import { sequelize, redis } from './config/database.js';
 
 export const createApp = () => {
   const metrics = createMetricsRegistry(config.observability.serviceName);
@@ -109,8 +109,21 @@ export const createApp = () => {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   }
 
-  app.get('/health', (req, res) => {
-    res.json({ status: 'OK', message: 'TRAKA API is running' });
+  app.get('/health', async (_req, res) => {
+    const [postgresOk, redisOk] = await Promise.all([
+      sequelize.authenticate().then(() => true).catch(() => false),
+      redis.get('__health__').then(() => true).catch(() => false),
+    ]);
+
+    const allOk = postgresOk && redisOk;
+    res.status(allOk ? 200 : 503).json({
+      status: allOk ? 'OK' : 'DEGRADED',
+      timestamp: new Date().toISOString(),
+      databases: {
+        postgres: postgresOk ? 'connected' : 'unreachable',
+        redis: redisOk ? 'connected' : 'unreachable',
+      },
+    });
   });
 
   app.get('/metrics', (req, res, next) => {
