@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
+import { Op } from 'sequelize';
 import { CourierPresenceService } from '../services/CourierPresenceService.js';
 import { MatchingEngine } from '../services/MatchingEngine.js';
 import { DispatchService } from '../services/DispatchService.js';
 import { DeliveryRequest } from '../models/CourierState.js';
+import { PackageModel } from '../../package/package.model.js';
+import { emitRiderLocationUpdate } from '../../websocket/websocket.service.js';
 import logger from '../../utils/logger.js';
 import { VehicleType } from '../config/vehicles.js';
 
@@ -18,17 +21,32 @@ export class MatchingController {
       }
 
       const { lat, lng } = req.body;
+      const timestamp = Date.now();
 
-      await CourierPresenceService.updateCourierLocation(courierId, {
-        lat,
-        lng,
-        timestamp: Date.now()
+      await CourierPresenceService.updateCourierLocation(courierId, { lat, lng, timestamp });
+
+      // Broadcast to any customer who has joined the tracking room for this rider's active package.
+      const activePackage = await PackageModel.findOne({
+        where: {
+          rider_id: courierId,
+          status: { [Op.in]: ['IN_TRANSIT', 'OUT_FOR_DELIVERY'] }
+        },
+        attributes: ['id', 'tracking_number', 'status']
       });
 
-      res.json({
-        message: 'Location updated successfully',
-        timestamp: Date.now()
-      });
+      if (activePackage) {
+        emitRiderLocationUpdate(activePackage.id, {
+          package_id: activePackage.id,
+          tracking_number: activePackage.tracking_number,
+          rider_id: courierId,
+          latitude: lat,
+          longitude: lng,
+          timestamp,
+          package_status: activePackage.status
+        });
+      }
+
+      res.json({ message: 'Location updated successfully', timestamp });
     } catch (error: any) {
       logger.error('Update location error', { error: (error as Error).message });
       res.status(500).json({ error: 'Failed to update location' });
