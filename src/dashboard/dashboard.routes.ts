@@ -17,6 +17,9 @@ router.get('/admin', authenticateToken, requirePermission(Resource.USER, Action.
 router.get('/admin/tenants', authenticateToken, requirePermission(Resource.TENANT, Action.READ), dashboardController.getAllTenants);
 router.get('/admin/analytics', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), dashboardController.getPlatformAnalytics);
 
+// Super Admin Dashboard Route (SUPER_ADMIN only)
+router.get('/super-admin', authenticateToken, requirePermission(Resource.SYSTEM, Action.DELETE), dashboardController.getSuperAdminDashboard);
+
 // Rider Dashboard Route (Mobile)
 router.get('/rider', authenticateToken, dashboardController.getRiderDashboard);
 
