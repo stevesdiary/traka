@@ -85,7 +85,7 @@ export const welcomeCustomerEmail = (firstName: string): string =>
 
     <table cellpadding="0" cellspacing="0" width="100%">
       ${step('1', '📦', 'Book a delivery', 'Tap "Send Package", enter the pickup and drop-off address, choose a package size, and get an instant quote.')}
-      ${step('2', '🗺️', 'Track in real time', 'Follow your rider on a live map from the moment they pick up your package until it's delivered.')}
+      ${step('2', '🗺️', 'Track in real time', 'Follow your rider on a live map from the moment they pick up your package until it\'s delivered.')}
       ${step('3', '⭐', 'Rate your experience', 'After each delivery, rate your rider and help us maintain quality across the network.')}
       ${step('4', '👤', 'Complete your profile', 'Add a profile photo and save your frequent addresses to make future bookings even faster.')}
     </table>
@@ -104,7 +104,7 @@ export const welcomeBusinessEmail = (contactPerson: string, businessName: string
     <p style="margin:0 0 16px;font-size:13px;font-weight:600;color:#9CA3AF;letter-spacing:1px;text-transform:uppercase;">What to expect</p>
 
     <table cellpadding="0" cellspacing="0" width="100%">
-      ${step('1', '✅', 'Account approval', 'Our team will review your business details within 24 hours. You'll get an email once you're approved.')}
+      ${step('1', '✅', 'Account approval', 'Our team will review your business details within 24 hours. You\'ll get an email once you\'re approved.')}
       ${step('2', '👥', 'Invite your team', 'Add staff members and assign roles so your team can book and track deliveries independently.')}
       ${step('3', '🚚', 'Bulk shipments', 'Upload a CSV of recipients and dispatch multiple deliveries in one go — perfect for e-commerce fulfilment.')}
       ${step('4', '📊', 'Business dashboard', 'View delivery history, spending analytics, and rider performance across your entire operation.')}
