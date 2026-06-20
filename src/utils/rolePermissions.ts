@@ -77,7 +77,7 @@ export const ROLE_PERMISSIONS: Record<Role, Partial<RolePermissions>> = {
   },
   
   [Role.USER]: {
-    [Resource.PACKAGE]: [Action.READ]
+    [Resource.PACKAGE]: [Action.CREATE, Action.READ, Action.UPDATE]
   }
 };
 
