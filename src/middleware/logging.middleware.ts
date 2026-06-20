@@ -6,6 +6,9 @@ import logger from '../utils/logger.js';
  * Logs all HTTP requests with timing information
  */
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+  // Skip logging for health checks to reduce noise
+  if (req.originalUrl === '/health') return next();
+
   const startTime = Date.now();
 
   // Log request start
