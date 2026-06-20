@@ -11,7 +11,9 @@ import {
   getMe,
   refresh,
 } from "./auth.controller.js";
+import { setup2FA, verifySetup2FA, verify2FA, disable2FA } from "./2fa.controller.js";
 import { authenticateToken, requireRole } from "../middleware/auth.middleware.js";
+import { requireTOTPChallenge } from "../middleware/totp-challenge.middleware.js";
 import { validateInput } from "../middleware/validation.middleware.js";
 import {
   LoginSchema,
@@ -62,6 +64,14 @@ const passwordResetLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many password reset attempts, please try again later' }
+});
+
+const totpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many 2FA attempts, please try again later' }
 });
 
 // Authentication
@@ -196,6 +206,40 @@ router.put(
       res.status(400).json({ error: error.message || 'Failed to update profile photo' });
     }
   }
+);
+
+// ─── 2FA routes (ADMIN / SUPER_ADMIN only) ───────────────────────────────────
+
+// Step 1 of enrollment: generate QR code (requires setup_token from login)
+router.post(
+  '/2fa/setup',
+  totpLimiter,
+  requireTOTPChallenge('2fa_setup'),
+  setup2FA
+);
+
+// Step 2 of enrollment: confirm first code → activates 2FA, issues full JWT
+router.post(
+  '/2fa/setup/verify',
+  totpLimiter,
+  requireTOTPChallenge('2fa_setup'),
+  verifySetup2FA
+);
+
+// Login-time TOTP verification → issues full JWT
+router.post(
+  '/2fa/verify',
+  totpLimiter,
+  requireTOTPChallenge('2fa_challenge'),
+  verify2FA
+);
+
+// Disable 2FA (SUPER_ADMIN only, requires own password + TOTP)
+router.delete(
+  '/2fa',
+  authenticateToken,
+  requireRole(['SUPER_ADMIN']),
+  disable2FA
 );
 
 export default router;

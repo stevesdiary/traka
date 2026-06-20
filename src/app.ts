@@ -14,6 +14,7 @@ import logger from './utils/logger.js';
 import config from './config/environment.js';
 import { createMetricsRegistry, metricsMiddleware, attachSequelizeObservability } from './shared/observability/index.js';
 import { sequelize, redis } from './config/database.js';
+import { slackNotificationService } from './notification/slack.notification.js';
 
 export const createApp = () => {
   const metrics = createMetricsRegistry(config.observability.serviceName);
@@ -152,6 +153,10 @@ export const createApp = () => {
 
   app.use(errorLogger);
 
+  // Deduplication: suppress repeat Slack alerts for same error within 60s
+  const recentErrors = new Map<string, number>();
+  const DEDUP_WINDOW_MS = 60_000;
+
   app.use((err: any, req: any, res: any, next: any) => {
     logger.error('Unhandled error', {
       error: err.message,
@@ -161,7 +166,37 @@ export const createApp = () => {
       ip: req.ip
     });
 
-    res.status(500).json({
+    const statusCode = err.status || err.statusCode || 500;
+
+    // Send 5xx errors to Slack
+    if (statusCode >= 500) {
+      const key = `${req.method}:${req.originalUrl}:${err.message}`;
+      const now = Date.now();
+      const lastSent = recentErrors.get(key);
+
+      if (!lastSent || now - lastSent > DEDUP_WINDOW_MS) {
+        recentErrors.set(key, now);
+        slackNotificationService.sendErrorNotification({
+          error: err instanceof Error ? err : new Error(String(err.message || err)),
+          context: {
+            endpoint: req.originalUrl,
+            method: req.method,
+            userId: req.user?.id,
+            requestId: req.headers['x-request-id'],
+            additionalInfo: { app: 'traka-server' },
+          }
+        }).catch(() => {});
+      }
+
+      // Prune stale entries periodically
+      if (recentErrors.size > 100) {
+        for (const [k, ts] of recentErrors) {
+          if (now - ts > DEDUP_WINDOW_MS) recentErrors.delete(k);
+        }
+      }
+    }
+
+    res.status(statusCode).json({
       error: 'Internal server error',
       ...(config.isDevelopment && { message: err.message, stack: err.stack })
     });

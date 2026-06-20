@@ -123,4 +123,13 @@ export class DashboardController {
       res.status(500).json({ error: 'Failed to load rider dashboard' });
     }
   };
+
+  getSuperAdminDashboard = async (_req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = await this.dashboardService.getSuperAdminStats();
+      res.json({ message: 'Super admin dashboard retrieved successfully', data: stats });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to load super admin dashboard' });
+    }
+  };
 }

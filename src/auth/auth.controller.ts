@@ -65,12 +65,33 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
-    
+
     if (!result) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
 
+    // Admin: 2FA not yet set up — client must call POST /auth/2fa/setup
+    if ('requires_2fa_setup' in result) {
+      res.json({
+        requires_2fa_setup: true,
+        setup_token: result.setup_token,
+        message: 'Two-factor authentication setup required. Scan the QR code with Google Authenticator.'
+      });
+      return;
+    }
+
+    // Admin: 2FA enabled — client must call POST /auth/2fa/verify
+    if ('requires_2fa' in result) {
+      res.json({
+        requires_2fa: true,
+        challenge_token: result.challenge_token,
+        message: 'Enter the 6-digit code from your authenticator app.'
+      });
+      return;
+    }
+
+    // Normal login (non-admin roles)
     setAuthCookie(res, result.token);
     const refreshToken = await issueRefreshToken(result.user.id);
     setRefreshCookie(res, refreshToken);

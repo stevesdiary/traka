@@ -29,7 +29,8 @@ const requiredVars = [
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
   'JWT_SECRET',
-  'PORT'
+  'PORT',
+  'TOTP_ENCRYPTION_KEY'
 ];
 
 const missingVars = requiredVars.filter(varName => !process.env[varName]);
@@ -132,6 +133,11 @@ export const config = {
     otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318/v1/traces',
     slowQueryThresholdMs: parseInt(process.env.SLOW_QUERY_THRESHOLD_MS ?? '500', 10),
     serviceName: process.env.SERVICE_NAME ?? 'traka-api',
+  },
+
+  totp: {
+    encryptionKey: process.env.TOTP_ENCRYPTION_KEY!,
+    issuer: process.env.TOTP_ISSUER || 'TRAKA Admin'
   },
 };
 

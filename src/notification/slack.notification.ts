@@ -36,14 +36,16 @@ export class SlackNotificationService {
     try {
       const { error, context } = payload;
       
+      const appName = context?.additionalInfo?.app || 'traka-server';
+
       const slackMessage = {
-        text: `🚨 Application Error - ${this.environment.toUpperCase()}`,
+        text: `🚨 [${appName}] Application Error - ${this.environment.toUpperCase()}`,
         blocks: [
           {
             type: 'header',
             text: {
               type: 'plain_text',
-              text: `🚨 Error Alert - ${this.environment.toUpperCase()}`
+              text: `🚨 [${appName}] Error - ${this.environment.toUpperCase()}`
             }
           },
           {

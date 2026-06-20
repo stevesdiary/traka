@@ -1,6 +1,8 @@
 import { RiderRepository } from '../rider/rider.repository.js';
 import { PackageRepository } from '../package/package.repository.js';
 import { UserRepository } from '../user/user.repository.js';
+import { PromotionModel } from '../promotion/promotion.model.js';
+import { TenantModel } from '../tenant/tenant.model.js';
 
 export class DashboardService {
   private riderRepository: RiderRepository;
@@ -163,6 +165,90 @@ export class DashboardService {
         total_earnings: earnings,
         balance: earnings * 0.8 // assuming 20% platform fee
       }
+    };
+  }
+
+  async getSuperAdminStats(): Promise<any> {
+    const now = new Date();
+
+    const [allUsers, allRiders, allPackages, allTenants, promotions, softDeletedRiders] = await Promise.all([
+      this.userRepository.findAll(),
+      this.riderRepository.findAll(),
+      this.packageRepository.findAll(),
+      TenantModel.findAll({ attributes: ['id', 'business_name', 'status', 'createdAt'] }),
+      PromotionModel.findAll({ order: [['createdAt', 'DESC']] }),
+      this.riderRepository.getSoftDeletedRiders(),
+    ]);
+
+    // Users by role
+    const usersByRole = allUsers.reduce((acc: Record<string, number>, user: any) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {});
+
+    const verifiedUsers = allUsers.filter((u: any) => u.email_verified).length;
+
+    // Tenants by status
+    const tenantsByStatus = (allTenants as any[]).reduce((acc: Record<string, number>, t: any) => {
+      acc[t.status] = (acc[t.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Promotions breakdown
+    const activePromos   = promotions.filter(p => p.is_active && new Date(p.start_date) <= now && new Date(p.end_date) >= now);
+    const expiredPromos  = promotions.filter(p => new Date(p.end_date) < now);
+    const scheduledPromos = promotions.filter(p => new Date(p.start_date) > now);
+
+    // Soft-deleted riders
+    const deletedRiders = (softDeletedRiders as any[]).map((r: any) => ({
+      id: r.id,
+      full_name: r.user ? `${r.user.first_name} ${r.user.surname}` : 'Unknown',
+      email: r.user?.email ?? '—',
+      vehicle_type: r.vehicle_type,
+      deleted_at: r.deletedAt,
+    }));
+
+    return {
+      users: {
+        total: allUsers.length,
+        by_role: usersByRole,
+        verified: verifiedUsers,
+        unverified: allUsers.length - verifiedUsers,
+        verification_rate: allUsers.length > 0 ? Math.round((verifiedUsers / allUsers.length) * 100) : 0,
+      },
+      tenants: {
+        total: allTenants.length,
+        by_status: tenantsByStatus,
+      },
+      riders: {
+        total: allRiders.length,
+        soft_deleted_count: softDeletedRiders.length,
+        soft_deleted: deletedRiders,
+      },
+      packages: {
+        total: allPackages.length,
+        cancelled: allPackages.filter(p => p.status === 'CANCELLED').length,
+        cancellation_rate: allPackages.length > 0
+          ? Math.round((allPackages.filter(p => p.status === 'CANCELLED').length / allPackages.length) * 100)
+          : 0,
+      },
+      promotions: {
+        total: promotions.length,
+        active: activePromos.length,
+        expired: expiredPromos.length,
+        scheduled: scheduledPromos.length,
+        list: promotions.slice(0, 10).map(p => ({
+          id: p.id,
+          code: p.code,
+          name: p.name,
+          discount_type: p.discount_type,
+          discount_value: Number(p.discount_value),
+          is_active: p.is_active,
+          start_date: p.start_date,
+          end_date: p.end_date,
+          max_uses: p.max_uses,
+        })),
+      },
     };
   }
 }
