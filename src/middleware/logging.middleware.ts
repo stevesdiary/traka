@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger.js';
+import { slackNotificationService } from '../notification/slack.notification.js';
+
+// Deduplication for Slack alerts
+const recentSlackAlerts = new Map<string, number>();
+const DEDUP_WINDOW_MS = 60_000;
 
 /**
  * Request logging middleware
@@ -37,6 +42,42 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
       duration: `${duration}ms`,
       ip: req.ip,
     });
+
+    // Send 5xx errors to Slack
+    if (statusCode >= 500) {
+      const key = `${req.method}:${req.originalUrl}:${statusCode}`;
+      const now = Date.now();
+      const lastSent = recentSlackAlerts.get(key);
+
+      if (!lastSent || now - lastSent > DEDUP_WINDOW_MS) {
+        recentSlackAlerts.set(key, now);
+
+        // Extract error message from response body if possible
+        const body = args[0];
+        let errorMsg = `${statusCode} on ${req.method} ${req.originalUrl}`;
+        if (body && typeof body === 'string') {
+          try { errorMsg = JSON.parse(body).error || errorMsg; } catch {}
+        }
+
+        slackNotificationService.sendErrorNotification({
+          error: new Error(errorMsg),
+          context: {
+            endpoint: req.originalUrl,
+            method: req.method,
+            userId: (req as any).user?.id,
+            requestId: req.headers['x-request-id'] as string,
+            additionalInfo: { app: 'traka-server', statusCode, duration: `${duration}ms` },
+          }
+        }).catch(() => {});
+      }
+
+      // Prune stale entries
+      if (recentSlackAlerts.size > 100) {
+        for (const [k, ts] of recentSlackAlerts) {
+          if (now - ts > DEDUP_WINDOW_MS) recentSlackAlerts.delete(k);
+        }
+      }
+    }
 
     // Call original end function
     return originalEnd(...args) as Response;
