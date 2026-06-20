@@ -177,7 +177,7 @@ export class DashboardService {
       this.packageRepository.findAll(),
       TenantModel.findAll({ attributes: ['id', 'business_name', 'status', 'createdAt'] }),
       PromotionModel.findAll({ order: [['createdAt', 'DESC']] }),
-      this.riderRepository.getSoftDeletedRiders(),
+      this.riderRepository.getDeletedRiders(),
     ]);
 
     // Users by role
@@ -195,9 +195,9 @@ export class DashboardService {
     }, {});
 
     // Promotions breakdown
-    const activePromos   = promotions.filter(p => p.is_active && new Date(p.start_date) <= now && new Date(p.end_date) >= now);
-    const expiredPromos  = promotions.filter(p => new Date(p.end_date) < now);
-    const scheduledPromos = promotions.filter(p => new Date(p.start_date) > now);
+    const activePromos   = promotions.filter((p: any) => p.is_active && new Date(p.start_date) <= now && new Date(p.end_date) >= now);
+    const expiredPromos  = promotions.filter((p: any) => new Date(p.end_date) < now);
+    const scheduledPromos = promotions.filter((p: any) => new Date(p.start_date) > now);
 
     // Soft-deleted riders
     const deletedRiders = (softDeletedRiders as any[]).map((r: any) => ({
@@ -227,9 +227,9 @@ export class DashboardService {
       },
       packages: {
         total: allPackages.length,
-        cancelled: allPackages.filter(p => p.status === 'CANCELLED').length,
+        cancelled: allPackages.filter((p: any) => p.status === 'CANCELLED').length,
         cancellation_rate: allPackages.length > 0
-          ? Math.round((allPackages.filter(p => p.status === 'CANCELLED').length / allPackages.length) * 100)
+          ? Math.round((allPackages.filter((p: any) => p.status === 'CANCELLED').length / allPackages.length) * 100)
           : 0,
       },
       promotions: {
@@ -237,7 +237,7 @@ export class DashboardService {
         active: activePromos.length,
         expired: expiredPromos.length,
         scheduled: scheduledPromos.length,
-        list: promotions.slice(0, 10).map(p => ({
+        list: promotions.slice(0, 10).map((p: any) => ({
           id: p.id,
           code: p.code,
           name: p.name,
