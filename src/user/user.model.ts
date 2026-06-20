@@ -87,4 +87,16 @@ export class UserModel extends Model <UserModel> {
     allowNull: true
   })
   declare terms_accepted_at: Date | null;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true
+  })
+  declare totp_secret_enc: string | null;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false
+  })
+  declare totp_enabled: boolean;
 }

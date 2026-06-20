@@ -10,6 +10,16 @@ import { EmailNotificationService } from '../notification/email.service.js';
 import { welcomeCustomerEmail, welcomeBusinessEmail, welcomeRiderEmail } from '../notification/email-templates.js';
 import logger from '../utils/logger.js';
 
+const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN']);
+
+function issueChallenge(userId: string, type: '2fa_challenge' | '2fa_setup'): string {
+  return jwt.sign(
+    { id: userId, userId, email: '', role: '', tenant_id: null, challenge_type: type },
+    config.jwt.secret,
+    { ...JWT_SIGN_OPTIONS, expiresIn: '10m' }
+  );
+}
+
 const emailService = new EmailNotificationService();
 
 export class AuthService {
@@ -56,12 +66,25 @@ export class AuthService {
     await this.userRepository.updateById(userId, { password_hash });
   }
 
-  async login(email: string, password: string): Promise<{ token: string; user: any } | null> {
+  async login(email: string, password: string): Promise<
+    | { token: string; user: any }
+    | { requires_2fa: true; challenge_token: string }
+    | { requires_2fa_setup: true; setup_token: string }
+    | null
+  > {
     const user = await this.userRepository.findByEmail(email);
     if (!user) return null;
 
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) return null;
+
+    // Admin and Super Admin must go through 2FA before receiving a full JWT.
+    if (ADMIN_ROLES.has(user.role)) {
+      if (!user.totp_enabled) {
+        return { requires_2fa_setup: true, setup_token: issueChallenge(user.id, '2fa_setup') };
+      }
+      return { requires_2fa: true, challenge_token: issueChallenge(user.id, '2fa_challenge') };
+    }
 
     const payload: JWTPayload = {
       id: user.id,
