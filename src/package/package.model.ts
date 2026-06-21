@@ -18,11 +18,11 @@ export class PackageModel extends Model {
     allowNull: false,
     unique: true
   })
-  tracking_number!: string;
+  declare tracking_number: string;
 
   @ForeignKey(() => UserModel)
   @Column(DataType.UUID)
-  sender_id!: string;
+  declare sender_id: string;
 
   // Guest delivery support - recipient_id is optional
   @ForeignKey(() => UserModel)
@@ -30,138 +30,138 @@ export class PackageModel extends Model {
     type: DataType.UUID,
     allowNull: true
   })
-  recipient_id?: string;
+  declare recipient_id: string | undefined;
 
   // Guest recipient information
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  recipient_name!: string;
+  declare recipient_name: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  recipient_email?: string;
+  declare recipient_email: string | undefined;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  recipient_phone!: string;
+  declare recipient_phone: string;
 
   @Column({
     type: DataType.ENUM('PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'),
     defaultValue: 'PENDING'
   })
-  status!: string;
+  declare status: string;
 
   // Scheduling fields
   @Column({
     type: DataType.ENUM('IMMEDIATE', 'SCHEDULED', 'SAME_DAY', 'NEXT_DAY'),
     defaultValue: 'IMMEDIATE'
   })
-  schedule_type!: string;
+  declare schedule_type: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: true
   })
-  scheduled_for?: Date;
+  declare scheduled_for: Date | undefined;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  pickup_address?: string;
+  declare pickup_address: string | undefined;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  delivery_address!: string;
+  declare delivery_address: string;
 
   @Column(DataType.TEXT)
-  description!: string;
+  declare description: string;
 
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  tenant_id?: string;
+  declare tenant_id: string | undefined;
 
   // Delivery tracking
   @Column(DataType.DATE)
-  delivered_at?: Date;
+  declare delivered_at: Date | undefined;
 
   @Column(DataType.STRING)
-  delivery_notes?: string;
+  declare delivery_notes: string | undefined;
 
   // Pricing fields
   @Column({
     type: DataType.ENUM('SMALL', 'MEDIUM', 'LARGE'),
     defaultValue: 'SMALL'
   })
-  package_size!: string;
+  declare package_size: string;
 
   @Column({
     type: DataType.DECIMAL(5, 2),
     allowNull: true
   })
-  package_weight?: number;
+  declare package_weight: number | undefined;
 
   @Column({
     type: DataType.ENUM('STANDARD', 'EXPRESS', 'SAME_DAY'),
     defaultValue: 'STANDARD'
   })
-  delivery_speed!: string;
+  declare delivery_speed: string;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true
   })
-  delivery_fee?: number;
+  declare delivery_fee: number | undefined;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true
   })
-  platform_fee?: number;
+  declare platform_fee: number | undefined;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true
   })
-  total_amount?: number;
+  declare total_amount: number | undefined;
 
   @Column({
     type: DataType.DECIMAL(8, 2),
     allowNull: true
   })
-  estimated_distance_km?: number;
+  declare estimated_distance_km: number | undefined;
 
   // Payment fields
   @Column({
     type: DataType.ENUM('DIGITAL', 'CASH'),
     defaultValue: 'DIGITAL'
   })
-  payment_method!: string;
+  declare payment_method: string;
 
   @Column({
     type: DataType.ENUM('SENDER', 'RECIPIENT'),
     defaultValue: 'SENDER'
   })
-  payment_by!: string;
+  declare payment_by: string;
 
   @Column({
     type: DataType.ENUM('PENDING', 'PAID', 'FAILED'),
     defaultValue: 'PENDING'
   })
-  payment_status!: string;
+  declare payment_status: string;
 
   @Column(DataType.DATE)
-  paid_at?: Date;
+  declare paid_at: Date | undefined;
 
   @Column({
     type: DataType.ENUM(
@@ -180,50 +180,50 @@ export class PackageModel extends Model {
     allowNull: false,
     defaultValue: 'OTHERS'
   })
-  category!: string;
+  declare category: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_fragile!: boolean;
+  declare is_fragile: boolean;
 
   // Verification fields
   @Column({
     type: DataType.STRING(6),
     allowNull: true
   })
-  pickup_pin?: string;
+  declare pickup_pin: string | undefined;
 
   @Column({
     type: DataType.STRING(6),
     allowNull: true
   })
-  delivery_pin?: string;
+  declare delivery_pin: string | undefined;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true
   })
-  qr_code_data?: string;
+  declare qr_code_data: string | undefined;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  pickup_confirmed!: boolean;
+  declare pickup_confirmed: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  delivery_confirmed!: boolean;
+  declare delivery_confirmed: boolean;
 
   @Column(DataType.DATE)
-  pickup_confirmed_at?: Date;
+  declare pickup_confirmed_at: Date | undefined;
 
   @Column(DataType.DATE)
-  delivery_confirmed_at?: Date;
+  declare delivery_confirmed_at: Date | undefined;
 
   // Cancellation fields
   @Column({
@@ -239,50 +239,50 @@ export class PackageModel extends Model {
     ),
     allowNull: true
   })
-  cancellation_reason?: string;
+  declare cancellation_reason: string | undefined;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true
   })
-  cancellation_note?: string;
+  declare cancellation_note: string | undefined;
 
   @Column(DataType.DATE)
-  cancelled_at?: Date;
+  declare cancelled_at: Date | undefined;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  cancelled_by?: string;
+  declare cancelled_by: string | undefined;
 
   @Column({
     type: DataType.BOOLEAN,
     allowNull: true
   })
-  rider_has_package?: boolean;
+  declare rider_has_package: boolean | undefined;
 
   // Guest tracking token for non-registered recipients
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  guest_tracking_token?: string;
+  declare guest_tracking_token: string | undefined;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  rider_id?: string;
+  declare rider_id: string | undefined;
 
   @BelongsTo(() => UserModel, 'sender_id')
-  sender!: UserModel;
+  declare sender: UserModel;
 
   @BelongsTo(() => UserModel, 'recipient_id')
-  recipient?: UserModel;
+  declare recipient: UserModel | undefined;
 
   @BelongsTo(() => UserModel, 'rider_id')
-  rider?: UserModel;
+  declare rider: UserModel | undefined;
 }

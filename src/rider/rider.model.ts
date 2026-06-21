@@ -19,93 +19,93 @@ export class RiderModel extends Model {
     allowNull: false,
     unique: true
   })
-  rider_id!: string;
+  declare rider_id: string;
 
   @ForeignKey(() => UserModel)
   @Column(DataType.UUID)
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  business_id?: string;
+  declare business_id: string | undefined;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  license_number!: string;
+  declare license_number: string;
 
   @Column({
     type: DataType.ENUM('BICYCLE', 'MOTORCYCLE'),
     allowNull: false
   })
-  vehicle_type!: string;
+  declare vehicle_type: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  vehicle_plate!: string;
+  declare vehicle_plate: string;
 
   @Column(DataType.STRING)
-  profile_photo?: string;
+  declare profile_photo: string | undefined;
 
   @Column(DataType.STRING)
-  license_photo?: string;
+  declare license_photo: string | undefined;
 
   @Column(DataType.STRING)
-  vehicle_photo?: string;
+  declare vehicle_photo: string | undefined;
 
   @Column({
     type: DataType.ENUM('PENDING', 'VERIFIED', 'REJECTED'),
     defaultValue: 'PENDING'
   })
-  verification_status!: string;
+  declare verification_status: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_available!: boolean;
+  declare is_available: boolean;
 
   @Column({
     type: DataType.ENUM('INDEPENDENT', 'BUSINESS_MANAGED'),
     allowNull: false
   })
-  rider_type!: string;
+  declare rider_type: string;
 
   @Column({
     type: DataType.ENUM('AVAILABLE', 'BUSY', 'OFFLINE'),
     defaultValue: 'OFFLINE'
   })
-  status!: string;
+  declare status: string;
 
   @Column(DataType.DECIMAL(10, 8))
-  current_latitude?: number;
+  declare current_latitude: number | undefined;
 
   @Column(DataType.DECIMAL(11, 8))
-  current_longitude?: number;
+  declare current_longitude: number | undefined;
 
   @Column({
     type: DataType.STRING(20),
     allowNull: true,
     unique: true
   })
-  referral_code?: string;
+  declare referral_code: string | undefined;
 
   @Column({
     type: DataType.DATE,
     allowNull: true
   })
-  referral_code_updated_at?: Date;
+  declare referral_code_updated_at: Date | undefined;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 
   @HasMany(() => RatingModel, 'rider_id')
-  ratings!: RatingModel[];
+  declare ratings: RatingModel[];
 }
 
 export interface RiderProfile {

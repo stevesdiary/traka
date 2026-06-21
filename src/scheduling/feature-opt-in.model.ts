@@ -15,17 +15,17 @@ export class FeatureOptInModel extends Model {
     type: DataType.STRING,
     allowNull: false
   })
-  email!: string;
+  declare email: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  feature_name!: string;
+  declare feature_name: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  notified!: boolean;
+  declare notified: boolean;
 }

@@ -17,56 +17,56 @@ export class UserAddressModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  label!: string; // Home, Work, Office, etc.
+  declare label: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false
   })
-  address!: string;
+  declare address: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  city?: string;
+  declare city: string | undefined;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  state?: string;
+  declare state: string | undefined;
 
   @Column({
     type: DataType.DECIMAL(10, 8),
     allowNull: true
   })
-  latitude?: number;
+  declare latitude: number | undefined;
 
   @Column({
     type: DataType.DECIMAL(11, 8),
     allowNull: true
   })
-  longitude?: number;
+  declare longitude: number | undefined;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_default!: boolean;
+  declare is_default: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  is_active!: boolean;
+  declare is_active: boolean;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 }

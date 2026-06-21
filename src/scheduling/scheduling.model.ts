@@ -18,35 +18,35 @@ export class ScheduledDeliveryRecord extends Model {
     allowNull: false,
     field: 'package_id'
   })
-  packageId!: string;
+  declare packageId: string;
 
   @Column({
     type: DataType.ENUM(...Object.values(DeliveryScheduleType)),
     allowNull: false,
     field: 'schedule_type'
   })
-  scheduleType!: DeliveryScheduleType;
+  declare scheduleType: DeliveryScheduleType;
 
   @Column({
     type: DataType.DATE,
     allowNull: false,
     field: 'scheduled_for'
   })
-  scheduledFor!: Date;
+  declare scheduledFor: Date;
 
   @Column({
     type: DataType.ENUM(...Object.values(ScheduleStatus)),
     allowNull: false,
     defaultValue: ScheduleStatus.PENDING
   })
-  status!: ScheduleStatus;
+  declare status: ScheduleStatus;
 
   @Column({
     type: DataType.DATE,
     allowNull: true,
     field: 'dispatched_at'
   })
-  dispatchedAt?: Date;
+  declare dispatchedAt: Date | undefined;
 }
 
 function toScheduledDelivery(record: ScheduledDeliveryRecord): ScheduledDelivery {

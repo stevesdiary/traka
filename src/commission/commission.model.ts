@@ -15,43 +15,43 @@ export class CommissionModel extends Model {
 
   @ForeignKey(() => RiderModel)
   @Column(DataType.UUID)
-  driver_id!: string;
+  declare driver_id: string;
 
   @Column({
     type: DataType.UUID,
     allowNull: false
   })
-  package_id!: string;
+  declare package_id: string;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false
   })
-  delivery_fee!: number;
+  declare delivery_fee: number;
 
   @Column({
     type: DataType.DECIMAL(5, 4),
     allowNull: false
   })
-  commission_rate!: number;
+  declare commission_rate: number;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false
   })
-  commission_amount!: number;
+  declare commission_amount: number;
 
   @Column({
     type: DataType.ENUM('PENDING', 'PAID', 'CANCELLED'),
     defaultValue: 'PENDING'
   })
-  status!: string;
+  declare status: string;
 
   @Column(DataType.DATE)
-  paid_at?: Date;
+  declare paid_at: Date | undefined;
 
   @BelongsTo(() => RiderModel)
-  rider!: RiderModel;
+  declare rider: RiderModel;
 }
 
 export interface Commission {
