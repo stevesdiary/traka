@@ -29,6 +29,13 @@ router.get('/couriers/:courierId/state',
   matchingController.getCourierState
 );
 
+// Customer route: find available riders by plain address (geocodes internally)
+router.post('/find-couriers/by-address',
+  authenticateToken,
+  canRead(Resource.PACKAGE),
+  matchingController.findCouriersByAddress
+);
+
 // Matching routes (require package permissions)
 router.post('/find-couriers', 
   authenticateToken, 

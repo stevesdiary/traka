@@ -20,6 +20,7 @@ export class GeocodingService {
   private photonBaseUrl = this.normalizeBaseUrl(
     process.env.GEOCODING_PHOTON_URL || 'https://photon.komoot.io'
   );
+  private geocodingApiKey = process.env.GEOCODING_API_KEY || '';
   private userAgent = process.env.GEOCODING_USER_AGENT || 'TRAKA-Logistics/1.0';
   private countryCode = (process.env.GEOCODING_COUNTRY_CODE || '').toLowerCase().trim();
   private CACHE_PREFIX = 'geocode:';
@@ -182,6 +183,9 @@ export class GeocodingService {
       if (this.countryCode) {
         params.set('countrycodes', this.countryCode);
       }
+      if (this.geocodingApiKey) {
+        params.set('key', this.geocodingApiKey);
+      }
 
       return `${this.nominatimBaseUrl}/search?${params.toString()}`;
     }
@@ -203,6 +207,9 @@ export class GeocodingService {
         format: 'json',
         addressdetails: '1'
       });
+      if (this.geocodingApiKey) {
+        params.set('key', this.geocodingApiKey);
+      }
       return `${this.nominatimBaseUrl}/reverse?${params.toString()}`;
     }
 

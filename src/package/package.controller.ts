@@ -25,7 +25,7 @@ export class PackageController {
         package: newPackage
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to create package' });
+      res.status(500).json({ error: 'Failed to create package', message: error.message });
     }
   };
 
@@ -49,7 +49,7 @@ export class PackageController {
         res.status(404).json({ error: 'Package not found or invalid tracking information' });
         return;
       }
-      res.status(500).json({ error: 'Failed to retrieve package information' });
+      res.status(500).json({ error: 'Failed to retrieve package information', message: error.message });
     }
   };
 
@@ -77,7 +77,7 @@ export class PackageController {
         res.status(403).json({ error: 'Access denied' });
         return;
       }
-      res.status(500).json({ error: 'Failed to retrieve package' });
+      res.status(500).json({ error: 'Failed to retrieve package', message: error.message });
     }
   };
 
@@ -100,7 +100,7 @@ export class PackageController {
         res.status(400).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to claim package' });
+      res.status(500).json({ error: 'Failed to claim package', message: error.message });
     }
   };
 
@@ -124,7 +124,7 @@ export class PackageController {
         res.status(400).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to cancel package' });
+      res.status(500).json({ error: 'Failed to cancel package', message: error.message });
     }
   };
 
@@ -138,7 +138,7 @@ export class PackageController {
         packages
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to retrieve your packages' });
+      res.status(500).json({ error: 'Failed to retrieve your packages', message: error.message });
     }
   };
 }
