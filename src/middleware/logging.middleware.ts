@@ -56,7 +56,14 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
         const body = args[0];
         let errorMsg = `${statusCode} on ${req.method} ${req.originalUrl}`;
         if (body && typeof body === 'string') {
-          try { errorMsg = JSON.parse(body).error || errorMsg; } catch {}
+          try {
+            const parsed = JSON.parse(body);
+            const detail = parsed.message || parsed.error || '';
+            const summary = parsed.error && parsed.message
+              ? `${parsed.error}: ${parsed.message}`
+              : detail;
+            if (summary) errorMsg = summary;
+          } catch {}
         }
 
         slackNotificationService.sendErrorNotification({
