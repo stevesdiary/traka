@@ -3,7 +3,8 @@ import { UserModel } from '../user/user.model.js';
 
 @Table({
   tableName: 'user_addresses',
-  timestamps: true
+  timestamps: true,
+  underscored: true
 })
 export class UserAddressModel extends Model {
   @PrimaryKey
