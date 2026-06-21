@@ -17,43 +17,43 @@ export class BusinessWalletModel extends Model {
     allowNull: false,
     unique: true
   })
-  tenant_id!: string;
+  declare tenant_id: string;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     defaultValue: 0.00,
     allowNull: false
   })
-  balance!: number;
+  declare balance: number;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     defaultValue: 1000.00,
     allowNull: false
   })
-  auto_recharge_threshold!: number;
+  declare auto_recharge_threshold: number;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     defaultValue: 5000.00,
     allowNull: false
   })
-  auto_recharge_amount!: number;
+  declare auto_recharge_amount: number;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  auto_recharge_enabled!: boolean;
+  declare auto_recharge_enabled: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  is_active!: boolean;
+  declare is_active: boolean;
 
   @BelongsTo(() => TenantModel)
-  tenant!: TenantModel;
+  declare tenant: TenantModel;
 }
 
 @Table({
@@ -68,39 +68,39 @@ export class BusinessWalletTransactionModel extends Model {
 
   @ForeignKey(() => BusinessWalletModel)
   @Column(DataType.UUID)
-  wallet_id!: string;
+  declare wallet_id: string;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     allowNull: false
   })
-  amount!: number;
+  declare amount: number;
 
   @Column({
     type: DataType.ENUM('PLATFORM_FEE', 'RECHARGE', 'REFUND', 'ADJUSTMENT'),
     allowNull: false
   })
-  type!: string;
+  declare type: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  reference!: string;
+  declare reference: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  description?: string;
+  declare description: string | undefined;
 
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  package_id?: string;
+  declare package_id: string | undefined;
 
   @BelongsTo(() => BusinessWalletModel)
-  wallet!: BusinessWalletModel;
+  declare wallet: BusinessWalletModel;
 }

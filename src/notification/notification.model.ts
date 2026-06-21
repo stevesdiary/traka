@@ -16,52 +16,52 @@ export class NotificationModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.ENUM('DELIVERY_ASSIGNED', 'PICKUP_CONFIRMED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED', 'PAYMENT_RECEIVED', 'RATING_RECEIVED', 'RIDER_ASSIGNED', 'RIDER_ARRIVED'),
     allowNull: false
   })
-  type!: string;
+  declare type: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  title!: string;
+  declare title: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false
   })
-  message!: string;
+  declare message: string;
 
   @Column({
     type: DataType.JSON,
     allowNull: true
   })
-  data?: any;
+  declare data: any;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_read!: boolean;
+  declare is_read: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_sent!: boolean;
+  declare is_sent: boolean;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  push_token?: string;
+  declare push_token: string | undefined;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 }
 
 @Table({
@@ -80,32 +80,32 @@ export class NotificationPreferenceModel extends Model {
     allowNull: false,
     unique: true
   })
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  push_enabled!: boolean;
+  declare push_enabled: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  sms_enabled!: boolean;
+  declare sms_enabled: boolean;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  email_enabled!: boolean;
+  declare email_enabled: boolean;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  fcm_token?: string;
+  declare fcm_token: string | undefined;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 }

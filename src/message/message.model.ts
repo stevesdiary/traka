@@ -18,30 +18,30 @@ export class MessageModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  package_id!: string;
+  declare package_id: string;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: false
   })
-  sender_id!: string;
+  declare sender_id: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false
   })
-  message!: string;
+  declare message: string;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: false
   })
-  is_read!: boolean;
+  declare is_read: boolean;
 
   @BelongsTo(() => PackageModel)
-  package!: PackageModel;
+  declare package: PackageModel;
 
   @BelongsTo(() => UserModel, 'sender_id')
-  sender!: UserModel;
+  declare sender: UserModel;
 }

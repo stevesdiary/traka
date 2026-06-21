@@ -14,41 +14,41 @@ export class LegalContentModel extends Model {
     type: DataType.ENUM('FAQ', 'TERMS_OF_SERVICE', 'PRIVACY_POLICY', 'COMMISSION_POLICY'),
     allowNull: false
   })
-  type!: string;
+  declare type: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  title!: string;
+  declare title: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: false
   })
-  content!: string;
+  declare content: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  category?: string;
+  declare category: string | undefined;
 
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0
   })
-  order_index!: number;
+  declare order_index: number;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  is_active!: boolean;
+  declare is_active: boolean;
 
   @Column({
     type: DataType.STRING,
     defaultValue: '1.0.0'
   })
-  content_version!: string;
+  declare content_version: string;
 }

@@ -16,31 +16,31 @@ export class TenantModel extends Model {
     type: DataType.STRING,
     allowNull: false
   })
-  business_name!: string;
+  declare business_name: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  business_address!: string;
+  declare business_address: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  contact_person!: string;
+  declare contact_person: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  phone!: string;
+  declare phone: string;
 
   @Column({
     type: DataType.ENUM('ACTIVE', 'SUSPENDED', 'PENDING'),
     defaultValue: 'PENDING'
   })
-  status!: string;
+  declare status: string;
 }
 
 export interface Tenant {

@@ -17,44 +17,41 @@ export class RatingModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  package_id!: string;
+  declare package_id: string;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: false
   })
-  rider_id!: string;
+  declare rider_id: string;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: false
   })
-  rated_by!: string;
+  declare rated_by: string;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    validate: { min: 1, max: 5 }
   })
-  rating!: number;
+  declare rating: number;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true
   })
-  review?: string;
+  declare review: string | undefined;
 
   @BelongsTo(() => PackageModel)
-  package!: PackageModel;
+  declare package: PackageModel;
 
   @BelongsTo(() => UserModel, 'rider_id')
-  rider!: UserModel;
+  declare rider: UserModel;
 
   @BelongsTo(() => UserModel, 'rated_by')
-  rater!: UserModel;
+  declare rater: UserModel;
 }

@@ -19,30 +19,30 @@ export class WalletModel extends Model {
     allowNull: false,
     unique: true
   })
-  user_id!: string;
+  declare user_id: string;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     defaultValue: 0.00,
     allowNull: false
   })
-  balance!: number;
+  declare balance: number;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     defaultValue: -2000.00,
     allowNull: false
   })
-  credit_limit!: number;
+  declare credit_limit: number;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  is_active!: boolean;
+  declare is_active: boolean;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 }
 
 @Table({
@@ -57,39 +57,39 @@ export class WalletTransactionModel extends Model {
 
   @ForeignKey(() => WalletModel)
   @Column(DataType.UUID)
-  wallet_id!: string;
+  declare wallet_id: string;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     allowNull: false
   })
-  amount!: number;
+  declare amount: number;
 
   @Column({
     type: DataType.ENUM('COMMISSION_DEBIT', 'TRIP_EARNING', 'DEBT_REPAYMENT', 'WITHDRAWAL', 'DEPOSIT'),
     allowNull: false
   })
-  type!: string;
+  declare type: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  reference!: string;
+  declare reference: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: true
   })
-  description?: string;
+  declare description: string | undefined;
 
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  package_id?: string;
+  declare package_id: string | undefined;
 
   @BelongsTo(() => WalletModel)
-  wallet!: WalletModel;
+  declare wallet: WalletModel;
 }

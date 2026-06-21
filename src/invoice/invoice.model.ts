@@ -13,69 +13,69 @@ export class InvoiceModel extends Model {
 
   @ForeignKey(() => TenantModel)
   @Column(DataType.UUID)
-  tenant_id!: string;
+  declare tenant_id: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true
   })
-  invoice_number!: string;
+  declare invoice_number: string;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     allowNull: false
   })
-  subtotal!: number;
+  declare subtotal: number;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     allowNull: false
   })
-  platform_fee!: number;
+  declare platform_fee: number;
 
   @Column({
     type: DataType.DECIMAL(20, 2),
     allowNull: false
   })
-  total_amount!: number;
+  declare total_amount: number;
 
   @Column({
     type: DataType.ENUM('PENDING', 'PAID', 'OVERDUE', 'CANCELLED'),
     defaultValue: 'PENDING'
   })
-  status!: string;
+  declare status: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  due_date!: Date;
+  declare due_date: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: true
   })
-  paid_at?: Date;
+  declare paid_at: Date | undefined;
 
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0
   })
-  package_count!: number;
+  declare package_count: number;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  period_start!: Date;
+  declare period_start: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  period_end!: Date;
+  declare period_end: Date;
 
   @BelongsTo(() => TenantModel)
-  tenant!: TenantModel;
+  declare tenant: TenantModel;
 }

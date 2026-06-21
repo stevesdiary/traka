@@ -39,5 +39,5 @@ export class RefreshTokenModel extends Model {
   declare revoked_at: Date | null;
 
   @BelongsTo(() => UserModel)
-  user!: UserModel;
+  declare user: UserModel;
 }

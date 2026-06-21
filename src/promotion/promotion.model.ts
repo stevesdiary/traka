@@ -18,71 +18,71 @@ export class PromotionModel extends Model {
     allowNull: false,
     unique: true
   })
-  code!: string;
+  declare code: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false
   })
-  name!: string;
+  declare name: string;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true
   })
-  description?: string;
+  declare description: string | undefined;
 
   @Column({
     type: DataType.ENUM('PERCENTAGE', 'FIXED'),
     allowNull: false
   })
-  discount_type!: string;
+  declare discount_type: string;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: false
   })
-  discount_value!: number;
+  declare discount_value: number;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: true
   })
-  max_uses?: number;
+  declare max_uses: number | undefined;
 
   @Column({
     type: DataType.INTEGER,
     allowNull: true
   })
-  max_uses_per_user?: number;
+  declare max_uses_per_user: number | undefined;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  start_date!: Date;
+  declare start_date: Date;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  end_date!: Date;
+  declare end_date: Date;
 
   @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })
-  is_active!: boolean;
+  declare is_active: boolean;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  created_by?: string;
+  declare created_by: string | undefined;
 
   @BelongsTo(() => UserModel, 'created_by')
-  creator?: UserModel;
+  declare creator: UserModel | undefined;
 }
 
 @Table({
@@ -101,46 +101,46 @@ export class PromotionUsageModel extends Model {
     type: DataType.UUID,
     allowNull: false
   })
-  promotion_id!: string;
+  declare promotion_id: string;
 
   @ForeignKey(() => UserModel)
   @Column({
     type: DataType.UUID,
     allowNull: false
   })
-  user_id!: string;
+  declare user_id: string;
 
   @ForeignKey(() => PackageModel)
   @Column({
     type: DataType.UUID,
     allowNull: true
   })
-  package_id?: string;
+  declare package_id: string | undefined;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
     allowNull: true
   })
-  discount_amount?: number;
+  declare discount_amount: number | undefined;
 
   @Column({
     type: DataType.STRING(3),
     defaultValue: 'NGN'
   })
-  currency!: string;
+  declare currency: string;
 
   @Column({
     type: DataType.DATE,
     allowNull: false
   })
-  used_at!: Date;
+  declare used_at: Date;
 
   @BelongsTo(() => PromotionModel)
-  promotion!: PromotionModel;
+  declare promotion: PromotionModel;
 
   @BelongsTo(() => UserModel, 'user_id')
-  user!: UserModel;
+  declare user: UserModel;
 
   @BelongsTo(() => PackageModel, 'package_id')
-  package?: PackageModel;
+  declare package: PackageModel | undefined;
 }
