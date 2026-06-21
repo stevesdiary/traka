@@ -26,7 +26,12 @@ export class ServiceAreaService {
   }
 
   async checkCoverage(city: string, state: string): Promise<{ covered: boolean; city?: string }> {
-    const serviceArea = await ServiceAreaModel.findOne({
+    if (!city?.trim() || !state?.trim()) {
+      return { covered: false };
+    }
+
+    // Try exact match first
+    const exactMatch = await ServiceAreaModel.findOne({
       where: { 
         city: city,
         state: state,
@@ -34,8 +39,27 @@ export class ServiceAreaService {
       }
     });
 
-    if (serviceArea) {
-      return { covered: true, city: serviceArea.city };
+    if (exactMatch) {
+      return { covered: true, city: exactMatch.city };
+    }
+
+    // Fallback: case-insensitive partial match on city OR state
+    const allAreas = await ServiceAreaModel.findAll({ where: { is_active: true } });
+    const normalizedCity = city.toLowerCase().trim();
+    const normalizedState = state.toLowerCase().trim();
+
+    const match = allAreas.find(area => {
+      const areaCity = (area.city ?? '').toLowerCase();
+      const areaState = (area.state ?? '').toLowerCase();
+      if (!areaCity || !areaState) return false;
+      return (
+        (normalizedCity && (normalizedCity.includes(areaCity) || areaCity.includes(normalizedCity))) ||
+        (normalizedState && (normalizedState === areaState || normalizedState.includes(areaState) || areaState.includes(normalizedState)))
+      );
+    });
+
+    if (match) {
+      return { covered: true, city: match.city };
     }
 
     return { covered: false };

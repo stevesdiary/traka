@@ -8,14 +8,14 @@ export class ServiceAreaModel extends Model {
   declare id: string;
 
   @Column({ type: DataType.STRING, allowNull: false, unique: true })
-  city!: string;
+  declare city: string;
 
   @Column({ type: DataType.STRING, allowNull: false })
-  state!: string;
+  declare state: string;
 
   @Column({ type: DataType.STRING, allowNull: false })
-  country!: string;
+  declare country: string;
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
-  is_active!: boolean;
+  declare is_active: boolean;
 }

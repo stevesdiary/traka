@@ -5,6 +5,7 @@ import { MatchingEngine } from '../services/MatchingEngine.js';
 import { DispatchService } from '../services/DispatchService.js';
 import { DeliveryRequest } from '../models/CourierState.js';
 import { PackageModel } from '../../package/package.model.js';
+import { GeocodingService } from '../../utils/geocoding.service.js';
 import { emitRiderLocationUpdate } from '../../websocket/websocket.service.js';
 import logger from '../../utils/logger.js';
 import { VehicleType } from '../config/vehicles.js';
@@ -87,6 +88,54 @@ export class MatchingController {
     } catch (error: any) {
       console.error('Get courier state error:', error);
       res.status(500).json({ error: 'Failed to get courier state' });
+    }
+  };
+
+  // Customer-friendly: accepts plain addresses, geocodes internally
+  findCouriersByAddress = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { pickup_address, delivery_address, weight, package_size } = req.body;
+
+      if (!pickup_address || !delivery_address) {
+        res.status(400).json({ error: 'pickup_address and delivery_address are required' });
+        return;
+      }
+
+      const geocodingService = new GeocodingService();
+      const [pickupGeo, deliveryGeo] = await Promise.all([
+        geocodingService.geocodeAddress(pickup_address),
+        geocodingService.geocodeAddress(delivery_address),
+      ]);
+
+      const deliveryRequest: DeliveryRequest = {
+        id: `req_${Date.now()}`,
+        pickupLocation: { lat: pickupGeo.latitude, lng: pickupGeo.longitude, address: pickup_address },
+        dropoffLocation: { lat: deliveryGeo.latitude, lng: deliveryGeo.longitude, address: delivery_address },
+        package: {
+          weight: weight ?? (package_size === 'LARGE' ? 12 : package_size === 'MEDIUM' ? 5 : 1),
+          volume: package_size === 'LARGE' ? 3 : package_size === 'MEDIUM' ? 2 : 1,
+          fragile: false,
+        },
+        createdAt: Date.now(),
+      };
+
+      const matches = await MatchingEngine.findMatchingCouriers(deliveryRequest);
+
+      res.json({
+        message: 'Available riders found',
+        matches: matches.map(match => ({
+          courierId: match.courier.id,
+          vehicleType: match.courier.vehicleType,
+          eta: Math.round(match.eta),
+          distance: Math.round(match.distance),
+          score: match.score,
+          location: match.courier.location,
+        })),
+        count: matches.length,
+      });
+    } catch (error: any) {
+      logger.error('Find couriers by address error', { error: error.message });
+      res.status(500).json({ error: 'Failed to find available riders' });
     }
   };
 
