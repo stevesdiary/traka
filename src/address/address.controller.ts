@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AddressService } from './address.service.js';
+import logger from '../utils/logger.js';
 
 export class AddressController {
   private addressService = new AddressService();
@@ -29,7 +30,8 @@ export class AddressController {
         address: newAddress 
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      logger.error('Create address failed', { error: error.message, stack: error.stack });
+      res.status(500).json({ error: 'Failed to create address', message: error.message });
     }
   };
 
