@@ -247,8 +247,8 @@ export class PackageService {
     return {
       id: rider.id,
       name: rider.user ? `${rider.user.first_name} ${rider.user.surname}`.trim() : 'Rider',
-      phone: rider.user?.phone_number,
-      rating: rider.average_rating,
+      phone: rider.user?.phone,
+      rating: (rider as any).avg_rating,
       vehicle_type: rider.vehicle_type,
     };
   }
