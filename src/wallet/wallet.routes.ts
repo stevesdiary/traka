@@ -48,4 +48,7 @@ router.post('/cash-delivery',
   walletController.processCashDelivery
 );
 
+// Pay for a delivery from wallet balance
+router.post('/pay-for-delivery', walletController.payForDelivery);
+
 export { router as walletRoutes };

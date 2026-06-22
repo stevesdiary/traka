@@ -203,6 +203,56 @@ export class PackageService {
     };
   }
 
+  async getPackageByUuid(
+    id: string,
+    requester: { id: string; role: string }
+  ): Promise<any> {
+    const packageData = await this.packageRepository.findById(id);
+    if (!packageData) throw new Error('Package not found');
+
+    const isStaff = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(requester.role);
+    const isOwner = packageData.sender_id === requester.id || packageData.recipient_id === requester.id;
+    if (!isStaff && !isOwner) throw new Error('Unauthorized');
+
+    const liveTracking = await this.getLiveTrackingData(packageData);
+
+    return {
+      id: packageData.id,
+      tracking_number: packageData.tracking_number,
+      status: packageData.status,
+      pickup_address: packageData.pickup_address,
+      delivery_address: packageData.delivery_address,
+      recipient_name: packageData.recipient_name,
+      recipient_phone: packageData.recipient_phone,
+      recipient_email: packageData.recipient_email,
+      description: packageData.description,
+      delivery_notes: packageData.delivery_notes,
+      package_size: packageData.package_size,
+      delivery_speed: packageData.delivery_speed,
+      category: packageData.category,
+      is_fragile: packageData.is_fragile,
+      total_amount: packageData.total_amount,
+      estimated_cost: packageData.total_amount,
+      rider_id: packageData.rider_id,
+      rider: packageData.rider_id ? await this.getRiderInfo(packageData.rider_id) : null,
+      created_at: packageData.createdAt,
+      delivered_at: packageData.delivered_at,
+      live_tracking: liveTracking,
+    };
+  }
+
+  private async getRiderInfo(riderId: string): Promise<any> {
+    const rider = await this.riderRepository.getRiderByUserId(riderId);
+    if (!rider) return null;
+    return {
+      id: rider.id,
+      name: rider.user ? `${rider.user.first_name} ${rider.user.surname}`.trim() : 'Rider',
+      phone: rider.user?.phone_number,
+      rating: rider.average_rating,
+      vehicle_type: rider.vehicle_type,
+    };
+  }
+
   async getPackageByTrackingNumber(
     tracking_number: string,
     guest_token?: string,
@@ -403,10 +453,16 @@ export class PackageService {
       id: pkg.id,
       tracking_number: pkg.tracking_number,
       status: pkg.status,
-      recipient_name: pkg.recipient_name,
+      pickup_address: pkg.pickup_address,
       delivery_address: pkg.delivery_address,
+      recipient_name: pkg.recipient_name,
+      recipient_phone: pkg.recipient_phone,
       description: pkg.description,
       package_size: pkg.package_size,
+      delivery_speed: pkg.delivery_speed,
+      category: pkg.category,
+      total_amount: pkg.total_amount,
+      estimated_cost: pkg.total_amount,
       rider_id: pkg.rider_id,
       created_at: pkg.createdAt,
       is_sender: pkg.sender_id === userId,
