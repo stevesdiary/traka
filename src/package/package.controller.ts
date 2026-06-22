@@ -53,6 +53,25 @@ export class PackageController {
     }
   };
 
+  getPackageById = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const requester = { id: req.user!.userId, role: req.user!.role };
+      const packageData = await this.packageService.getPackageByUuid(id, requester);
+      res.json({ message: 'Package retrieved successfully', package: packageData });
+    } catch (error: any) {
+      if (error.message === 'Package not found') {
+        res.status(404).json({ error: error.message });
+        return;
+      }
+      if (error.message === 'Unauthorized') {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to retrieve package', message: error.message });
+    }
+  };
+
   // Authenticated tracking endpoint
   getPackageByTrackingNumber = async (req: Request, res: Response): Promise<void> => {
     try {

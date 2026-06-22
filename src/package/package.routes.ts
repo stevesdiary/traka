@@ -15,6 +15,7 @@ router.get('/track/:tracking_number', packageController.trackPackage);
 // Authenticated package management
 router.post('/', authenticateToken, requirePermission(Resource.PACKAGE, Action.CREATE), validateInput(CreatePackageSchema), packageController.createPackage);
 router.get('/', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getMyPackages);
+router.get('/by-id/:id', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getPackageById);
 router.get('/:tracking_number', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getPackageByTrackingNumber);
 
 // Package claiming for registered users

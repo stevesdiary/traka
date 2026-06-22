@@ -22,6 +22,56 @@ export class WalletService {
 
   // outerTx allows the caller to wrap this operation in a larger atomic transaction.
   // When provided, commit/rollback are the caller's responsibility.
+  async payForDelivery(userId: string, packageId: string): Promise<{ message: string; balance: number }> {
+    const { PackageRepository } = await import('../package/package.repository.js');
+    const packageRepo = new PackageRepository();
+    const pkg = await packageRepo.findById(packageId);
+
+    if (!pkg) throw new Error('Package not found');
+    if (pkg.sender_id !== userId) throw new Error('Unauthorized: You are not the sender');
+    if (pkg.payment_status === 'PAID') throw new Error('Package already paid for');
+
+    const amount = Number(pkg.total_amount);
+    if (!amount || amount <= 0) throw new Error('Invalid package amount');
+
+    const t = await sequelize.transaction();
+    try {
+      const wallet = await this.walletRepository.findByUserId(userId, t);
+      if (!wallet) throw new Error('Wallet not found');
+
+      const balance = Number(wallet.balance);
+      if (balance < amount) throw new Error(`Insufficient wallet balance. Need ₦${amount}, have ₦${balance.toFixed(2)}`);
+
+      const reference = `PAY-${packageId}`;
+      const existing = await this.walletRepository.findTransactionByReference(reference, t);
+      if (existing) { await t.rollback(); return { message: 'Already paid', balance }; }
+
+      await this.walletRepository.updateBalance(wallet.id, -amount, t);
+      await this.walletRepository.createTransaction({
+        wallet_id: wallet.id,
+        amount: -amount,
+        type: 'DELIVERY_PAYMENT',
+        reference,
+        description: `Delivery payment for package ${packageId}`,
+        package_id: packageId,
+      }, t);
+
+      await packageRepo.updatePackage(packageId, { status: pkg.status } as any);
+      // Mark payment status via raw update
+      await (packageRepo as any).model.update(
+        { payment_status: 'PAID', paid_at: new Date() },
+        { where: { id: packageId }, transaction: t }
+      );
+
+      const newBalance = balance - amount;
+      await t.commit();
+      return { message: 'Payment successful', balance: newBalance };
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
+  }
+
   async processCashDelivery(riderId: string, totalFare: number, packageId: string, outerTx?: Transaction): Promise<void> {
     const managed = !outerTx;
     const t = outerTx ?? await sequelize.transaction();
