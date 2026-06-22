@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import type { VerifyErrors, JwtPayload } from 'jsonwebtoken';
 import { Role, Resource, Action, PermissionService } from '../utils/rolePermissions.js';
 import { JWTPayload } from '../types/index.js';
+import logger from '../utils/logger.js';
 
 declare global {
   namespace Express {
@@ -37,7 +38,8 @@ export const requirePermission = (resource: Resource, action: Action) => {
     
     const userRole = req.user.role as Role;
     if (!PermissionService.hasPermission(userRole, resource, action)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
+      logger.warn('Permission denied', { role: userRole, resource, action, userId: req.user.userId });
+      return res.status(403).json({ error: 'Insufficient permissions', role: userRole, required: `${resource}:${action}` });
     }
     next();
   };
