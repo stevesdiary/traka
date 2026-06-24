@@ -71,6 +71,11 @@ export class PackageController {
   getPackageById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        res.status(400).json({ error: 'Invalid package ID' });
+        return;
+      }
       const requester = { id: req.user!.userId, role: req.user!.role };
       const packageData = await this.packageService.getPackageByUuid(id, requester);
       res.json({ message: 'Package retrieved successfully', package: packageData });
