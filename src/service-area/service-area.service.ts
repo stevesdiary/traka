@@ -9,7 +9,7 @@ export class ServiceAreaService {
     try {
       const cached = await redis.get(this.CACHE_KEY);
       if (cached) {
-        return JSON.parse(cached);
+        return typeof cached === 'string' ? JSON.parse(cached) : cached as any;
       }
 
       const areas = await ServiceAreaModel.findAll({

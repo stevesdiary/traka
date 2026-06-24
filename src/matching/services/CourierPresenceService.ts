@@ -61,7 +61,8 @@ export class CourierPresenceService {
         lastSeen: Date.now()
       };
     }
-    return JSON.parse(raw);
+    // Upstash may return an already-parsed object or a JSON string
+    return typeof raw === 'string' ? JSON.parse(raw) : raw as unknown as CourierState;
   }
 
   static async getAvailableCouriers(): Promise<CourierState[]> {
@@ -77,7 +78,7 @@ export class CourierPresenceService {
         await redis.sRem(AVAILABLE_SET_KEY, id);
         continue;
       }
-      const state: CourierState = JSON.parse(raw);
+      const state: CourierState = typeof raw === 'string' ? JSON.parse(raw) : raw as unknown as CourierState;
       if (now - state.lastSeen > MATCHING_CONFIG.COURIER_TTL * 1000) {
         await redis.sRem(AVAILABLE_SET_KEY, id);
         continue;

@@ -256,7 +256,7 @@ export class GeocodingService {
       const cached = await redis.get(cacheKey);
       if (cached) {
         console.log(`Geocoding cache hit: ${address}`);
-        return JSON.parse(cached);
+        return typeof cached === 'string' ? JSON.parse(cached) : cached as any;
       }
     } catch (error) {
       console.warn('Redis cache read failed:', error);
@@ -304,7 +304,7 @@ export class GeocodingService {
       const cached = await redis.get(cacheKey);
       if (cached) {
         console.log(`✅ Reverse geocoding cache hit: ${latitude},${longitude}`);
-        return JSON.parse(cached);
+        return typeof cached === 'string' ? JSON.parse(cached) : cached as any;
       }
     } catch (error) {
       console.warn('Redis cache read failed:', error);
