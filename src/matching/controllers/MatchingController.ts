@@ -5,18 +5,32 @@ import { MatchingEngine } from '../services/MatchingEngine.js';
 import { DispatchService } from '../services/DispatchService.js';
 import { DeliveryRequest } from '../models/CourierState.js';
 import { PackageModel } from '../../package/package.model.js';
+import { RiderRepository } from '../../rider/rider.repository.js';
 import { GeocodingService } from '../../utils/geocoding.service.js';
 import { emitRiderLocationUpdate } from '../../websocket/websocket.service.js';
 import logger from '../../utils/logger.js';
 import { VehicleType } from '../config/vehicles.js';
 
 export class MatchingController {
+  private riderRepo = new RiderRepository();
+
+  /** Returns true if the caller owns the courierId (either directly as userId or as a rider profile). */
+  private async _isCourierOwner(userId: string, courierId: string): Promise<boolean> {
+    if (userId === courierId) return true;
+    try {
+      const profile = await this.riderRepo.findById(courierId);
+      return profile?.user_id === userId;
+    } catch {
+      return false;
+    }
+  }
+
   // Courier presence endpoints
   updateLocation = async (req: Request, res: Response): Promise<void> => {
     try {
       const { courierId } = req.params;
 
-      if (req.user!.userId !== courierId) {
+      if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }
@@ -49,8 +63,8 @@ export class MatchingController {
 
       res.json({ message: 'Location updated successfully', timestamp });
     } catch (error: any) {
-      logger.error('Update location error', { error: (error as Error).message });
-      res.status(500).json({ error: 'Failed to update location' });
+      logger.error('Update location error', { courierId: req.params.courierId, error: error.message, stack: error.stack });
+      res.status(500).json({ error: 'Failed to update location', detail: error.message });
     }
   };
 
@@ -58,7 +72,7 @@ export class MatchingController {
     try {
       const { courierId } = req.params;
 
-      if (req.user!.userId !== courierId) {
+      if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }
@@ -234,7 +248,7 @@ export class MatchingController {
     try {
       const { courierId, requestId } = req.params;
 
-      if (req.user!.userId !== courierId) {
+      if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }
@@ -262,7 +276,7 @@ export class MatchingController {
     try {
       const { courierId, requestId } = req.params;
 
-      if (req.user!.userId !== courierId) {
+      if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
         return;
       }

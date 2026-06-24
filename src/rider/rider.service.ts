@@ -341,7 +341,22 @@ export class RiderService {
   async getAvailableJobs(): Promise<any[]> {
     const { PackageRepository } = await import("../package/package.repository.js");
     const packageRepo = new PackageRepository();
-    // Use repository method instead of accessing protected model property
-    return await packageRepo.findAvailablePackages();
+    const packages = await packageRepo.findAvailablePackages();
+    return packages.map((pkg: any) => ({
+      id: pkg.id,
+      tracking_number: pkg.tracking_number,
+      status: pkg.status,
+      pickup_address: pkg.pickup_address ?? pkg.pickupAddress ?? null,
+      delivery_address: pkg.delivery_address ?? pkg.deliveryAddress ?? '',
+      recipient_name: pkg.recipient_name ?? pkg.recipientName ?? '',
+      package_size: pkg.package_size ?? pkg.packageSize ?? 'SMALL',
+      delivery_speed: pkg.delivery_speed ?? pkg.deliverySpeed ?? 'STANDARD',
+      category: pkg.category ?? '',
+      total_amount: pkg.total_amount ?? pkg.totalAmount ?? 0,
+      pay: pkg.total_amount ?? pkg.totalAmount ?? 0,
+      estimated_distance_km: pkg.estimated_distance_km ?? pkg.estimatedDistanceKm ?? null,
+      distance_km: pkg.estimated_distance_km ?? pkg.estimatedDistanceKm ?? null,
+      created_at: pkg.createdAt,
+    }));
   }
 }
