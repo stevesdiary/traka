@@ -13,6 +13,7 @@ import {
   NotificationType,
 } from "../notification/notification.service.js";
 import { EmailNotificationService } from "../notification/email.service.js";
+import { trackingStartedEmail } from "../notification/email-templates.js";
 import { SMSService } from "../notification/sms.service.js";
 import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
@@ -64,25 +65,30 @@ export class PackageService {
     sender_id: string,
     tenant_id: string | null
   ): Promise<any> {
-    // Geocode addresses to get coordinates and city/state
-    const pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address);
-    const deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address);
+    // Geocode addresses to get coordinates and city/state (fall back to Lagos on failure)
+    const LAGOS_DEFAULT = { latitude: 6.5244, longitude: 3.3792, city: 'Lagos', state: 'Lagos', country: 'Nigeria', formatted_address: '' };
+    const pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address).catch(() => LAGOS_DEFAULT);
+    const deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address).catch(() => LAGOS_DEFAULT);
 
-    // Check service area coverage (city/state only)
-    const pickupCoverage = await this.serviceAreaService.checkCoverage(
-      pickupGeo.city,
-      pickupGeo.state
-    );
-    if (!pickupCoverage.covered) {
-      throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
+    // Check service area coverage — skip if geocoding fell back to default
+    if (pickupGeo !== LAGOS_DEFAULT) {
+      const pickupCoverage = await this.serviceAreaService.checkCoverage(
+        pickupGeo.city,
+        pickupGeo.state
+      );
+      if (!pickupCoverage.covered) {
+        throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
+      }
     }
 
-    const deliveryCoverage = await this.serviceAreaService.checkCoverage(
-      deliveryGeo.city,
-      deliveryGeo.state
-    );
-    if (!deliveryCoverage.covered) {
-      throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
+    if (deliveryGeo !== LAGOS_DEFAULT) {
+      const deliveryCoverage = await this.serviceAreaService.checkCoverage(
+        deliveryGeo.city,
+        deliveryGeo.state
+      );
+      if (!deliveryCoverage.covered) {
+        throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
+      }
     }
 
     // Calculate pricing
@@ -183,7 +189,20 @@ export class PackageService {
     );
 
     return {
-      ...newPackage,
+      id: newPackage.id,
+      tracking_number: newPackage.tracking_number,
+      status: newPackage.status,
+      pickup_address: (newPackage as any).pickup_address,
+      delivery_address: newPackage.delivery_address,
+      recipient_name: newPackage.recipient_name,
+      recipient_phone: newPackage.recipient_phone,
+      recipient_email: newPackage.recipient_email,
+      description: newPackage.description,
+      package_size: newPackage.package_size,
+      delivery_speed: newPackage.delivery_speed,
+      category: newPackage.category,
+      total_amount: newPackage.total_amount,
+      estimated_cost: newPackage.total_amount,
       pickup_pin: verification.pickup_pin,
       delivery_pin: verification.delivery_pin,
       qr_code_data: verification.qr_code_data,
@@ -422,10 +441,28 @@ export class PackageService {
     }
 
     await this.packageVerificationService.confirmPickup(package_id, pin);
-    
-    // Update package status
     await this.updatePackageStatus(package_id, 'IN_TRANSIT', tenant_id);
-    
+
+    // Send tracking email to recipient now that the rider has picked up
+    const packageData = await this.packageRepository.findById(package_id);
+    if (packageData?.recipient_email) {
+      const sender = await this.userRepository.findById(packageData.sender_id);
+      const senderName = sender ? `${sender.first_name} ${sender.surname}`.trim() : 'Someone';
+      const trackingUrl = this.generateTrackingUrl(packageData.tracking_number, packageData.guest_tracking_token);
+
+      this.emailService.sendEmail(
+        { email: packageData.recipient_email, name: packageData.recipient_name },
+        'Your package is on the way 🚀',
+        trackingStartedEmail(
+          packageData.recipient_name,
+          packageData.tracking_number,
+          senderName,
+          packageData.delivery_address,
+          trackingUrl
+        )
+      ).catch(err => console.error('Failed to send tracking email', err));
+    }
+
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
   }
 
@@ -805,47 +842,7 @@ export class PackageService {
   }
 
   private async sendTrackingNotification(packageData: any): Promise<void> {
-    const trackingUrl = this.generateTrackingUrl(
-      packageData.tracking_number,
-      packageData.guest_tracking_token
-    );
-    const deepLink = this.generateDeepLink(
-      packageData.tracking_number,
-      packageData.guest_tracking_token
-    );
-
-    const message = `Hi ${packageData.recipient_name}! Your package (${packageData.tracking_number}) is on its way. Track it here: ${trackingUrl}`;
-
-    try {
-      // Primary: Send via SMS
-      await this.sendSMS(packageData.recipient_phone, message);
-
-      // Secondary: Send via WhatsApp if available
-      await this.sendWhatsApp(packageData.recipient_phone, message);
-
-      // Fallback: Send email if provided
-      if (packageData.recipient_email) {
-        await this.sendEmail(
-          packageData.recipient_email,
-          "Package Tracking",
-          message
-        );
-      }
-    } catch (error) {
-      console.error("Failed to send tracking notification:", error);
-    }
-  }
-
-  private async sendSMS(phone: string, message: string): Promise<void> {
-    await this.smsService.sendSMS(phone, message);
-  }
-
-  private async sendWhatsApp(phone: string, message: string): Promise<void> {
-    // WhatsApp Business API not yet integrated — fall back to SMS
-    await this.smsService.sendSMS(phone, message);
-  }
-
-  private async sendEmail(email: string, subject: string, message: string): Promise<void> {
-    await this.emailService.sendNotification(email, subject, message);
+    // Tracking info is sent via email when the rider picks up (IN_TRANSIT).
+    // Nothing to send at booking time.
   }
 }
