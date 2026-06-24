@@ -169,7 +169,7 @@ export class DispatchService {
   ): Promise<{ success: boolean; assignedCourier?: CourierState }> {
     // Filter out bicycles if distance > 3km (anti-spam for bicycles)
     const eligibleMatches = matches.filter(match => {
-      if (match.courier.vehicleType === 'BICYCLE' && match.distance > 3000) {
+      if (match.courier.vehicleType === 'BICYCLE' && match.distance > 1500) {
         return false;
       }
       return true;

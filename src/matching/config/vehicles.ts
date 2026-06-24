@@ -14,25 +14,25 @@ export interface VehicleProfile {
 
 export const VEHICLE_PROFILES: Record<VehicleType, VehicleProfile> = {
   [VehicleType.BICYCLE]: {
-    maxDistance: 3000, // 3km hard limit
+    maxDistance: 1500, // 1.5km
     maxWeight: 10,
     avgSpeed: 15,
     trafficSensitivity: 0.1
   },
   [VehicleType.MOTORCYCLE]: {
-    maxDistance: 15000, // 15km
+    maxDistance: 3000, // 3km
     maxWeight: 40,
     avgSpeed: 35,
     trafficSensitivity: 0.3
   },
   [VehicleType.CAR]: {
-    maxDistance: 30000, // 30km 
+    maxDistance: 5000, // 5km
     maxWeight: 100,
     avgSpeed: 40,
     trafficSensitivity: 0.4
   },
   [VehicleType.VAN]: {
-    maxDistance: 50000, // 50km
+    maxDistance: 7000, // 7km
     maxWeight: 200,
     avgSpeed: 25,
     trafficSensitivity: 0.5
@@ -40,8 +40,8 @@ export const VEHICLE_PROFILES: Record<VehicleType, VehicleProfile> = {
 };
 
 export const MATCHING_CONFIG = {
-  COURIER_TTL: 15, // seconds
-  DISPATCH_TIMEOUT: 6, // seconds
+  COURIER_TTL: 120, // seconds — rider considered online if seen within 2 minutes
+  DISPATCH_TIMEOUT: 30, // seconds per courier offer
   MAX_DISPATCH_ATTEMPTS: 3,
   GEO_QUERY_LIMIT: 20,
   COLD_START_ACCEPTANCE_RATE: 0.85

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
+import logger from '../utils/logger.js';
 
 export const validateInput = (schema: Joi.Schema, source: 'body' | 'query' | 'params' = 'body') => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -11,6 +12,8 @@ export const validateInput = (schema: Joi.Schema, source: 'body' | 'query' | 'pa
         field: detail.path.join('.'),
         message: detail.message.replace(/"/g, '')
       }));
+
+      logger.warn('Validation failed', { url: req.url, method: req.method, errors: validationErrors, body: req.body });
 
       return res.status(400).json({
         error: 'Validation failed',
