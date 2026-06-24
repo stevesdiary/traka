@@ -45,9 +45,21 @@ export class PricingService {
     this.geocodingService = new GeocodingService();
   }
 
+  // Default Lagos coordinates used as fallback when geocoding fails
+  private static readonly LAGOS_DEFAULT = { latitude: 6.5244, longitude: 3.3792 };
+
+  private async safeGeocode(address: string): Promise<{ latitude: number; longitude: number }> {
+    try {
+      return await this.geocodingService.geocodeAddress(address);
+    } catch {
+      console.warn(`Geocoding failed for "${address}", using Lagos default coordinates`);
+      return PricingService.LAGOS_DEFAULT;
+    }
+  }
+
   async calculateDeliveryPrice(request: PricingRequest): Promise<PricingResponse> {
-    const pickupGeo = await this.geocodingService.geocodeAddress(request.pickup_address);
-    const deliveryGeo = await this.geocodingService.geocodeAddress(request.delivery_address);
+    const pickupGeo = await this.safeGeocode(request.pickup_address);
+    const deliveryGeo = await this.safeGeocode(request.delivery_address);
 
     const distance = this.calculateDistance(
       pickupGeo.latitude,

@@ -120,6 +120,42 @@ export const welcomeBusinessEmail = (contactPerson: string, businessName: string
     ${ctaButton('Go to Dashboard', BASE_URL, '#1D4ED8')}
   `);
 
+export const trackingStartedEmail = (
+  recipientName: string,
+  trackingNumber: string,
+  senderName: string,
+  deliveryAddress: string,
+  trackingUrl: string
+): string =>
+  shell(`
+    <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#111827;">Your package is on the way! 🚀</h1>
+    <p style="margin:0 0 28px;font-size:15px;color:#6B7280;line-height:1.6;">
+      Hi ${recipientName}, a package from <strong>${senderName}</strong> has been picked up and is heading your way.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="background:#F9FAFB;border-radius:10px;margin-bottom:28px;">
+      <tr>
+        <td style="padding:20px 24px;">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#9CA3AF;letter-spacing:1px;text-transform:uppercase;">Delivery details</p>
+          <table cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#6B7280;width:120px;">Tracking No.</td>
+              <td style="padding:6px 0;font-size:14px;font-weight:700;color:#111827;letter-spacing:1px;">${trackingNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#6B7280;">Delivering to</td>
+              <td style="padding:6px 0;font-size:14px;color:#111827;">${deliveryAddress}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${ctaButton('Track My Package 🗺️', trackingUrl, '#FF6B00')}
+
+    <p style="margin:28px 0 0;font-size:13px;color:#9CA3AF;text-align:center;">Tap the button above to see your rider\'s live location.</p>
+  `);
+
 export const welcomeRiderEmail = (firstName: string): string =>
   shell(`
     <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#111827;">You're in, ${firstName}! 🏍️</h1>
