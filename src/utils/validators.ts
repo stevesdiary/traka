@@ -538,7 +538,7 @@ export const TenantApprovalSchema = Joi.object({
 
 // Commission Payment Schema
 export const PayCommissionSchema = Joi.object({
-  payment_method: Joi.string().valid('BANK_TRANSFER', 'CASH', 'MOBILE_MONEY').optional(),
+  payment_method: Joi.string().valid('DIGITAL', 'CASH').optional(),
   payment_reference: Joi.string().optional()
 });
 
