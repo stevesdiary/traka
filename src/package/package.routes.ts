@@ -16,6 +16,7 @@ router.get('/track/:tracking_number', packageController.trackPackage);
 router.post('/', authenticateToken, requirePermission(Resource.PACKAGE, Action.CREATE), validateInput(CreatePackageSchema), packageController.createPackage);
 router.get('/', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getMyPackages);
 router.get('/by-id/:id', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getPackageById);
+router.post('/schedule-search', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.scheduleBackgroundSearch);
 router.get('/:tracking_number', authenticateToken, requirePermission(Resource.PACKAGE, Action.READ), packageController.getPackageByTrackingNumber);
 
 // Package claiming for registered users
