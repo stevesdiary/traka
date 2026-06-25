@@ -51,7 +51,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
     },
     pickup_address: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
     },
     delivery_address: {
       type: DataTypes.STRING,

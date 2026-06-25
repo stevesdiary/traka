@@ -515,7 +515,7 @@ export class PackageService {
         id: p.id,
         tracking_number: p.tracking_number,
         status: p.status,
-        pickup_address: p.pickup_address ?? null,
+        pickup_address: p.pickup_address ?? '',
         delivery_address: p.delivery_address ?? '',
         recipient_name: p.recipient_name ?? '',
         recipient_phone: p.recipient_phone ?? '',
