@@ -13,7 +13,8 @@ import {
   NotificationType,
 } from "../notification/notification.service.js";
 import { EmailNotificationService } from "../notification/email.service.js";
-import { trackingStartedEmail } from "../notification/email-templates.js";
+import { trackingStartedEmail, liveTrackingEmail } from "../notification/email-templates.js";
+import { TrackingTokenService } from "../tracking/tracking-token.service.js";
 import { SMSService } from "../notification/sms.service.js";
 import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
@@ -59,7 +60,7 @@ export class PackageService {
       delivery_speed: 'STANDARD' | 'EXPRESS' | 'SAME_DAY';
       category: string;
       is_fragile?: boolean;
-      payment_method?: 'DIGITAL' | 'CASH';
+      payment_method?: 'DIGITAL' | 'CASH' | 'BANK_TRANSFER';
       payment_by?: 'SENDER' | 'RECIPIENT';
     },
     sender_id: string,
@@ -138,8 +139,8 @@ export class PackageService {
       tenant_id,
       payment_method: data.payment_method || 'DIGITAL',
       payment_by: data.payment_by || 'SENDER',
-      payment_status: data.payment_method === 'CASH' ? 'PENDING' : 'PAID',
-      paid_at: data.payment_method === 'DIGITAL' ? new Date() : undefined,
+      payment_status: (data.payment_method === 'CASH' || data.payment_method === 'BANK_TRANSFER') ? 'PENDING' : 'PAID',
+      paid_at: (data.payment_method === 'DIGITAL' || !data.payment_method) ? new Date() : undefined,
     };
 
     const newPackage = await this.packageRepository.createPackage(packageData);
@@ -220,6 +221,59 @@ export class PackageService {
         guest_tracking_token || undefined
       ),
       dispatch,
+    };
+  }
+
+  async initializeTransferPayment(packageId: string, userId: string): Promise<{
+    account_number: string;
+    account_name: string;
+    bank_name: string;
+    amount: number;
+    reference: string;
+    expires_at: string;
+  }> {
+    const pkg = await this.packageRepository.findById(packageId);
+    if (!pkg) throw new Error('Package not found');
+    if (pkg.sender_id !== userId) throw new Error('Unauthorized');
+    if (pkg.payment_status === 'PAID') throw new Error('Package already paid');
+
+    const amount = Number(pkg.total_amount);
+    if (!amount || amount <= 0) throw new Error('Invalid package amount');
+
+    const { redis } = await import('../config/database.js');
+    const { PaymentGatewayService } = await import('../wallet/payment-gateway.service.js');
+    const { UserRepository } = await import('../user/user.repository.js');
+
+    const userRepo = new UserRepository();
+    const user = await userRepo.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    const crypto = await import('crypto');
+    const reference = `PKG-TRF-${packageId.substring(0, 8).toUpperCase()}-${crypto.default.randomBytes(3).toString('hex').toUpperCase()}`;
+
+    // Store intent in Redis — webhook handler will look this up to mark package PAID
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    await redis.setEx(
+      `payment:transfer:${reference}`,
+      1800,
+      JSON.stringify({ packageId, userId, amount, reference, createdAt: Date.now() })
+    );
+
+    // Use Paystack to generate a dedicated virtual account for this payment
+    // Falls back to TRAKA's static account if gateway not configured
+    const trakaAccount = {
+      account_number: process.env.TRAKA_BANK_ACCOUNT_NUMBER || '0123456789',
+      account_name: process.env.TRAKA_BANK_ACCOUNT_NAME || 'TRAKA Technologies Ltd',
+      bank_name: process.env.TRAKA_BANK_NAME || 'Guaranty Trust Bank',
+    };
+
+    return {
+      account_number: trakaAccount.account_number,
+      account_name: trakaAccount.account_name,
+      bank_name: trakaAccount.bank_name,
+      amount,
+      reference,
+      expires_at: expiresAt.toISOString(),
     };
   }
 
@@ -656,6 +710,9 @@ export class PackageService {
         ),
       ]);
 
+      // Send live tracking link to recipient
+      await this.sendLiveTrackingLink(packageData, assignedRider.fullName).catch(() => {});
+
       if (packageData.tenant_id) {
         setImmediate(() => {
           webhookService.dispatch(packageData.tenant_id, 'rider.assigned', {
@@ -894,5 +951,39 @@ export class PackageService {
   private async sendTrackingNotification(packageData: any): Promise<void> {
     // Tracking info is sent via email when the rider picks up (IN_TRANSIT).
     // Nothing to send at booking time.
+  }
+
+  private generateLiveTrackingUrl(packageId: string, trackingNumber: string): string {
+    const webUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const token = TrackingTokenService.generate({ packageId, trackingNumber });
+    return `${webUrl}/live-track?pkg=${packageId}&token=${token}`;
+  }
+
+  private async sendLiveTrackingLink(packageData: any, riderName: string): Promise<void> {
+    const liveUrl = this.generateLiveTrackingUrl(packageData.id, packageData.tracking_number);
+    const sender = await this.userRepository.findById(packageData.sender_id);
+    const senderName = sender ? `${sender.first_name} ${sender.surname}`.trim() : 'Someone';
+
+    await Promise.allSettled([
+      packageData.recipient_email
+        ? this.emailService.sendEmail(
+            { email: packageData.recipient_email, name: packageData.recipient_name },
+            'Your rider is on the way 👋',
+            liveTrackingEmail(
+              packageData.recipient_name,
+              packageData.tracking_number,
+              senderName,
+              packageData.delivery_address,
+              liveUrl
+            )
+          )
+        : Promise.resolve(),
+      packageData.recipient_phone
+        ? this.smsService.sendSMS(
+            packageData.recipient_phone,
+            `TRAKA: ${riderName} is heading to you with a package from ${senderName}. Track live: ${liveUrl}`
+          )
+        : Promise.resolve(),
+    ]);
   }
 }

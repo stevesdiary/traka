@@ -29,5 +29,7 @@ router.post('/:id/cancel', authenticateToken, requirePermission(Resource.PACKAGE
 router.post('/:id/confirm-pickup', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.confirmPickup);
 router.post('/:id/confirm-delivery', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.confirmDelivery);
 
+// Bank transfer payment initialization
+router.post('/:id/initialize-transfer', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.initializeTransferPayment);
 
 export default router;

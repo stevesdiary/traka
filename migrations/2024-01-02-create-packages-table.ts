@@ -104,7 +104,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: true,
     },
     payment_method: {
-      type: DataTypes.ENUM('DIGITAL', 'CASH'),
+      type: DataTypes.ENUM('DIGITAL', 'CASH', 'BANK_TRANSFER'),
       defaultValue: 'DIGITAL',
       allowNull: false,
     },

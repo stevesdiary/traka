@@ -66,9 +66,13 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     return this.model.findAll({
       where: {
         status: 'PENDING',
-        payment_status: 'PAID',
         rider_id: null,
-        pickup_address: { [Op.ne]: null } // Ensure pickup_address is not null(todo))
+        pickup_address: { [Op.ne]: null },
+        // Show pre-paid (wallet/card) OR pay-on-delivery (cash/bank transfer)
+        [Op.or]: [
+          { payment_status: 'PAID' },
+          { payment_method: { [Op.in]: ['CASH', 'BANK_TRANSFER'] } },
+        ],
       },
       order: [['createdAt', 'DESC']]
     });
