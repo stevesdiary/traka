@@ -60,4 +60,13 @@ export class WalletRepository {
       limit
     });
   }
+
+  async updateBankAccount(walletId: string, data: {
+    bank_name: string;
+    bank_code: string;
+    account_number: string;
+    account_name: string;
+  }): Promise<void> {
+    await WalletModel.update(data, { where: { id: walletId } });
+  }
 }

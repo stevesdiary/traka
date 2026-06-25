@@ -60,7 +60,7 @@ export async function up(queryInterface: QueryInterface): Promise<void> {
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM('COMMISSION_DEBIT', 'TRIP_EARNING', 'DEBT_REPAYMENT', 'WITHDRAWAL', 'DEPOSIT'),
+      type: DataTypes.ENUM('COMMISSION_DEBIT', 'TRIP_EARNING', 'DEBT_REPAYMENT', 'WITHDRAWAL', 'DEPOSIT', 'DELIVERY_PAYMENT'),
       allowNull: false,
     },
     reference: {

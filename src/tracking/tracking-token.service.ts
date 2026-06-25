@@ -19,7 +19,7 @@ export const TrackingTokenService = {
 
   verify(token: string): TrackingTokenPayload | null {
     try {
-      return jwt.verify(token, TRACKING_SECRET, JWT_VERIFY_OPTIONS) as TrackingTokenPayload;
+      return jwt.verify(token, TRACKING_SECRET, { algorithms: ['HS256'] }) as unknown as TrackingTokenPayload;
     } catch {
       return null;
     }
