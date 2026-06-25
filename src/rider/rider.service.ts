@@ -342,21 +342,24 @@ export class RiderService {
     const { PackageRepository } = await import("../package/package.repository.js");
     const packageRepo = new PackageRepository();
     const packages = await packageRepo.findAvailablePackages();
-    return packages.map((pkg: any) => ({
-      id: pkg.id,
-      tracking_number: pkg.tracking_number,
-      status: pkg.status,
-      pickup_address: pkg.pickup_address ?? pkg.pickupAddress ?? null,
-      delivery_address: pkg.delivery_address ?? pkg.deliveryAddress ?? '',
-      recipient_name: pkg.recipient_name ?? pkg.recipientName ?? '',
-      package_size: pkg.package_size ?? pkg.packageSize ?? 'SMALL',
-      delivery_speed: pkg.delivery_speed ?? pkg.deliverySpeed ?? 'STANDARD',
-      category: pkg.category ?? '',
-      total_amount: pkg.total_amount ?? pkg.totalAmount ?? 0,
-      pay: pkg.total_amount ?? pkg.totalAmount ?? 0,
-      estimated_distance_km: pkg.estimated_distance_km ?? pkg.estimatedDistanceKm ?? null,
-      distance_km: pkg.estimated_distance_km ?? pkg.estimatedDistanceKm ?? null,
-      created_at: pkg.createdAt,
-    }));
+    return packages.map((pkg: any) => {
+      const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
+      return {
+        id: p.id,
+        tracking_number: p.tracking_number,
+        status: p.status,
+        pickup_address: p.pickup_address ?? null,
+        delivery_address: p.delivery_address ?? '',
+        recipient_name: p.recipient_name ?? '',
+        package_size: p.package_size ?? 'SMALL',
+        delivery_speed: p.delivery_speed ?? 'STANDARD',
+        category: p.category ?? '',
+        total_amount: p.total_amount ?? 0,
+        pay: p.total_amount ?? 0,
+        estimated_distance_km: p.estimated_distance_km ?? null,
+        distance_km: p.estimated_distance_km ?? null,
+        created_at: p.createdAt,
+      };
+    });
   }
 }
