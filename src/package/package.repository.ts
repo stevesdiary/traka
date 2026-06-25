@@ -62,11 +62,13 @@ export class PackageRepository extends BaseRepository<PackageModel> {
   }
 
   async findAvailablePackages(): Promise<PackageModel[]> {
+    const { Op } = await import('sequelize');
     return this.model.findAll({
       where: {
         status: 'PENDING',
         payment_status: 'PAID',
-        rider_id: null
+        rider_id: null,
+        pickup_address: { [Op.ne]: null } // Ensure pickup_address is not null(todo))
       },
       order: [['createdAt', 'DESC']]
     });
