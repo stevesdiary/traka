@@ -21,6 +21,7 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     recipient_name: string;
     recipient_email?: string;
     recipient_phone: string;
+    pickup_address: string;
     delivery_address: string;
     description: string;
     delivery_notes?: string;

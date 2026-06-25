@@ -121,6 +121,7 @@ export class PackageService {
       recipient_name: data.recipient_name,
       recipient_email: data.recipient_email,
       recipient_phone: data.recipient_phone,
+      pickup_address: data.pickup_address,
       delivery_address: data.delivery_address,
       description: data.description,
       delivery_notes: data.delivery_notes,
