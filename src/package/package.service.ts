@@ -509,24 +509,27 @@ export class PackageService {
 
   async getPackagesForUser(userId: string): Promise<any[]> {
     const packages = await this.packageRepository.findByUserId(userId);
-    return packages.map((pkg: any) => ({
-      id: pkg.id,
-      tracking_number: pkg.tracking_number,
-      status: pkg.status,
-      pickup_address: pkg.pickup_address,
-      delivery_address: pkg.delivery_address,
-      recipient_name: pkg.recipient_name,
-      recipient_phone: pkg.recipient_phone,
-      description: pkg.description,
-      package_size: pkg.package_size,
-      delivery_speed: pkg.delivery_speed,
-      category: pkg.category,
-      total_amount: pkg.total_amount,
-      estimated_cost: pkg.total_amount,
-      rider_id: pkg.rider_id,
-      created_at: pkg.createdAt,
-      is_sender: pkg.sender_id === userId,
-    }));
+    return packages.map((pkg: any) => {
+      const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
+      return {
+        id: p.id,
+        tracking_number: p.tracking_number,
+        status: p.status,
+        pickup_address: p.pickup_address ?? null,
+        delivery_address: p.delivery_address ?? '',
+        recipient_name: p.recipient_name ?? '',
+        recipient_phone: p.recipient_phone ?? '',
+        description: p.description ?? '',
+        package_size: p.package_size ?? '',
+        delivery_speed: p.delivery_speed ?? '',
+        category: p.category ?? '',
+        total_amount: p.total_amount ?? 0,
+        estimated_cost: p.total_amount ?? 0,
+        rider_id: p.rider_id ?? null,
+        created_at: p.createdAt,
+        is_sender: p.sender_id === userId,
+      };
+    });
   }
 
   private async attemptAutoDispatch(
