@@ -148,7 +148,7 @@ router.put(
   validateInput(UpdatePasswordSchema),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.userId || (req as any).user?.id;
       const { current_password, new_password } = req.body;
       await authService.updatePassword(userId, current_password, new_password);
       res.json({ message: 'Password updated successfully' });
@@ -165,7 +165,7 @@ router.patch(
   validateInput(ProfileUpdateSchema),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.userId || (req as any).user?.id;
       const { first_name, surname, phone } = req.body;
       const updates: Record<string, string> = {};
       if (first_name) updates.first_name = first_name;
@@ -198,7 +198,7 @@ router.put(
   validateInput(ProfilePhotoUpdateSchema),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id;
+      const userId = (req as any).user?.userId || (req as any).user?.id;
       const { profile_photo } = req.body;
       const updated = await userRepository.updateById(userId, { profile_photo });
       res.json({ message: 'Profile photo updated', profile_photo });
