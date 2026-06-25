@@ -145,7 +145,7 @@ export class DispatchService {
       const response = await redis.get(responseKey);
       
       if (response) {
-        const { accepted } = JSON.parse(response);
+        const { accepted } = typeof response === 'string' ? JSON.parse(response) : response as any;
         await redis.del(offerKey);
         await redis.del(responseKey);
         
@@ -203,7 +203,7 @@ export class DispatchService {
       const response = await redis.get(responseKey);
       
       if (response) {
-        const { courierId } = JSON.parse(response);
+        const { courierId } = typeof response === 'string' ? JSON.parse(response) : response as any;
         const assignedCourier = eligibleMatches.find(m => m.courier.id === courierId)?.courier;
         
         await redis.del(broadcastKey);

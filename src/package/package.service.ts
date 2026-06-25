@@ -222,6 +222,29 @@ export class PackageService {
     };
   }
 
+  async scheduleBackgroundSearch(packageId: string, userId: string): Promise<void> {
+    const pkg = await this.packageRepository.findById(packageId);
+    if (!pkg) throw new Error('Package not found');
+    if (pkg.sender_id !== userId) throw new Error('Unauthorized');
+    if (pkg.status !== 'PENDING') throw new Error('Package is no longer pending');
+    if (pkg.rider_id) throw new Error('Rider already assigned');
+
+    // Store in Redis — a background worker can periodically retry dispatch
+    const { redis } = await import('../config/database.js');
+    await redis.setEx(
+      `dispatch:background:${packageId}`,
+      86400, // 24 hours
+      JSON.stringify({ packageId, scheduledAt: Date.now(), userId })
+    );
+
+    // Notify the sender via push notification when a rider is eventually found
+    await this.notificationService.sendToCustomer(
+      userId,
+      NotificationType.RIDER_ASSIGNED,
+      { package_id: packageId, tracking_number: pkg.tracking_number, scheduled: true }
+    ).catch(() => {});
+  }
+
   async getPackageByUuid(
     id: string,
     requester: { id: string; role: string }

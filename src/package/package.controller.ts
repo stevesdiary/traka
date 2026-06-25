@@ -53,9 +53,29 @@ export class PackageController {
     }
   };
 
+  scheduleBackgroundSearch = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { package_id } = req.body;
+      const user_id = req.user!.userId;
+      if (!package_id) {
+        res.status(400).json({ error: 'package_id is required' });
+        return;
+      }
+      await this.packageService.scheduleBackgroundSearch(package_id, user_id);
+      res.json({ message: "We'll alert you when we get a rider for you" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+
   getPackageById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(id)) {
+        res.status(400).json({ error: 'Invalid package ID' });
+        return;
+      }
       const requester = { id: req.user!.userId, role: req.user!.role };
       const packageData = await this.packageService.getPackageByUuid(id, requester);
       res.json({ message: 'Package retrieved successfully', package: packageData });

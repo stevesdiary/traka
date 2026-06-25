@@ -10,7 +10,10 @@ export const upstashRedis = new Redis({
 export const redis = {
   async get(key: string): Promise<string | null> {
     const value = await upstashRedis.get(key);
-    return value !== null && value !== undefined ? String(value) : null;
+    if (value === null || value === undefined) return null;
+    // Upstash REST API auto-deserializes JSON — return as-is if already an object
+    if (typeof value === 'object') return value as unknown as string;
+    return String(value);
   },
 
   async set(key: string, value: string): Promise<void> {
