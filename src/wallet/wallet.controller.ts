@@ -42,6 +42,38 @@ export class WalletController {
     }
   };
 
+  getBankAccount = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+      const wallet = await this.walletService.getWallet(userId);
+      res.json({
+        bank_name: wallet?.bank_name ?? null,
+        bank_code: wallet?.bank_code ?? null,
+        account_number: wallet?.account_number ?? null,
+        account_name: wallet?.account_name ?? null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  updateBankAccount = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) { res.status(401).json({ error: 'Unauthorized' }); return; }
+      const { bank_name, bank_code, account_number, account_name } = req.body;
+      if (!bank_name || !bank_code || !account_number || !account_name) {
+        res.status(400).json({ error: 'All bank account fields are required' });
+        return;
+      }
+      await this.walletService.updateBankAccount(userId, { bank_name, bank_code, account_number, account_name });
+      res.json({ message: 'Bank account updated successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
   payForDelivery = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;

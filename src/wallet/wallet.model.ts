@@ -41,6 +41,18 @@ export class WalletModel extends Model {
   })
   declare is_active: boolean;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare bank_name: string | undefined;
+
+  @Column({ type: DataType.STRING(10), allowNull: true })
+  declare bank_code: string | undefined;
+
+  @Column({ type: DataType.STRING(20), allowNull: true })
+  declare account_number: string | undefined;
+
+  @Column({ type: DataType.STRING, allowNull: true })
+  declare account_name: string | undefined;
+
   @BelongsTo(() => UserModel)
   declare user: UserModel;
 }
@@ -66,7 +78,7 @@ export class WalletTransactionModel extends Model {
   declare amount: number;
 
   @Column({
-    type: DataType.ENUM('COMMISSION_DEBIT', 'TRIP_EARNING', 'DEBT_REPAYMENT', 'WITHDRAWAL', 'DEPOSIT'),
+    type: DataType.ENUM('COMMISSION_DEBIT', 'TRIP_EARNING', 'DEBT_REPAYMENT', 'WITHDRAWAL', 'DEPOSIT', 'DELIVERY_PAYMENT'),
     allowNull: false
   })
   declare type: string;

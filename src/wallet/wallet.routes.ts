@@ -42,6 +42,10 @@ router.get('/balance', walletController.getBalance);
 // Get transaction history
 router.get('/transactions', walletController.getTransactions);
 
+// Bank account (payout details)
+router.get('/bank-account', walletController.getBankAccount);
+router.put('/bank-account', walletController.updateBankAccount);
+
 // Process cash delivery (admin/system only)
 router.post('/cash-delivery',
   requirePermission(Resource.PACKAGE, Action.UPDATE),

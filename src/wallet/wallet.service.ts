@@ -200,6 +200,17 @@ export class WalletService {
     return await this.walletRepository.getTransactionHistory(wallet.id, limit);
   }
 
+  async updateBankAccount(userId: string, data: {
+    bank_name: string;
+    bank_code: string;
+    account_number: string;
+    account_name: string;
+  }): Promise<void> {
+    const wallet = await this.walletRepository.findByUserId(userId);
+    if (!wallet) throw new Error('Wallet not found');
+    await this.walletRepository.updateBankAccount(wallet.id, data);
+  }
+
   async getWalletBalance(userId: string): Promise<number> {
     const wallet = await this.getWallet(userId);
     return wallet ? Number(wallet.balance) : 0;
