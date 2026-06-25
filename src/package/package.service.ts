@@ -467,8 +467,20 @@ export class PackageService {
     await this.packageVerificationService.confirmPickup(package_id, pin);
     await this.updatePackageStatus(package_id, 'IN_TRANSIT', tenant_id);
 
-    // Send tracking email to recipient now that the rider has picked up
     const packageData = await this.packageRepository.findById(package_id);
+
+    // Set rider status to BUSY
+    if (packageData?.rider_id) {
+      await Promise.allSettled([
+        this.riderRepository.updateRiderProfile(packageData.rider_id, {
+          status: 'BUSY',
+          is_available: false,
+        }),
+        CourierPresenceService.updateCourierStatus(packageData.rider_id, 'BUSY'),
+      ]);
+    }
+
+    // Send tracking email to recipient
     if (packageData?.recipient_email) {
       const sender = await this.userRepository.findById(packageData.sender_id);
       const senderName = sender ? `${sender.first_name} ${sender.surname}`.trim() : 'Someone';
@@ -497,10 +509,21 @@ export class PackageService {
     }
 
     await this.packageVerificationService.confirmDelivery(package_id, pin);
-    
-    // Update package status
     await this.updatePackageStatus(package_id, 'DELIVERED', tenant_id);
-    
+
+    const packageData = await this.packageRepository.findById(package_id);
+
+    // Set rider back to AVAILABLE so they can pick up another job
+    if (packageData?.rider_id) {
+      await Promise.allSettled([
+        this.riderRepository.updateRiderProfile(packageData.rider_id, {
+          status: 'AVAILABLE',
+          is_available: true,
+        }),
+        CourierPresenceService.updateCourierStatus(packageData.rider_id, 'AVAILABLE'),
+      ]);
+    }
+
     return { message: 'Package delivery confirmed', status: 'DELIVERED' };
   }
 

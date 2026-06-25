@@ -25,5 +25,9 @@ router.post('/:tracking_number/claim', authenticateToken, requirePermission(Reso
 // Package cancellation
 router.post('/:id/cancel', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), validateInput(CancelPackageSchema), packageController.cancelPackage);
 
+// Pickup & delivery confirmation (rider)
+router.post('/:id/confirm-pickup', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.confirmPickup);
+router.post('/:id/confirm-delivery', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.confirmDelivery);
+
 
 export default router;

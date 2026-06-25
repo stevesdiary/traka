@@ -167,6 +167,30 @@ export class PackageController {
     }
   };
 
+  confirmPickup = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { pin } = req.body;
+      const tenant_id = req.user!.tenant_id;
+      const result = await this.packageService.confirmPickup(id, pin ?? '', tenant_id);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+
+  confirmDelivery = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { pin } = req.body;
+      const tenant_id = req.user!.tenant_id;
+      const result = await this.packageService.confirmDelivery(id, pin ?? '', tenant_id);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+
   getMyPackages = async (req: Request, res: Response): Promise<void> => {
     try {
       const user_id = req.user!.userId;
