@@ -463,6 +463,30 @@ export class PaymentGatewayService {
     return raw ? JSON.parse(raw) as WalletFundingIntent : null;
   }
 
+  private async processPackageTransferPayment(payment: VerifiedPayment): Promise<WebhookProcessResult> {
+    const raw = await redis.get(`payment:transfer:${payment.reference}`);
+    if (!raw) return { processed: false, code: 'MISSING_INTENT', message: `No transfer intent for ${payment.reference}` };
+
+    const intent = typeof raw === 'string' ? JSON.parse(raw) : raw as any;
+    const { packageId, amount } = intent;
+
+    if (payment.amount < amount) {
+      return { processed: false, code: 'PENDING', message: `Underpayment: paid ₦${payment.amount}, expected ₦${amount}` };
+    }
+
+    const { PackageRepository } = await import('../package/package.repository.js');
+    const packageRepo = new PackageRepository();
+    await (packageRepo as any).model.update(
+      { payment_status: 'PAID', paid_at: new Date() },
+      { where: { id: packageId } }
+    );
+
+    await redis.del(`payment:transfer:${payment.reference}`);
+
+    logger.info('Package transfer payment confirmed', { packageId, amount: payment.amount, reference: payment.reference });
+    return { processed: true, code: 'OK', message: 'Package payment confirmed' };
+  }
+
   private async clearFundingIntent(reference: string): Promise<void> {
     await redis.del(`${INTENT_PREFIX}${reference}`);
   }
@@ -480,6 +504,11 @@ export class PaymentGatewayService {
     payment: VerifiedPayment,
     expectedUserId?: string
   ): Promise<WebhookProcessResult> {
+    // Check if this is a package transfer payment
+    if (payment.reference.startsWith('PKG-TRF-')) {
+      return this.processPackageTransferPayment(payment);
+    }
+
     const intent = await this.getFundingIntent(payment.reference);
     const walletOwnerId = await this.resolveWalletOwner(payment, intent);
 

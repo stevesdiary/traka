@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { MessageModel } from '../message/message.model.js';
 import { PackageModel } from '../package/package.model.js';
 import { UserModel } from '../user/user.model.js';
+import { TrackingTokenService } from '../tracking/tracking-token.service.js';
 import logger from '../utils/logger.js';
 
 export class WebSocketService {
@@ -24,10 +25,19 @@ export class WebSocketService {
   private setupMiddleware() {
     this.io.use(async (socket, next) => {
       try {
-        const token = socket.handshake.auth.token;
-        if (!token) {
-          return next(new Error('Authentication required'));
+        // Path 1: recipient tracking link (no user account required)
+        const trackingToken = socket.handshake.auth.trackingToken;
+        if (trackingToken) {
+          const payload = TrackingTokenService.verify(trackingToken);
+          if (!payload) return next(new Error('Invalid or expired tracking token'));
+          socket.data.trackingPackageId = payload.packageId;
+          socket.data.isTrackingOnly = true;
+          return next();
         }
+
+        // Path 2: authenticated user (sender / rider)
+        const token = socket.handshake.auth.token;
+        if (!token) return next(new Error('Authentication required'));
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as any;
         socket.data.userId = decoded.id;
@@ -62,6 +72,13 @@ export class WebSocketService {
 
       socket.on('join-tracking', async (packageId: string) => {
         try {
+          // Tracking-only sockets: token already scoped to a specific package
+          if (socket.data.isTrackingOnly) {
+            if (socket.data.trackingPackageId !== packageId) return;
+            socket.join(`tracking:package:${packageId}`);
+            return;
+          }
+
           const pkg = await PackageModel.findByPk(packageId);
           if (!pkg) return;
 

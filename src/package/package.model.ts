@@ -143,7 +143,7 @@ export class PackageModel extends Model {
 
   // Payment fields
   @Column({
-    type: DataType.ENUM('DIGITAL', 'CASH'),
+    type: DataType.ENUM('DIGITAL', 'CASH', 'BANK_TRANSFER'),
     defaultValue: 'DIGITAL'
   })
   declare payment_method: string;

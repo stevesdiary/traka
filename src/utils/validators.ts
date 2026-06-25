@@ -189,7 +189,7 @@ export const CreatePackageSchema = Joi.object({
     'any.required': 'Package category is required'
   }),
   is_fragile: Joi.boolean().optional().default(false),
-  payment_method: Joi.string().valid('DIGITAL', 'CASH').optional().default('DIGITAL')
+  payment_method: Joi.string().valid('DIGITAL', 'CASH', 'BANK_TRANSFER').optional().default('DIGITAL')
 });
 
 export const GuestTrackingSchema = Joi.object({

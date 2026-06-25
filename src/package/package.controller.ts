@@ -53,6 +53,17 @@ export class PackageController {
     }
   };
 
+  initializeTransferPayment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const user_id = req.user!.userId;
+      const result = await this.packageService.initializeTransferPayment(id, user_id);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  };
+
   scheduleBackgroundSearch = async (req: Request, res: Response): Promise<void> => {
     try {
       const { package_id } = req.body;
