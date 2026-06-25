@@ -72,9 +72,9 @@ export class PackageModel extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: true
+    allowNull: false
   })
-  declare pickup_address: string | undefined;
+  declare pickup_address: string;
 
   @Column({
     type: DataType.STRING,
