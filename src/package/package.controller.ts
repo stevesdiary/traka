@@ -191,6 +191,18 @@ export class PackageController {
     }
   };
 
+  unassignSelf = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+      await this.packageService.unassignRiderSelf(id, userId);
+      res.json({ message: 'Job cancelled' });
+    } catch (error: any) {
+      const status = error.message.includes('not found') ? 404 : 400;
+      res.status(status).json({ error: error.message });
+    }
+  };
+
   confirmPickup = async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;

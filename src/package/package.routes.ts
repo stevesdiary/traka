@@ -34,5 +34,6 @@ router.post('/:id/initialize-transfer', authenticateToken, requirePermission(Res
 
 // Rider self-assignment
 router.post('/:id/assign-self', authenticateToken, packageController.assignSelf);
+router.post('/:id/unassign-self', authenticateToken, packageController.unassignSelf);
 
 export default router;
