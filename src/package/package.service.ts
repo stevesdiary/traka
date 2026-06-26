@@ -224,6 +224,18 @@ export class PackageService {
     };
   }
 
+  async unassignRiderSelf(packageId: string, userId: string): Promise<void> {
+    const pkg = await this.packageRepository.findById(packageId);
+    if (!pkg) throw new Error('Package not found');
+    if (pkg.rider_id !== userId) throw new Error('You are not assigned to this package');
+    if (pkg.status === 'IN_TRANSIT') throw new Error('Cannot cancel after pickup is confirmed');
+
+    await this.packageRepository.assignRider(packageId, null as any);
+    await Promise.allSettled([
+      this.riderRepository.updateRiderProfile(userId, { status: 'AVAILABLE', is_available: true }),
+    ]);
+  }
+
   async assignRiderSelf(packageId: string, userId: string): Promise<void> {
     const pkg = await this.packageRepository.findById(packageId);
     if (!pkg) throw new Error('Package not found');
