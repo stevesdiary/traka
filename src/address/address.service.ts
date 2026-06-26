@@ -12,9 +12,8 @@ export class AddressService {
     longitude?: number;
     is_default?: boolean;
   }): Promise<any> {
-    // If this is set as default, update existing defaults
     if (data.is_default) {
-      await this.addressRepository.setDefaultAddress('', userId); // Clear existing defaults
+      await this.addressRepository.clearDefaultAddresses(userId);
     }
 
     return await this.addressRepository.createAddress({

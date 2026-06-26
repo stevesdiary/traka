@@ -64,6 +64,13 @@ export class AddressRepository {
     );
   }
 
+  async clearDefaultAddresses(userId: string): Promise<void> {
+    await UserAddressModel.update(
+      { is_default: false },
+      { where: { user_id: userId } }
+    );
+  }
+
   async deleteAddress(addressId: string, userId: string): Promise<void> {
     await UserAddressModel.update(
       { is_active: false },
