@@ -345,8 +345,8 @@ export class RiderService {
     return packages.map((pkg: any) => {
       const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
       const deliveryFee = Number(p.delivery_fee ?? 0);
-      const commissionRate = 0.80; // rider earns 80% of delivery fee
-      return {
+      const platformCommissionRate = 0.15; // platform takes 15%, rider keeps 85%
+      const riderEarnings = Math.round(deliveryFee * (1 - platformCommissionRate));
         id: p.id,
         tracking_number: p.tracking_number,
         status: p.status,
@@ -358,7 +358,7 @@ export class RiderService {
         delivery_speed: p.delivery_speed ?? 'STANDARD',
         category: p.category ?? '',
         total_amount: Number(p.total_amount ?? 0),
-        estimated_commission: Math.round(deliveryFee * commissionRate),
+        estimated_commission: riderEarnings,
         distance_km: Number(p.estimated_distance_km ?? 0),
         payment_method: p.payment_method ?? 'DIGITAL',
         is_fragile: p.is_fragile ?? false,
