@@ -309,7 +309,8 @@ export class PackageService {
 
     const isStaff = ['ADMIN', 'SUPER_ADMIN', 'MANAGER'].includes(requester.role);
     const isOwner = packageData.sender_id === requester.id || packageData.recipient_id === requester.id;
-    if (!isStaff && !isOwner) throw new Error('Unauthorized');
+    const isAssignedRider = packageData.rider_id === requester.id;
+    if (!isStaff && !isOwner && !isAssignedRider) throw new Error('Unauthorized');
 
     const liveTracking = await this.getLiveTrackingData(packageData);
 
@@ -335,8 +336,8 @@ export class PackageService {
       created_at: packageData.createdAt,
       delivered_at: packageData.delivered_at,
       live_tracking: liveTracking,
-      // Only expose pickup_pin to the sender — rider needs it to confirm collection
-      pickup_pin: packageData.sender_id === requester.id ? packageData.pickup_pin : undefined,
+      // Expose pickup_pin to sender and assigned rider
+      pickup_pin: (isOwner || isAssignedRider) ? packageData.pickup_pin : undefined,
     };
   }
 
