@@ -335,6 +335,8 @@ export class PackageService {
       created_at: packageData.createdAt,
       delivered_at: packageData.delivered_at,
       live_tracking: liveTracking,
+      // Only expose pickup_pin to the sender — rider needs it to confirm collection
+      pickup_pin: packageData.sender_id === requester.id ? packageData.pickup_pin : undefined,
     };
   }
 
