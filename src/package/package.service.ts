@@ -224,6 +224,24 @@ export class PackageService {
     };
   }
 
+  async assignRiderSelf(packageId: string, userId: string): Promise<void> {
+    const pkg = await this.packageRepository.findById(packageId);
+    if (!pkg) throw new Error('Package not found');
+    if (pkg.rider_id) throw new Error('Package already assigned to a rider');
+    if (pkg.status !== 'PENDING') throw new Error('Package is no longer available');
+
+    await this.packageRepository.assignRider(packageId, userId);
+
+    await Promise.allSettled([
+      this.riderRepository.updateRiderProfile(userId, { status: 'BUSY', is_available: false }),
+      this.notificationService.sendToCustomer(
+        pkg.sender_id,
+        NotificationType.RIDER_ASSIGNED,
+        { package_id: packageId, tracking_number: pkg.tracking_number }
+      ),
+    ]);
+  }
+
   async initializeTransferPayment(packageId: string, userId: string): Promise<{
     account_number: string;
     account_name: string;

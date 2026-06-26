@@ -32,4 +32,7 @@ router.post('/:id/confirm-delivery', authenticateToken, requirePermission(Resour
 // Bank transfer payment initialization
 router.post('/:id/initialize-transfer', authenticateToken, requirePermission(Resource.PACKAGE, Action.UPDATE), packageController.initializeTransferPayment);
 
+// Rider self-assignment
+router.post('/:id/assign-self', authenticateToken, packageController.assignSelf);
+
 export default router;
