@@ -339,11 +339,13 @@ export class RiderService {
   }
 
   async getAvailableJobs(): Promise<any[]> {
-    const { PackageRepository } = await import("../package/package.repository.js");
+    const { PackageRepository } = await import('../package/package.repository.js');
     const packageRepo = new PackageRepository();
     const packages = await packageRepo.findAvailablePackages();
     return packages.map((pkg: any) => {
       const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
+      const deliveryFee = Number(p.delivery_fee ?? 0);
+      const commissionRate = 0.80; // rider earns 80% of delivery fee
       return {
         id: p.id,
         tracking_number: p.tracking_number,
@@ -352,12 +354,14 @@ export class RiderService {
         delivery_address: p.delivery_address ?? '',
         recipient_name: p.recipient_name ?? '',
         package_size: p.package_size ?? 'SMALL',
+        package_type: p.category ?? p.package_size ?? 'Parcel',
         delivery_speed: p.delivery_speed ?? 'STANDARD',
         category: p.category ?? '',
-        total_amount: p.total_amount ?? 0,
-        pay: p.total_amount ?? 0,
-        estimated_distance_km: p.estimated_distance_km ?? null,
-        distance_km: p.estimated_distance_km ?? null,
+        total_amount: Number(p.total_amount ?? 0),
+        estimated_commission: Math.round(deliveryFee * commissionRate),
+        distance_km: Number(p.estimated_distance_km ?? 0),
+        payment_method: p.payment_method ?? 'DIGITAL',
+        is_fragile: p.is_fragile ?? false,
         created_at: p.createdAt,
       };
     });
