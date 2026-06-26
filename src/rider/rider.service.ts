@@ -347,6 +347,7 @@ export class RiderService {
       const deliveryFee = Number(p.delivery_fee ?? 0);
       const platformCommissionRate = 0.15; // platform takes 15%, rider keeps 85%
       const riderEarnings = Math.round(deliveryFee * (1 - platformCommissionRate));
+      return {
         id: p.id,
         tracking_number: p.tracking_number,
         status: p.status,
