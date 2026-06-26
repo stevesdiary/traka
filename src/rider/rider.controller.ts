@@ -202,4 +202,14 @@ export class RiderController {
       res.status(500).json({ error: 'Failed to get jobs' });
     }
   };
+
+  getActiveJobs = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const jobs = await this.riderService.getActiveJobsForRider(userId);
+      res.json({ jobs });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get active jobs' });
+    }
+  };
 }

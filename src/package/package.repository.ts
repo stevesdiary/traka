@@ -82,6 +82,16 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     });
   }
 
+  async findActiveByRiderId(riderId: string): Promise<PackageModel[]> {
+    return this.model.findAll({
+      where: {
+        rider_id: riderId,
+        status: { [Op.in]: ['PENDING', 'OUT_FOR_DELIVERY', 'IN_TRANSIT'] },
+      },
+      order: [['createdAt', 'DESC']],
+    });
+  }
+
   async assignRider(packageId: string, riderUserId: string): Promise<void> {
     await this.model.update(
       { rider_id: riderUserId },
