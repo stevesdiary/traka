@@ -349,6 +349,7 @@ export class PackageService {
       is_fragile: packageData.is_fragile,
       total_amount: packageData.total_amount,
       estimated_cost: packageData.total_amount,
+      payment_method: packageData.payment_method,
       rider_id: packageData.rider_id,
       rider: packageData.rider_id ? await this.getRiderInfo(packageData.rider_id) : null,
       created_at: packageData.createdAt,
