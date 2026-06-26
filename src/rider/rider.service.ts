@@ -338,6 +338,31 @@ export class RiderService {
     return await this.riderRepository.getDeletedRiders(businessId);
   }
 
+  async getActiveJobsForRider(userId: string): Promise<any[]> {
+    const { PackageRepository } = await import('../package/package.repository.js');
+    const packageRepo = new PackageRepository();
+    const packages = await packageRepo.findActiveByRiderId(userId);
+    return packages.map((pkg: any) => {
+      const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
+      const deliveryFee = Number(p.delivery_fee ?? 0);
+      return {
+        id: p.id,
+        tracking_number: p.tracking_number,
+        status: p.status,
+        pickup_address: p.pickup_address ?? '',
+        delivery_address: p.delivery_address ?? '',
+        recipient_name: p.recipient_name ?? '',
+        package_size: p.package_size ?? 'SMALL',
+        package_type: p.category ?? p.package_size ?? 'Parcel',
+        delivery_speed: p.delivery_speed ?? 'STANDARD',
+        estimated_commission: Math.round(deliveryFee * 0.85),
+        distance_km: Number(p.estimated_distance_km ?? 0),
+        payment_method: p.payment_method ?? 'DIGITAL',
+        created_at: p.createdAt,
+      };
+    });
+  }
+
   async getAvailableJobs(): Promise<any[]> {
     const { PackageRepository } = await import('../package/package.repository.js');
     const packageRepo = new PackageRepository();
