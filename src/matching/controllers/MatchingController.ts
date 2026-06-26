@@ -18,7 +18,7 @@ export class MatchingController {
   private async _isCourierOwner(userId: string, courierId: string): Promise<boolean> {
     if (userId === courierId) return true;
     try {
-      const profile = await this.riderRepo.findById(courierId);
+      const profile = await this.riderRepo.findByIdWithUser(courierId);
       return profile?.user_id === userId;
     } catch {
       return false;
