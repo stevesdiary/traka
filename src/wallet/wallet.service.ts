@@ -17,7 +17,12 @@ export class WalletService {
   }
 
   async getWallet(userId: string): Promise<any> {
-    return await this.walletRepository.findByUserId(userId);
+    let wallet = await this.walletRepository.findByUserId(userId);
+    // Auto-create wallet on first access so riders/users never hit a missing wallet
+    if (!wallet) {
+      wallet = await this.walletRepository.createWallet({ user_id: userId, balance: 0 });
+    }
+    return wallet;
   }
 
   // outerTx allows the caller to wrap this operation in a larger atomic transaction.
