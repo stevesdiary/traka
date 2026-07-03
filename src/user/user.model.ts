@@ -99,4 +99,16 @@ export class UserModel extends Model <UserModel> {
     defaultValue: false
   })
   declare totp_enabled: boolean;
+
+  @Column({
+    type: DataType.STRING,
+  allowNull: true
+  })
+  declare refresh_token_hash: string | null;
+
+  @Column({
+    type: DataType. DATE,
+    defaultValue: null
+  })
+  declare refresh_token_expiry: Date | null;
 }
