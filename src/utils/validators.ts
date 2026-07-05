@@ -608,3 +608,62 @@ export const ScheduleDeliverySchema = Joi.object({
     otherwise: Joi.date().iso().optional()
   })
 });
+
+// External API schemas
+const BulkOrderItemSchema = Joi.object({
+  recipient_name: Joi.string().min(2).required().messages({
+    'string.min': 'Recipient name must be at least 2 characters long',
+    'any.required': 'Recipient name is required'
+  }),
+  recipient_phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required().messages({
+    'string.pattern.base': 'Please provide a valid phone number',
+    'any.required': 'Recipient phone number is required'
+  }),
+  recipient_email: Joi.string().email().optional().messages({
+    'string.email': 'Please provide a valid recipient email address'
+  }),
+  pickup_address: Joi.string().required().messages({
+    'any.required': 'Pickup address is required'
+  }),
+  delivery_address: Joi.string().required().messages({
+    'any.required': 'Delivery address is required'
+  }),
+  description: Joi.string().required().messages({
+    'any.required': 'Package description is required'
+  }),
+  delivery_notes: Joi.string().optional(),
+  package_size: Joi.string().valid('SMALL', 'MEDIUM', 'LARGE').optional().default('SMALL'),
+  package_weight: Joi.number().positive().optional(),
+  delivery_speed: Joi.string().valid('STANDARD', 'EXPRESS', 'SAME_DAY').optional().default('STANDARD'),
+  category: Joi.string().valid(
+    'FOOD', 'SHOES', 'ELECTRONICS', 'CLOTHING', 'JEWELRY_VALUABLES',
+    'GROCERIES', 'DOCUMENTS', 'HEALTH_PHARMACEUTICALS',
+    'CONSTRUCTION_MATERIALS', 'HOUSEHOLD_ITEMS', 'OTHERS'
+  ).optional().default('OTHERS'),
+  is_fragile: Joi.boolean().optional().default(false),
+  payment_method: Joi.string().valid('DIGITAL', 'CASH', 'BANK_TRANSFER').optional().default('DIGITAL'),
+  payment_by: Joi.string().valid('SENDER', 'RECIPIENT').optional().default('SENDER'),
+});
+
+export const BulkOrderSchema = Joi.object({
+  orders: Joi.array().items(BulkOrderItemSchema).min(1).max(50).required().messages({
+    'array.min': 'At least one order is required',
+    'array.max': 'Maximum 50 orders per bulk request',
+    'any.required': 'Orders array is required'
+  })
+});
+
+export const UpdateRecipientSchema = Joi.object({
+  recipient_name: Joi.string().min(2).optional().messages({
+    'string.min': 'Recipient name must be at least 2 characters long'
+  }),
+  recipient_phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).optional().messages({
+    'string.pattern.base': 'Please provide a valid phone number'
+  }),
+  recipient_email: Joi.string().email().optional().messages({
+    'string.email': 'Please provide a valid email address'
+  }),
+  delivery_address: Joi.string().optional()
+}).min(1).messages({
+  'object.min': 'At least one field must be provided'
+});
