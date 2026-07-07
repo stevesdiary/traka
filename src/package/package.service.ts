@@ -224,6 +224,79 @@ export class PackageService {
     };
   }
 
+  async updateRecipientDetails(
+    tracking_number: string,
+    tenant_id: string,
+    updates: {
+      recipient_name?: string;
+      recipient_phone?: string;
+      recipient_email?: string;
+      delivery_address?: string;
+    }
+  ): Promise<{ tracking_number: string; updated_fields: string[]; pricing_breakdown?: any }> {
+    const pkg = await this.packageRepository.findByTrackingNumber(tracking_number);
+    if (!pkg || pkg.tenant_id !== tenant_id) {
+      throw new Error('Order not found');
+    }
+    if (pkg.status !== 'PENDING') {
+      throw new Error(`Cannot update order in ${pkg.status} status`);
+    }
+
+    const updateData: Record<string, any> = {};
+    const updated_fields: string[] = [];
+
+    if (updates.recipient_name) {
+      updateData.recipient_name = updates.recipient_name;
+      updated_fields.push('recipient_name');
+    }
+    if (updates.recipient_phone) {
+      updateData.recipient_phone = updates.recipient_phone;
+      updated_fields.push('recipient_phone');
+    }
+    if (updates.recipient_email !== undefined) {
+      updateData.recipient_email = updates.recipient_email;
+      updated_fields.push('recipient_email');
+    }
+
+    let pricing_breakdown: any | undefined;
+
+    if (updates.delivery_address) {
+      updateData.delivery_address = updates.delivery_address;
+      updated_fields.push('delivery_address');
+
+      const pricing = await this.pricingService.calculateDeliveryPrice({
+        pickup_address: (pkg as any).pickup_address as string,
+        delivery_address: updates.delivery_address,
+        package_size: pkg.package_size as 'SMALL' | 'MEDIUM' | 'LARGE',
+        package_weight: pkg.package_weight ? Number(pkg.package_weight) : undefined,
+        delivery_speed: pkg.delivery_speed as 'STANDARD' | 'EXPRESS' | 'SAME_DAY',
+        tenant_id,
+      });
+
+      updateData.delivery_fee = pricing.total_amount - pricing.platform_fee;
+      updateData.platform_fee = pricing.platform_fee;
+      updateData.total_amount = pricing.total_amount;
+      updateData.estimated_distance_km = pricing.estimated_distance_km;
+
+      pricing_breakdown = {
+        base_fee: pricing.base_fee,
+        distance_fee: pricing.distance_fee,
+        size_fee: pricing.size_fee,
+        speed_fee: pricing.speed_fee,
+        platform_fee: pricing.platform_fee,
+        total_amount: pricing.total_amount,
+      };
+    }
+
+    await this.packageRepository.updatePackage(pkg.id, updateData);
+
+    return {
+      tracking_number,
+      updated_fields,
+      ...(pricing_breakdown ? { pricing_breakdown } : {}),
+    };
+  }
+
   async unassignRiderSelf(packageId: string, userId: string): Promise<void> {
     const pkg = await this.packageRepository.findById(packageId);
     if (!pkg) throw new Error('Package not found');

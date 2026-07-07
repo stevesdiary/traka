@@ -112,6 +112,14 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     cancelled_by?: string;
     rider_has_package?: boolean;
     rider_id?: string;
+    recipient_name?: string;
+    recipient_email?: string | null;
+    recipient_phone?: string;
+    delivery_address?: string;
+    delivery_fee?: number;
+    platform_fee?: number;
+    total_amount?: number;
+    estimated_distance_km?: number;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },
