@@ -99,16 +99,13 @@ export const createApp = () => {
   app.use(requestLogger);
   app.use(metricsMiddleware(metrics));
 
-  // Swagger API docs — only exposed in non-production environments
-  if (!config.isProduction) {
-    const swaggerCandidates = [
-      path.resolve(process.cwd(), 'swagger.yaml'),
-      path.resolve(process.cwd(), '../swagger.yaml')
-    ];
-    const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
-    const swaggerDocument = YAML.load(swaggerPath);
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-  }
+  const swaggerCandidates = [
+    path.resolve(process.cwd(), 'swagger.yaml'),
+    path.resolve(process.cwd(), '../swagger.yaml')
+  ];
+  const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
+  const swaggerDocument = YAML.load(swaggerPath);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.get('/health', async (_req, res) => {
     const [postgresOk, redisOk] = await Promise.all([
