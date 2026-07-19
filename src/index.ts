@@ -31,6 +31,10 @@ const startServer = async () => {
         environment: config.env,
         apiBaseUrl: config.server.apiBaseUrl
       });
+
+      if (config.env === 'development') {
+        logger.info(`📖 Swagger docs: ${config.server.apiBaseUrl}/api-docs`);
+      }
     });
 
     // Initialize WebSocket
