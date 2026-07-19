@@ -32,9 +32,7 @@ const startServer = async () => {
         apiBaseUrl: config.server.apiBaseUrl
       });
 
-      if (config.env === 'development') {
-        logger.info(`📖 Swagger docs: ${config.server.apiBaseUrl}/api-docs`);
-      }
+      logger.info(`📖 Swagger docs: ${config.server.apiBaseUrl}/api-docs`);
     });
 
     // Initialize WebSocket
