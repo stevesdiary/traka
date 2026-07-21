@@ -960,6 +960,58 @@ paths:
         '201':
           description: Rating submitted successfully
 
+  /ratings/public:
+    get:
+      tags: [Ratings]
+      summary: Get public ratings for landing page
+      description: Returns recent ratings with reviews across all riders. No auth required.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Public ratings list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ratings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        rating:
+                          type: integer
+                        review:
+                          type: string
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+                        rater:
+                          type: object
+                          nullable: true
+                          properties:
+                            first_name:
+                              type: string
+                            last_name:
+                              type: string
+                        rider:
+                          type: object
+                          nullable: true
+                          properties:
+                            first_name:
+                              type: string
+                            last_name:
+                              type: string
+
   /ratings/rider/{rider_id}:
     get:
       tags: [Ratings]

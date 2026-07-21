@@ -1,5 +1,6 @@
 import { BaseRepository } from '../repositories/base.repository.js';
 import { RatingModel } from './rating.model.js';
+import { Op } from 'sequelize';
 
 export class RatingRepository extends BaseRepository<RatingModel> {
   constructor() {
@@ -12,6 +13,18 @@ export class RatingRepository extends BaseRepository<RatingModel> {
       order: [['createdAt', 'DESC']],
       limit,
       include: ['rater']
+    });
+  }
+
+  async findPublic(limit = 20): Promise<RatingModel[]> {
+    return this.model.findAll({
+      where: {
+        review: { [Op.not]: null },
+        [Op.and]: [{ review: { [Op.ne]: '' } }]
+      },
+      order: [['createdAt', 'DESC']],
+      limit,
+      include: ['rater', 'rider']
     });
   }
 

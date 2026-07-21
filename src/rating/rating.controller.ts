@@ -54,4 +54,16 @@ export class RatingController {
       res.status(500).json({ error: 'Failed to get rider stats' });
     }
   };
+
+  getPublicRatings = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 20;
+
+      const result = await this.ratingService.getPublicRatings(limit);
+
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: 'Failed to get public ratings' });
+    }
+  };
 }

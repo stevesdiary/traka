@@ -58,4 +58,23 @@ export class RatingService {
   async getRiderStats(rider_id: string): Promise<any> {
     return await this.ratingRepository.getRiderStats(rider_id);
   }
+
+  async getPublicRatings(limit = 20): Promise<any> {
+    const ratings = await this.ratingRepository.findPublic(limit);
+
+    return {
+      ratings: ratings.map((r: any) => ({
+        id: r.id,
+        rating: r.rating,
+        review: r.review,
+        created_at: r.createdAt,
+        rater: r.rater
+          ? { first_name: r.rater.first_name, last_name: r.rater.surname }
+          : null,
+        rider: r.rider
+          ? { first_name: r.rider.first_name, last_name: r.rider.surname }
+          : null,
+      }))
+    };
+  }
 }

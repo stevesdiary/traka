@@ -489,6 +489,21 @@ export class PackageService {
     }
 
     const liveTracking = await this.getLiveTrackingData(packageData);
+    const activeStatuses = ["PENDING", "IN_TRANSIT", "OUT_FOR_DELIVERY"];
+    const isActive = activeStatuses.includes(packageData.status) && packageData.rider_id;
+
+    const tracking_token = isActive
+      ? TrackingTokenService.generate({ packageId: packageData.id, trackingNumber: packageData.tracking_number })
+      : null;
+    const liveTrackingUrl = isActive
+      ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/live-track?pkg=${packageData.id}&token=${tracking_token}`
+      : null;
+
+    let eta_minutes: number | null = null;
+    if (activeStatuses.includes(packageData.status) && packageData.estimated_arrival_at) {
+      const remainingMs = new Date(packageData.estimated_arrival_at).getTime() - Date.now();
+      eta_minutes = remainingMs > 0 ? Math.ceil(remainingMs / 60000) : 0;
+    }
 
     return {
       id: packageData.id,
@@ -496,14 +511,30 @@ export class PackageService {
       status: packageData.status,
       recipient_name: packageData.recipient_name,
       recipient_email: packageData.recipient_email,
+      recipient_phone: packageData.recipient_phone,
+      pickup_address: packageData.pickup_address,
       delivery_address: packageData.delivery_address,
       description: packageData.description,
       delivery_notes: packageData.delivery_notes,
+      package_size: packageData.package_size,
+      package_weight: packageData.package_weight,
+      delivery_speed: packageData.delivery_speed,
+      schedule_type: packageData.schedule_type,
+      scheduled_for: packageData.scheduled_for,
       rider_id: packageData.rider_id,
+      rider_has_package: packageData.rider_has_package,
+      eta_minutes,
       created_at: packageData.createdAt,
+      updated_at: packageData.updatedAt,
       delivered_at: packageData.delivered_at,
+      cancellation_reason: packageData.cancellation_reason,
+      cancellation_note: packageData.cancellation_note,
+      cancelled_at: packageData.cancelled_at,
+      cancelled_by: packageData.cancelled_by,
       is_guest_delivery: !packageData.recipient_id,
+      tracking_token,
       live_tracking: liveTracking,
+      live_tracking_url: liveTrackingUrl,
     };
   }
 
@@ -782,7 +813,8 @@ export class PackageService {
         };
       }
 
-      await this.packageRepository.assignRider(packageData.id, assignedRider.userId);
+      const etaSeconds = dispatchResult.eta ? Math.round(dispatchResult.eta) : undefined;
+      await this.packageRepository.assignRider(packageData.id, assignedRider.userId, etaSeconds);
 
       await Promise.allSettled([
         this.riderRepository.updateRiderProfile(assignedRider.userId, {

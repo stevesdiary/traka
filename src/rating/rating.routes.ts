@@ -8,6 +8,7 @@ const router: Router = Router();
 const ratingController = new RatingController();
 
 router.post('/', authenticateToken, validateInput(CreateRatingSchema), ratingController.createRating);
+router.get('/public', ratingController.getPublicRatings);
 router.get('/rider/:rider_id', ratingController.getRiderRatings);
 router.get('/rider/:rider_id/stats', ratingController.getRiderStats);
 
