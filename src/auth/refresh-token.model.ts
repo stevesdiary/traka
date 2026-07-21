@@ -24,7 +24,7 @@ export class RefreshTokenModel extends Model {
     allowNull: false,
     unique: true
   })
-  declare refresh_token_hash: string;
+  declare token_hash: string;
 
   @Column({
     type: DataType.DATE,

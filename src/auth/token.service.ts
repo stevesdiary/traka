@@ -64,7 +64,7 @@ export const issueRefreshToken = async (userId: string) => {
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000);
   await RefreshTokenModel.create({
     user_id: userId,
-    refresh_token_hash: hashToken(refreshToken),
+    token_hash: hashToken(refreshToken),
     expires_at: expiresAt
   });
   return refreshToken;
@@ -73,7 +73,7 @@ export const issueRefreshToken = async (userId: string) => {
 export const revokeRefreshToken = async (refreshToken: string) => {
   await RefreshTokenModel.update(
     { revoked_at: new Date() },
-    { where: { refresh_token_hash: hashToken(refreshToken), revoked_at: null } }
+    { where: { token_hash: hashToken(refreshToken), revoked_at: null } }
   );
 };
 
@@ -82,7 +82,7 @@ export const verifyRefreshToken = async (refreshToken: string) => {
   const tokenHash = hashToken(refreshToken);
   const existing = await RefreshTokenModel.findOne({
     where: {
-      refresh_token_hash: tokenHash,
+      token_hash: tokenHash,
       revoked_at: null
     }
   });
