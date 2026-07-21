@@ -220,4 +220,33 @@ export class WalletService {
     const wallet = await this.getWallet(userId);
     return wallet ? Number(wallet.balance) : 0;
   }
+
+  async requestPayout(userId: string, amount: number): Promise<{ message: string; balance: number }> {
+    const t = await sequelize.transaction();
+    try {
+      const wallet = await this.walletRepository.findByUserId(userId);
+      if (!wallet) throw new Error('Wallet not found');
+      if (!wallet.bank_name || !wallet.account_number) throw new Error('No bank account saved. Add one in payout settings.');
+
+      const balance = Number(wallet.balance);
+      if (amount < 100) throw new Error('Minimum withdrawal is ₦100');
+      if (amount > balance) throw new Error(`Insufficient balance. Available: ₦${balance.toFixed(2)}`);
+
+      const reference = `WD-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      await this.walletRepository.updateBalance(wallet.id, -amount, t);
+      await this.walletRepository.createTransaction({
+        wallet_id: wallet.id,
+        amount: -amount,
+        type: 'WITHDRAWAL',
+        reference,
+        description: `Withdrawal to ${wallet.bank_name} ${wallet.account_number}`,
+      }, t);
+
+      await t.commit();
+      return { message: 'Withdrawal initiated successfully', balance: balance - amount };
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
+  }
 }

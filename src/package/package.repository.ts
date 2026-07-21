@@ -92,11 +92,15 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     });
   }
 
-  async assignRider(packageId: string, riderUserId: string): Promise<void> {
-    await this.model.update(
-      { rider_id: riderUserId },
-      { where: { id: packageId } }
-    );
+  async assignRider(packageId: string, riderUserId: string, etaSeconds?: number): Promise<void> {
+    const updateData: any = { rider_id: riderUserId };
+    if (etaSeconds !== undefined) {
+      updateData.eta_seconds = etaSeconds;
+      updateData.estimated_arrival_at = new Date(Date.now() + etaSeconds * 1000);
+    }
+    await this.model.update(updateData, {
+      where: { id: packageId }
+    });
   }
 
   async updatePackage(id: string, updateData: {
@@ -120,6 +124,8 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     platform_fee?: number;
     total_amount?: number;
     estimated_distance_km?: number;
+    eta_seconds?: number | null;
+    estimated_arrival_at?: Date | null;
   }): Promise<[number, PackageModel[]]> {
     return this.model.update(updateData, {
       where: { id },

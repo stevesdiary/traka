@@ -46,6 +46,9 @@ router.get('/transactions', walletController.getTransactions);
 router.get('/bank-account', walletController.getBankAccount);
 router.put('/bank-account', walletController.updateBankAccount);
 
+// Request payout / withdrawal
+router.post('/payout', walletController.requestPayout);
+
 // Process cash delivery (admin/system only)
 router.post('/cash-delivery',
   requirePermission(Resource.PACKAGE, Action.UPDATE),

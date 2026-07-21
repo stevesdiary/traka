@@ -263,6 +263,19 @@ export class PackageModel extends Model {
   })
   declare rider_has_package: boolean | undefined;
 
+  // ETA fields
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true
+  })
+  declare eta_seconds: number | undefined;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  declare estimated_arrival_at: Date | undefined;
+
   // Guest tracking token for non-registered recipients
   @Column({
     type: DataType.STRING,
