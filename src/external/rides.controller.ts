@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PackageService } from '../package/package.service.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
 import { webhookService } from '../webhook/webhook.service.js';
+import config from '../config/environment.js';
 
 const packageService = new PackageService();
 
@@ -91,6 +92,6 @@ export const bookRide = async (req: Request, res: Response): Promise<void> => {
       res.status(422).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to book ride', details: error.message });
+    res.status(500).json({ error: 'Failed to book ride', ...(config.isDevelopment && { details: error.message }) });
   }
 };

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { WebhookService, webhookService } from './webhook.service.js';
 import { WEBHOOK_EVENTS } from './webhook-subscription.model.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
+import config from '../config/environment.js';
 
 async function assertMembership(userId: string, tenantId: string, res: Response): Promise<boolean> {
   const membership = await BusinessMemberModel.findOne({
@@ -44,7 +45,7 @@ export const createWebhook = async (req: Request, res: Response): Promise<void> 
       res.status(400).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to create webhook', details: error.message });
+    res.status(500).json({ error: 'Failed to create webhook', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -58,7 +59,7 @@ export const listWebhooks = async (req: Request, res: Response): Promise<void> =
     const webhooks = await webhookService.listSubscriptions(business_id);
     res.json({ webhooks });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to list webhooks', details: error.message });
+    res.status(500).json({ error: 'Failed to list webhooks', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -76,6 +77,6 @@ export const deleteWebhook = async (req: Request, res: Response): Promise<void> 
       res.status(404).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to delete webhook', details: error.message });
+    res.status(500).json({ error: 'Failed to delete webhook', ...(config.isDevelopment && { details: error.message }) });
   }
 };

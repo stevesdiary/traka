@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { BusinessService } from './business.service.js';
+import config from '../config/environment.js';
 
 export class BusinessController {
   private businessService: BusinessService;
@@ -30,7 +31,7 @@ export class BusinessController {
         membership_role
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to create business', details: error.message });
+      res.status(500).json({ error: 'Failed to create business', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 
@@ -48,7 +49,7 @@ export class BusinessController {
         businesses
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to retrieve businesses', details: error.message });
+      res.status(500).json({ error: 'Failed to retrieve businesses', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 
@@ -72,7 +73,7 @@ export class BusinessController {
         res.status(403).json({ error: 'Insufficient permissions' });
         return;
       }
-      res.status(500).json({ error: 'Failed to update business', details: error.message });
+      res.status(500).json({ error: 'Failed to update business', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 }

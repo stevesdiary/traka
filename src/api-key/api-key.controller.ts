@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ApiKeyService } from './api-key.service.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
+import config from '../config/environment.js';
 
 const apiKeyService = new ApiKeyService();
 
@@ -34,7 +35,7 @@ export const createApiKey = async (req: Request, res: Response): Promise<void> =
       api_key: result,
     });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to create API key', details: error.message });
+    res.status(500).json({ error: 'Failed to create API key', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -48,7 +49,7 @@ export const listApiKeys = async (req: Request, res: Response): Promise<void> =>
     const keys = await apiKeyService.listKeys(business_id);
     res.json({ api_keys: keys });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to list API keys', details: error.message });
+    res.status(500).json({ error: 'Failed to list API keys', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -66,6 +67,6 @@ export const revokeApiKey = async (req: Request, res: Response): Promise<void> =
       res.status(404).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to revoke API key', details: error.message });
+    res.status(500).json({ error: 'Failed to revoke API key', ...(config.isDevelopment && { details: error.message }) });
   }
 };

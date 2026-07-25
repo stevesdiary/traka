@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { TenantService } from './tenant.service.js';
+import config from '../config/environment.js';
 
 export class TenantController {
   private tenantService: TenantService;
@@ -51,7 +52,7 @@ export class TenantController {
       });
     } catch (error: any) {
       console.error('Failed to approve tenant:', error);
-      res.status(500).json({ error: 'Failed to approve tenant', details: error.message });
+      res.status(500).json({ error: 'Failed to approve tenant', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 

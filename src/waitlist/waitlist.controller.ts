@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { WaitlistService } from './waitlist.service.js';
 import { waitlistSchema, notifyWaitlistSchema } from '../utils/service-area.validators.js';
+import config from '../config/environment.js';
 
 const waitlistService = new WaitlistService();
 
@@ -19,7 +20,7 @@ export class WaitlistController {
 
       res.status(201).json({ success: true, ...result });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 
@@ -31,7 +32,7 @@ export class WaitlistController {
       const result = await waitlistService.getAllWaitlist(page, limit);
       res.json({ success: true, ...result });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 
@@ -40,7 +41,7 @@ export class WaitlistController {
       const grouped = await waitlistService.getWaitlistByCity();
       res.json({ success: true, data: grouped });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 
@@ -57,7 +58,7 @@ export class WaitlistController {
       const result = await waitlistService.notifyWaitlist(value.city);
       res.json({ success: true, ...result });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 }
