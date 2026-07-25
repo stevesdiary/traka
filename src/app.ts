@@ -83,7 +83,17 @@ export const createApp = () => {
   });
 
   app.use(cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // No Origin header (curl, server-to-server, same-origin) — allow
+      if (!origin) return callback(null, true);
+
+      // Non-production: permissive, so local client dev servers work regardless of port
+      if (!config.isProduction) return callback(null, true);
+
+      if (config.server.corsOrigin.includes(origin)) return callback(null, true);
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true
   }));
 
