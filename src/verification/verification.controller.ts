@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { VerificationService } from './verification.service.js';
+import config from '../config/environment.js';
 
 export class VerificationController {
   private verificationService: VerificationService;
@@ -21,7 +22,7 @@ export class VerificationController {
 
       res.json({ message: 'Email verified successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: 'Verification failed', details: error.message });
+      res.status(500).json({ error: 'Verification failed', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 
@@ -38,7 +39,7 @@ export class VerificationController {
 
       res.json({ message: 'Phone verified successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: 'Verification failed', details: error.message });
+      res.status(500).json({ error: 'Verification failed', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 

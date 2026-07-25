@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
+import { config } from './environment.js';
 import { Sequelize } from 'sequelize-typescript';
 import logger from '../utils/logger.js';
 import { redis } from './upstash.js';
@@ -29,8 +27,8 @@ import { ApiKeyModel } from '../api-key/api-key.model.js';
 import { WebhookSubscriptionModel } from '../webhook/webhook-subscription.model.js';
 
 // Initialize Sequelize with connection string
-const dbUrl = process.env.POSTGRES_URL || 'postgresql://localhost:5432/traka';
-const isProduction = dbUrl.includes('neon.tech') || process.env.NODE_ENV === 'production';
+const dbUrl = config.database.postgres;
+const isProduction = dbUrl.includes('neon.tech') || config.isProduction;
 
 export const sequelize = new Sequelize(dbUrl, {
   dialect: 'postgres',

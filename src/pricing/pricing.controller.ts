@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { pricingService } from './pricing.service.js';
+import config from '../config/environment.js';
 
 export class PricingController {
   async calculatePrice(req: Request, res: Response): Promise<void> {
@@ -24,7 +25,7 @@ export class PricingController {
       res.status(500).json({
         success: false,
         error: 'Failed to calculate pricing',
-        message: error.message
+        ...(config.isDevelopment && { message: error.message })
       });
     }
   }

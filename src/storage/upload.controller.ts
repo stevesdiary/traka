@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import storageService from './storage.service.js';
 import imageProcessing from './image-processing.service.js';
 import logger from '../utils/logger.js';
+import config from '../config/environment.js';
 
 export class UploadController {
   uploadProfilePicture = async (req: Request, res: Response): Promise<void> => {
@@ -21,7 +22,7 @@ export class UploadController {
       res.json({ key, url });
     } catch (error: any) {
       logger.error('Profile upload failed', { error: error.message, stack: error.stack });
-      res.status(500).json({ error: 'Upload failed. Please try again later.', details: error.message });
+      res.status(500).json({ error: 'Upload failed. Please try again later.', ...(config.isDevelopment && { details: error.message }) });
     }
   };
 

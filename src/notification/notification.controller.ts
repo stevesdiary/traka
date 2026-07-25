@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { NotificationService } from './notification.service.js';
+import config from '../config/environment.js';
 
 export class NotificationController {
   private notificationService = new NotificationService();
@@ -104,7 +105,7 @@ export class NotificationController {
 
       res.json({ message: 'SMS sent successfully', phone });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to send SMS' });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Failed to send SMS' });
     }
   };
 }

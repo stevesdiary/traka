@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AddressService } from './address.service.js';
 import logger from '../utils/logger.js';
+import config from '../config/environment.js';
 
 export class AddressController {
   private addressService = new AddressService();
@@ -31,7 +32,7 @@ export class AddressController {
       });
     } catch (error: any) {
       logger.error('Create address failed', { error: error.message, stack: error.stack });
-      res.status(500).json({ error: 'Failed to create address', message: error.message });
+      res.status(500).json({ error: 'Failed to create address', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -46,7 +47,7 @@ export class AddressController {
       const addresses = await this.addressService.getUserAddresses(userId);
       res.json({ addresses });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -68,7 +69,7 @@ export class AddressController {
 
       res.json({ address });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -94,7 +95,7 @@ export class AddressController {
 
       res.json({ message: 'Address updated successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -111,7 +112,7 @@ export class AddressController {
       await this.addressService.setDefaultAddress(addressId, userId);
       res.json({ message: 'Default address updated successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -128,7 +129,7 @@ export class AddressController {
       await this.addressService.deleteAddress(addressId, userId);
       res.json({ message: 'Address deleted successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -143,7 +144,7 @@ export class AddressController {
       const address = await this.addressService.getDefaultAddress(userId);
       res.json({ address });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 }

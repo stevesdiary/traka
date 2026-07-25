@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { ServiceAreaService } from './service-area.service.js';
 import { serviceAreaSchema, checkCoverageSchema } from '../utils/service-area.validators.js';
+import config from '../config/environment.js';
 
 const serviceAreaService = new ServiceAreaService();
 
@@ -10,7 +11,7 @@ export class ServiceAreaController {
       const cities = await serviceAreaService.getActiveCities();
       res.json({ success: true, cities });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 
@@ -40,7 +41,7 @@ export class ServiceAreaController {
           : 'Service not available in this area. Join our waitlist!'
       });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 
@@ -58,7 +59,7 @@ export class ServiceAreaController {
 
       res.status(201).json({ success: true, area });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message });
+      res.status(500).json({ success: false, ...(config.isDevelopment && { message: error.message }) });
     }
   }
 }

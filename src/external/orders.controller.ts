@@ -4,6 +4,7 @@ import { PackageRepository } from '../package/package.repository.js';
 import { BusinessMemberModel } from '../business/business-member.model.js';
 import { webhookService } from '../webhook/webhook.service.js';
 import type { WebhookEvent } from '../webhook/webhook-subscription.model.js';
+import config from '../config/environment.js';
 
 const packageService = new PackageService();
 const packageRepository = new PackageRepository();
@@ -97,7 +98,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       res.status(422).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to create order', details: error.message });
+    res.status(500).json({ error: 'Failed to create order', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -121,7 +122,7 @@ export const trackOrder = async (req: Request, res: Response): Promise<void> => 
       res.status(404).json({ error: 'Order not found' });
       return;
     }
-    res.status(500).json({ error: 'Failed to retrieve order', details: error.message });
+    res.status(500).json({ error: 'Failed to retrieve order', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -212,7 +213,7 @@ export const createBulkOrders = async (req: Request, res: Response): Promise<voi
       errors,
     });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to process bulk orders', details: error.message });
+    res.status(500).json({ error: 'Failed to process bulk orders', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -247,7 +248,7 @@ export const updateRecipient = async (req: Request, res: Response): Promise<void
       res.status(400).json({ error: error.message });
       return;
     }
-    res.status(500).json({ error: 'Failed to update recipient', details: error.message });
+    res.status(500).json({ error: 'Failed to update recipient', ...(config.isDevelopment && { details: error.message }) });
   }
 };
 
@@ -283,6 +284,6 @@ export const confirmDelivery = async (req: Request, res: Response): Promise<void
 
     res.json({ message: 'Delivery confirmed', tracking_number, status: 'DELIVERED' });
   } catch (error: any) {
-    res.status(500).json({ error: 'Failed to confirm delivery', details: error.message });
+    res.status(500).json({ error: 'Failed to confirm delivery', ...(config.isDevelopment && { details: error.message }) });
   }
 };

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { LegalService } from './legal.service.js';
+import config from '../config/environment.js';
 
 export class LegalController {
   private legalService = new LegalService();
@@ -23,7 +24,7 @@ export class LegalController {
 
       res.json({ faqs: groupedFAQs });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -43,7 +44,7 @@ export class LegalController {
         last_updated: terms.updatedAt
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -63,7 +64,7 @@ export class LegalController {
         last_updated: policy.updatedAt
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -72,7 +73,7 @@ export class LegalController {
       await this.legalService.seedLegalContent();
       res.json({ message: 'Legal content seeded successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 }

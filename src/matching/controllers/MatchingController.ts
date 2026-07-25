@@ -10,6 +10,7 @@ import { GeocodingService } from '../../utils/geocoding.service.js';
 import { emitRiderLocationUpdate } from '../../websocket/websocket.service.js';
 import logger from '../../utils/logger.js';
 import { VehicleType } from '../config/vehicles.js';
+import config from '../../config/environment.js';
 
 export class MatchingController {
   private riderRepo = new RiderRepository();
@@ -64,7 +65,7 @@ export class MatchingController {
       res.json({ message: 'Location updated successfully', timestamp });
     } catch (error: any) {
       logger.error('Update location error', { courierId: req.params.courierId, error: error.message, stack: error.stack });
-      res.status(500).json({ error: 'Failed to update location', detail: error.message });
+      res.status(500).json({ error: 'Failed to update location', ...(config.isDevelopment && { detail: error.message }) });
     }
   };
 

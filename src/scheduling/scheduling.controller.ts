@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { SchedulingService } from './scheduling.service.js';
 import { DeliveryScheduleType } from './scheduling.types.js';
 import { FeatureOptInModel } from './feature-opt-in.model.js';
+import config from '../config/environment.js';
 
 export class SchedulingController {
   private schedulingService = new SchedulingService();
@@ -33,7 +34,7 @@ export class SchedulingController {
         scheduleType 
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -42,7 +43,7 @@ export class SchedulingController {
       await this.schedulingService.processPendingDeliveries();
       res.json({ message: 'Pending deliveries processed' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -64,7 +65,7 @@ export class SchedulingController {
         message: 'Thank you! We will notify you when scheduled delivery becomes available.' 
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 }

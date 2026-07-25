@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { cashPaymentService } from './cash-payment.service.js';
 import logger from '../utils/logger.js';
+import config from '../config/environment.js';
 
 export class CashPaymentController {
   confirmCashPayment = async (req: Request, res: Response): Promise<void> => {
@@ -33,7 +34,7 @@ export class CashPaymentController {
         package_id: req.params.package_id,
         rider_id: req.user?.userId
       });
-      res.status(500).json({ error: error.message || 'Failed to confirm cash payment' });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Failed to confirm cash payment' });
     }
   };
 

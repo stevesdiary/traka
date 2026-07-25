@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { WalletService } from './wallet.service.js';
+import config from '../config/environment.js';
 
 export class WalletController {
   private walletService = new WalletService();
@@ -21,7 +22,7 @@ export class WalletController {
         credit_limit: wallet?.credit_limit ?? -2000
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -38,7 +39,7 @@ export class WalletController {
 
       res.json({ transactions });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -54,7 +55,7 @@ export class WalletController {
         account_name: wallet?.account_name ?? null,
       });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -70,7 +71,7 @@ export class WalletController {
       await this.walletService.updateBankAccount(userId, { bank_name, bank_code, account_number, account_name });
       res.json({ message: 'Bank account updated successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -109,7 +110,7 @@ export class WalletController {
 
       res.json({ message: 'Cash delivery processed successfully' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 

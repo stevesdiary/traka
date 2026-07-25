@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PackageService } from './package.service.js';
+import config from '../config/environment.js';
 
 export class PackageController {
   private packageService: PackageService;
@@ -25,7 +26,7 @@ export class PackageController {
         package: newPackage
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to create package', message: error.message });
+      res.status(500).json({ error: 'Failed to create package', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -49,7 +50,7 @@ export class PackageController {
         res.status(404).json({ error: 'Package not found or invalid tracking information' });
         return;
       }
-      res.status(500).json({ error: 'Failed to retrieve package information', message: error.message });
+      res.status(500).json({ error: 'Failed to retrieve package information', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -99,7 +100,7 @@ export class PackageController {
         res.status(403).json({ error: 'Access denied' });
         return;
       }
-      res.status(500).json({ error: 'Failed to retrieve package', message: error.message });
+      res.status(500).json({ error: 'Failed to retrieve package', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -127,7 +128,7 @@ export class PackageController {
         res.status(403).json({ error: 'Access denied' });
         return;
       }
-      res.status(500).json({ error: 'Failed to retrieve package', message: error.message });
+      res.status(500).json({ error: 'Failed to retrieve package', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -150,7 +151,7 @@ export class PackageController {
         res.status(400).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to claim package', message: error.message });
+      res.status(500).json({ error: 'Failed to claim package', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -174,7 +175,7 @@ export class PackageController {
         res.status(400).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to cancel package', message: error.message });
+      res.status(500).json({ error: 'Failed to cancel package', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 
@@ -237,7 +238,7 @@ export class PackageController {
         packages
       });
     } catch (error: any) {
-      res.status(500).json({ error: 'Failed to retrieve your packages', message: error.message });
+      res.status(500).json({ error: 'Failed to retrieve your packages', ...(config.isDevelopment && { message: error.message }) });
     }
   };
 }

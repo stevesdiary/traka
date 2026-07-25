@@ -7,13 +7,18 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true
+    }],
+    '^.+\\.js$': ['babel-jest', {
+      presets: [['@babel/preset-env', { targets: { node: 'current' } }]]
     }]
   },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   },
+  // pnpm nests real packages under node_modules/.pnpm/<name>@<version>/node_modules/<name>/...
+  // so the lookahead must tolerate an optional `.pnpm/` segment before the package name.
   transformIgnorePatterns: [
-    'node_modules/(?!(nanoid)/)',
+    'node_modules/(?!(\\.pnpm/)?(nanoid|otplib|@otplib[+/]|@scure[+/]|@noble[+/]))',
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/']

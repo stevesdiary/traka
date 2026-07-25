@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { InvoiceService } from './invoice.service.js';
+import config from '../config/environment.js';
 
 export class InvoiceController {
   private invoiceService = new InvoiceService();
@@ -22,7 +23,7 @@ export class InvoiceController {
 
       res.status(201).json({ invoice });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -37,7 +38,7 @@ export class InvoiceController {
       const invoices = await this.invoiceService.getInvoicesByTenant(tenantId);
       res.json({ invoices });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -48,7 +49,7 @@ export class InvoiceController {
       await this.invoiceService.markInvoicePaid(invoiceId);
       res.json({ message: 'Invoice marked as paid' });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 
@@ -57,7 +58,7 @@ export class InvoiceController {
       const overdueInvoices = await this.invoiceService.getOverdueInvoices();
       res.json({ invoices: overdueInvoices });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });
     }
   };
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { promotionService } from './promotion.service.js';
+import config from '../config/environment.js';
 
 export class PromotionController {
   createPromotion = async (req: Request, res: Response): Promise<void> => {
@@ -25,7 +26,7 @@ export class PromotionController {
       const promotions = await promotionService.listPromotions({ status });
       res.json({ promotions, count: promotions.length });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to fetch promotions' });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Failed to fetch promotions' });
     }
   };
 
@@ -41,7 +42,7 @@ export class PromotionController {
       const stats = await promotionService.getPromotionStats(id);
       res.json({ promotion, stats });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to fetch promotion' });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Failed to fetch promotion' });
     }
   };
 
@@ -69,7 +70,7 @@ export class PromotionController {
       const result = await promotionService.listPromotionUsages(id, page, limit);
       res.json({ promotion_id: id, ...result });
     } catch (error: any) {
-      res.status(500).json({ error: error.message || 'Failed to fetch promotion usages' });
+      res.status(500).json({ error: config.isDevelopment ? error.message : 'Failed to fetch promotion usages' });
     }
   };
 
