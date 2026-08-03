@@ -1,5 +1,6 @@
 import { fuelPriceService } from './fuel-price.service.js';
 import { GeocodingService } from '../utils/geocoding.service.js';
+import config from '../config/environment.js';
 
 export interface PricingRequest {
   pickup_address: string;
@@ -13,7 +14,6 @@ export interface PricingRequest {
 export interface PricingResponse {
   base_fee: number;
   distance_fee: number;
-  size_fee: number;
   speed_fee: number;
   fuel_adjustment: number;
   platform_fee: number;
@@ -25,17 +25,12 @@ const PRICING_CONFIG = {
   BASE_FEE: 500,
   FUEL_BASELINE: 1100,
   DISTANCE_RATE_PER_KM: 100,
-  SIZE_FEES: {
-    SMALL: 0,
-    MEDIUM: 200,
-    LARGE: 500
-  },
+  MAX_PACKAGE_WEIGHT_KG: 40,
   SPEED_FEES: {
     STANDARD: 0,
     EXPRESS: 300,
     SAME_DAY: 150
-  },
-  PLATFORM_FEE_RATE: 0.15
+  }
 };
 
 export class PricingService {
@@ -58,6 +53,15 @@ export class PricingService {
   }
 
   async calculateDeliveryPrice(request: PricingRequest): Promise<PricingResponse> {
+    if (
+      request.package_weight &&
+      request.package_weight > PRICING_CONFIG.MAX_PACKAGE_WEIGHT_KG
+    ) {
+      throw new Error(
+        `PACKAGE_HEAVIER_THAN_CAPACITY: Package weight exceeds the ${PRICING_CONFIG.MAX_PACKAGE_WEIGHT_KG}kg limit`
+      );
+    }
+
     const pickupGeo = await this.safeGeocode(request.pickup_address);
     const deliveryGeo = await this.safeGeocode(request.delivery_address);
 
@@ -70,20 +74,23 @@ export class PricingService {
 
     const base_fee = PRICING_CONFIG.BASE_FEE;
     const distance_fee = distance * PRICING_CONFIG.DISTANCE_RATE_PER_KM;
-    const size_fee = PRICING_CONFIG.SIZE_FEES[request.package_size];
     const speed_fee = PRICING_CONFIG.SPEED_FEES[request.delivery_speed];
 
     const currentFuelPrice = await fuelPriceService.getFuelPrice();
     const fuel_adjustment = this.calculateFuelAdjustment(currentFuelPrice, distance);
 
-    const subtotal = base_fee + distance_fee + size_fee + speed_fee + fuel_adjustment;
-    const platform_fee = subtotal * PRICING_CONFIG.PLATFORM_FEE_RATE;
+    const subtotal = base_fee + distance_fee + speed_fee + fuel_adjustment;
+    // Individual riders/users pay the rider commission rate (20%); business
+    // tenants use their own platform fee rate.
+    const platformFeeRate = request.tenant_id
+      ? config.financial.platformFeeRateBusiness
+      : config.financial.riderCommissionRate;
+    const platform_fee = subtotal * platformFeeRate;
     const total_amount = subtotal + platform_fee;
 
     return {
       base_fee,
       distance_fee,
-      size_fee,
       speed_fee,
       fuel_adjustment,
       platform_fee,

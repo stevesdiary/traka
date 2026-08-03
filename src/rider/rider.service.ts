@@ -1,6 +1,7 @@
 import { RiderRepository } from "./rider.repository.js";
 import { RiderModel, RiderProfile, RiderRegistration } from "./rider.model.js";
 import logger from "../utils/logger.js";
+import config from "../config/environment.js";
 
 export class RiderService {
   private riderRepository: RiderRepository;
@@ -355,7 +356,7 @@ export class RiderService {
         package_size: p.package_size ?? 'SMALL',
         package_type: p.category ?? p.package_size ?? 'Parcel',
         delivery_speed: p.delivery_speed ?? 'STANDARD',
-        estimated_commission: Math.round(deliveryFee * 0.85),
+        estimated_commission: Math.round(deliveryFee * (1 - config.financial.riderCommissionRate)),
         distance_km: Number(p.estimated_distance_km ?? 0),
         payment_method: p.payment_method ?? 'DIGITAL',
         created_at: p.createdAt,
@@ -370,7 +371,7 @@ export class RiderService {
     return packages.map((pkg: any) => {
       const p = typeof pkg.toJSON === 'function' ? pkg.toJSON() : pkg;
       const deliveryFee = Number(p.delivery_fee ?? 0);
-      const platformCommissionRate = 0.15; // platform takes 15%, rider keeps 85%
+      const platformCommissionRate = config.financial.riderCommissionRate; // platform commission, rider keeps the rest
       const riderEarnings = Math.round(deliveryFee * (1 - platformCommissionRate));
       return {
         id: p.id,

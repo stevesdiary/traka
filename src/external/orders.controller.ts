@@ -98,6 +98,10 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       res.status(422).json({ error: error.message });
       return;
     }
+    if (error.message?.includes('PACKAGE_HEAVIER_THAN_CAPACITY')) {
+      res.status(422).json({ error: error.message });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create order', ...(config.isDevelopment && { details: error.message }) });
   }
 };

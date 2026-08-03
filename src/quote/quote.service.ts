@@ -23,7 +23,6 @@ interface QuoteResponse {
   breakdown: {
     base_fee: number;
     distance_fee: number;
-    size_fee: number;
     speed_fee: number;
     fuel_adjustment: number;
     platform_fee: number;
@@ -80,7 +79,6 @@ export class QuoteService {
       breakdown: {
         base_fee: pricing.base_fee,
         distance_fee: pricing.distance_fee,
-        size_fee: pricing.size_fee,
         speed_fee: pricing.speed_fee,
         fuel_adjustment: pricing.fuel_adjustment,
         platform_fee: pricing.platform_fee

@@ -211,7 +211,6 @@ export class PackageService {
       pricing_breakdown: {
         base_fee: pricing.base_fee,
         distance_fee: pricing.distance_fee,
-        size_fee: pricing.size_fee,
         speed_fee: pricing.speed_fee,
         platform_fee: pricing.platform_fee,
         total_amount: pricing.total_amount
@@ -281,7 +280,6 @@ export class PackageService {
       pricing_breakdown = {
         base_fee: pricing.base_fee,
         distance_fee: pricing.distance_fee,
-        size_fee: pricing.size_fee,
         speed_fee: pricing.speed_fee,
         platform_fee: pricing.platform_fee,
         total_amount: pricing.total_amount,
