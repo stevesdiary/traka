@@ -165,6 +165,19 @@ export const createApp = () => {
 
   app.use('/api', routes);
 
+  app.get('/', (_req, res) => {
+    res.json({
+      message: `${config.observability.serviceName} API is online`,
+      docs: '/api-docs',
+      service: config.observability.serviceName,
+      status: 'online',
+      environment: config.env,
+      health: '/health',
+      api: '/api',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   app.use((req, res) => {
     logger.warn('Route not found', {
       method: req.method,

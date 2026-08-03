@@ -2,9 +2,13 @@ app = "traka-server"
 primary_region = "lhr"
 
 [build]
+  dockerfile = "Dockerfile"
+
+# Runs migrations before new machines start
+release_command = "node dist/scripts/migrate.js up"
 
 [env]
-  NODE_ENV = "development"
+  NODE_ENV = "production"
   PORT = "8080"
 
 [http_service]
@@ -18,6 +22,14 @@ primary_region = "lhr"
     type = "connections"
     hard_limit = 100
     soft_limit = 80
+
+  [[http_service.checks]]
+    path = "/health"
+    method = "GET"
+    port = 8080
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "60s"
 
 [[vm]]
   memory = "512mb"
