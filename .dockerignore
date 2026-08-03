@@ -1,0 +1,13 @@
+node_modules
+dist
+.env*
+logs
+coverage
+docs
+postman
+tests
+.git
+.github
+*.md
+*.log
+*.sh
