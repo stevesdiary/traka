@@ -16,6 +16,7 @@ export interface PricingResponse {
   distance_fee: number;
   speed_fee: number;
   fuel_adjustment: number;
+  weight_multiplier: number;
   platform_fee: number;
   total_amount: number;
   estimated_distance_km: number;
@@ -26,6 +27,16 @@ const PRICING_CONFIG = {
   FUEL_BASELINE: 1100,
   DISTANCE_RATE_PER_KM: 100,
   MAX_PACKAGE_WEIGHT_KG: 40,
+  DEFAULT_WEIGHT_KG: {
+    SMALL: 1,
+    MEDIUM: 5,
+    LARGE: 12
+  },
+  WEIGHT_TIERS: [
+    { maxWeightKg: 5, multiplier: 1.0 },
+    { maxWeightKg: 15, multiplier: 1.25 },
+    { maxWeightKg: 40, multiplier: 1.5 }
+  ],
   SPEED_FEES: {
     STANDARD: 0,
     EXPRESS: 300,
@@ -58,7 +69,7 @@ export class PricingService {
       request.package_weight > PRICING_CONFIG.MAX_PACKAGE_WEIGHT_KG
     ) {
       throw new Error(
-        `PACKAGE_HEAVIER_THAN_CAPACITY: Package weight exceeds the ${PRICING_CONFIG.MAX_PACKAGE_WEIGHT_KG}kg limit`
+        `BULK_DELIVERIES_COMING_SOON: Packages over ${PRICING_CONFIG.MAX_PACKAGE_WEIGHT_KG}kg are coming soon`
       );
     }
 
@@ -79,7 +90,12 @@ export class PricingService {
     const currentFuelPrice = await fuelPriceService.getFuelPrice();
     const fuel_adjustment = this.calculateFuelAdjustment(currentFuelPrice, distance);
 
-    const subtotal = base_fee + distance_fee + speed_fee + fuel_adjustment;
+    const resolvedWeight = this.resolvePackageWeight(request);
+    const weight_multiplier = this.resolveWeightMultiplier(resolvedWeight);
+
+    // Weight multiplier compensates the rider for heavy/bulky packages.
+    const subtotal =
+      (base_fee + distance_fee + speed_fee + fuel_adjustment) * weight_multiplier;
     // Individual riders/users pay the rider commission rate (20%); business
     // tenants use their own platform fee rate.
     const platformFeeRate = request.tenant_id
@@ -93,10 +109,30 @@ export class PricingService {
       distance_fee,
       speed_fee,
       fuel_adjustment,
+      weight_multiplier,
       platform_fee,
       total_amount: Math.round(total_amount),
       estimated_distance_km: Math.round(distance * 10) / 10
     };
+  }
+
+  // Use the provided weight, otherwise fall back to a default per size class.
+  private resolvePackageWeight(request: PricingRequest): number {
+    if (request.package_weight && request.package_weight > 0) {
+      return request.package_weight;
+    }
+    return PRICING_CONFIG.DEFAULT_WEIGHT_KG[request.package_size];
+  }
+
+  private resolveWeightMultiplier(weightKg: number): number {
+    for (const tier of PRICING_CONFIG.WEIGHT_TIERS) {
+      if (weightKg <= tier.maxWeightKg) {
+        return tier.multiplier;
+      }
+    }
+    const lastTier =
+      PRICING_CONFIG.WEIGHT_TIERS[PRICING_CONFIG.WEIGHT_TIERS.length - 1];
+    return lastTier.multiplier;
   }
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {

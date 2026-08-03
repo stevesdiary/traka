@@ -7,7 +7,7 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 - **Multi-User Registration**: Customer, Business, and Rider registration
 - **Unique Rider IDs**: Auto-generated IDs (TRK-XXXX) for easy identification
 - **Package Management**: Create, track, and manage deliveries
-- **Package Limit**: All packages must weigh 40kg or less
+- **Package Limit**: Standard packages up to 40kg (bulk deliveries coming soon)
 - **Real-time Tracking**: GPS location updates and status tracking
 - **Business Verification**: Admin approval system for business tenants
 - **Role-based Access**: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER roles
@@ -194,8 +194,9 @@ npm test
 ### Pricing Model
 - **Base Fee**: ₦500 + ₦100 per km + speed fee + fuel adjustment
 - **Platform Fee**: 20% for individual deliveries, 15% for business tenants
-- **Size Not Priced**: Package size is descriptive only, not a price factor
-- **Weight Cap**: Packages must be 40kg or less
+- **Weight Multiplier**: Heavy packages pay a surcharge — ≤5kg ×1.0, 5–15kg ×1.25, 15–40kg ×1.5
+- **Size Descriptor**: Package size only estimates weight when none is provided
+- **Bulk Deliveries**: Packages over 40kg are coming soon
 
 ### Business Billing
 - **Prepaid System**: Businesses maintain wallet balance

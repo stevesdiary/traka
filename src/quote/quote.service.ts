@@ -25,6 +25,7 @@ interface QuoteResponse {
     distance_fee: number;
     speed_fee: number;
     fuel_adjustment: number;
+    weight_multiplier: number;
     platform_fee: number;
   };
 }
@@ -81,6 +82,7 @@ export class QuoteService {
         distance_fee: pricing.distance_fee,
         speed_fee: pricing.speed_fee,
         fuel_adjustment: pricing.fuel_adjustment,
+        weight_multiplier: pricing.weight_multiplier,
         platform_fee: pricing.platform_fee
       }
     };

@@ -212,6 +212,7 @@ export class PackageService {
         base_fee: pricing.base_fee,
         distance_fee: pricing.distance_fee,
         speed_fee: pricing.speed_fee,
+        weight_multiplier: pricing.weight_multiplier,
         platform_fee: pricing.platform_fee,
         total_amount: pricing.total_amount
       },
@@ -281,6 +282,7 @@ export class PackageService {
         base_fee: pricing.base_fee,
         distance_fee: pricing.distance_fee,
         speed_fee: pricing.speed_fee,
+        weight_multiplier: pricing.weight_multiplier,
         platform_fee: pricing.platform_fee,
         total_amount: pricing.total_amount,
       };
