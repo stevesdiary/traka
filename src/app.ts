@@ -46,16 +46,46 @@ export const createApp = () => {
   // Trust first proxy so req.ip reflects the real client IP behind reverse proxies
   app.set('trust proxy', 1);
 
-  // Global rate limiter: 100 requests per 15 minutes per IP
-  const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+  const limiterBase = {
     standardHeaders: true,
     legacyHeaders: false,
-    message: 'Too many requests from this IP, please try again later',
     validate: { trustProxy: false },
+  };
+
+  // Payment mutations — tightest limit
+  const paymentLimiter = rateLimit({
+    ...limiterBase,
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { error: 'Too many payment requests, please try again later' },
   });
-  app.use(globalLimiter);
+
+  // General API — covers most authenticated write operations
+  const standardLimiter = rateLimit({
+    ...limiterBase,
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    message: { error: 'Too many requests, please try again later' },
+  });
+
+  // Read-only polling endpoints — live tracking, package status, rider location
+  const relaxedLimiter = rateLimit({
+    ...limiterBase,
+    windowMs: 15 * 60 * 1000,
+    max: 600,
+    message: { error: 'Too many requests, please try again later' },
+  });
+
+  app.use('/api/wallet/fund', paymentLimiter);
+  app.use('/api/wallet/payout', paymentLimiter);
+  app.use('/api/wallet/webhook', paymentLimiter);
+
+  app.use('/api/packages/:tracking_number', relaxedLimiter);
+  app.use('/api/matching/courier-presence', relaxedLimiter);
+  app.use('/api/matching/available-couriers', relaxedLimiter);
+  app.use('/api/riders/location', relaxedLimiter);
+
+  app.use('/api', standardLimiter);
 
   app.use(helmet({
     contentSecurityPolicy: false,
