@@ -93,9 +93,12 @@ export const connectDatabases = async () => {
     await sequelize.authenticate();
     logger.info('PostgreSQL connected successfully');
 
-    // Sync models (create tables if they don't exist)
-    await sequelize.sync({ alter: false });
-    logger.info('Database models synchronized');
+    // Sync models (create tables if they don't exist) — dev convenience only.
+    // Production relies on migrations (see scripts/migrate.ts + migrations/).
+    if (!config.isProduction) {
+      await sequelize.sync({ alter: false });
+      logger.info('Database models synchronized');
+    }
 
     // Initialize Upstash Redis (serverless, no connection needed)
     await redis.connect();

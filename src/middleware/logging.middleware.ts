@@ -6,6 +6,16 @@ import { slackNotificationService } from '../notification/slack.notification.js'
 const recentSlackAlerts = new Map<string, number>();
 const DEDUP_WINDOW_MS = 60_000;
 
+const pruneStaleSlackAlerts = () => {
+  const now = Date.now();
+  for (const [k, ts] of recentSlackAlerts) {
+    if (now - ts > DEDUP_WINDOW_MS) recentSlackAlerts.delete(k);
+  }
+};
+
+// Periodic pruning so the map can't grow unbounded between alerts
+setInterval(pruneStaleSlackAlerts, DEDUP_WINDOW_MS).unref();
+
 /**
  * Request logging middleware
  * Logs all HTTP requests with timing information
@@ -76,13 +86,6 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
             additionalInfo: { app: 'traka-server', statusCode, duration: `${duration}ms` },
           }
         }).catch(() => {});
-      }
-
-      // Prune stale entries
-      if (recentSlackAlerts.size > 100) {
-        for (const [k, ts] of recentSlackAlerts) {
-          if (now - ts > DEDUP_WINDOW_MS) recentSlackAlerts.delete(k);
-        }
       }
     }
 

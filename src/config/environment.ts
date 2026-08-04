@@ -10,17 +10,12 @@ const envFile = `.env.${environment}`;
 const rootDir = path.resolve(process.cwd());
 const envPath = path.join(rootDir, envFile);
 
-console.log(`🌍 Loading environment: ${environment}`);
-console.log(`📁 Config file: ${envFile}`);
-
 // Load the environment file
 const result = dotenv.config({ path: envPath });
 
 if (result.error) {
   console.warn(`⚠️  Warning: Could not load ${envFile}, falling back to .env`);
   dotenv.config(); // Fallback to default .env
-} else {
-  console.log(`✅ Environment loaded successfully`);
 }
 
 // Validate required environment variables

@@ -161,6 +161,27 @@ export const createApp = () => {
   ];
   const swaggerPath = swaggerCandidates.find((candidate) => fs.existsSync(candidate)) || swaggerCandidates[0];
   const swaggerDocument = YAML.load(swaggerPath);
+
+  // Gate /api-docs: local access always allowed; in production, non-local requests
+  // require basic auth via SWAGGER_PASSWORD (blocked entirely if unset).
+  app.use('/api-docs', (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+
+    if (!config.isProduction || isLocal) return next();
+
+    const password = process.env.SWAGGER_PASSWORD;
+    if (!password) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const expected = `Basic ${Buffer.from(`admin:${password}`).toString('base64')}`;
+    if (req.headers.authorization === expected) return next();
+
+    res.setHeader('WWW-Authenticate', 'Basic realm="Swagger Docs"');
+    res.status(401).json({ error: 'Unauthorized' });
+  });
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.get('/health', async (_req, res) => {
@@ -223,6 +244,15 @@ export const createApp = () => {
   const recentErrors = new Map<string, number>();
   const DEDUP_WINDOW_MS = 60_000;
 
+  // Periodic pruning so the map can't grow unbounded between errors
+  const pruneStaleErrors = () => {
+    const now = Date.now();
+    for (const [k, ts] of recentErrors) {
+      if (now - ts > DEDUP_WINDOW_MS) recentErrors.delete(k);
+    }
+  };
+  setInterval(pruneStaleErrors, DEDUP_WINDOW_MS).unref();
+
   app.use((err: any, req: any, res: any, next: any) => {
     logger.error('Unhandled error', {
       error: err.message,
@@ -252,13 +282,6 @@ export const createApp = () => {
             additionalInfo: { app: 'traka-server' },
           }
         }).catch(() => {});
-      }
-
-      // Prune stale entries periodically
-      if (recentErrors.size > 100) {
-        for (const [k, ts] of recentErrors) {
-          if (now - ts > DEDUP_WINDOW_MS) recentErrors.delete(k);
-        }
       }
     }
 
