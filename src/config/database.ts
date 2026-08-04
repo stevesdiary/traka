@@ -25,6 +25,7 @@ import { FeatureOptInModel } from '../scheduling/feature-opt-in.model.js';
 import { ScheduledDeliveryRecord } from '../scheduling/scheduling.model.js';
 import { ApiKeyModel } from '../api-key/api-key.model.js';
 import { WebhookSubscriptionModel } from '../webhook/webhook-subscription.model.js';
+import { WebhookDeliveryModel } from '../webhook/webhook-delivery.model.js';
 
 // Initialize Sequelize with connection string
 const dbUrl = config.database.postgres;
@@ -75,6 +76,7 @@ sequelize.addModels([
   ScheduledDeliveryRecord,
   ApiKeyModel,
   WebhookSubscriptionModel,
+  WebhookDeliveryModel,
 ]);
 
 // Export Upstash Redis
