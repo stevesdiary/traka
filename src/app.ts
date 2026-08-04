@@ -16,6 +16,22 @@ import { createMetricsRegistry, metricsMiddleware, attachSequelizeObservability 
 import { sequelize, redis } from './config/database.js';
 import { slackNotificationService } from './notification/slack.notification.js';
 
+// Allowlist matcher. Supports exact origins ("https://app.example.com") and
+// wildcard subdomains ("https://*.example.com").
+const isOriginAllowed = (origin: string, allowedOrigins: string[]): boolean =>
+  allowedOrigins.some((allowed) => {
+    if (allowed === origin) return true;
+    const wildcard = allowed.match(/^(https?):\/\/\*\.(.+)$/);
+    if (!wildcard) return false;
+    const [, scheme, domain] = wildcard;
+    try {
+      const url = new URL(origin);
+      return url.protocol === `${scheme}:` && url.hostname.endsWith(`.${domain}`);
+    } catch {
+      return false;
+    }
+  });
+
 export const createApp = () => {
   const metrics = createMetricsRegistry(config.observability.serviceName);
   attachSequelizeObservability(
@@ -90,7 +106,7 @@ export const createApp = () => {
       // Non-production: permissive, so local client dev servers work regardless of port
       if (!config.isProduction) return callback(null, true);
 
-      if (config.server.corsOrigin.includes(origin)) return callback(null, true);
+      if (isOriginAllowed(origin, config.server.corsOrigin)) return callback(null, true);
 
       callback(new Error('Not allowed by CORS'));
     },
@@ -148,6 +164,19 @@ export const createApp = () => {
   });
 
   app.use('/api', routes);
+
+  app.get('/', (_req, res) => {
+    res.json({
+      message: `${config.observability.serviceName} API is online`,
+      docs: '/api-docs',
+      service: config.observability.serviceName,
+      status: 'online',
+      environment: config.env,
+      health: '/health',
+      api: '/api',
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   app.use((req, res) => {
     logger.warn('Route not found', {

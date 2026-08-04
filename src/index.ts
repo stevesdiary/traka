@@ -25,7 +25,7 @@ const startServer = async () => {
     QuoteExpirationCron.startCronJob();
     // startDispatchTimeoutCron();
 
-    const server = app.listen(port, () => {
+    const server = app.listen(port, '0.0.0.0', () => {
       logger.info(`TRAKA API started successfully`, {
         port,
         environment: config.env,
