@@ -4,6 +4,7 @@ import logger from '../utils/logger.js';
 import { EmailNotificationService } from '../notification/email.service.js';
 import { SMSService } from '../notification/sms.service.js';
 import { NotificationService, NotificationType } from '../notification/notification.service.js';
+import { webhookService } from '../webhook/webhook.service.js';
 
 const emailService = new EmailNotificationService();
 const smsService = new SMSService();
@@ -77,6 +78,30 @@ router.post('/notification', verifyQStashSignature, async (req: Request, res: Re
     res.json({ success: true });
   } catch (error) {
     logger.error('Notification queue processing failed', { error });
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
+// Webhook delivery handler — retries (with QStash backoff) on 5xx / network errors.
+// Returns 200 on success and on permanent failures so QStash stops retrying.
+router.post('/webhook', verifyQStashSignature, async (req: Request, res: Response) => {
+  try {
+    await webhookService.handleQueueDelivery(req.body);
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Webhook queue processing failed', { error: error.message });
+    res.status(500).json({ error: 'Processing failed' });
+  }
+});
+
+// Webhook dead-letter handler — called by QStash when retries are exhausted.
+// Auto-disables the subscription so dead endpoints stop burning attempts.
+router.post('/webhook/failed', verifyQStashSignature, async (req: Request, res: Response) => {
+  try {
+    await webhookService.handleDeadLetter(req.body);
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Webhook dead-letter processing failed', { error: error.message });
     res.status(500).json({ error: 'Processing failed' });
   }
 });

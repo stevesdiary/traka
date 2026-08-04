@@ -1,0 +1,106 @@
+---
+title: Track an order
+description: Look up the full state of a TRAKA order by tracking number, including live rider location and ETA.
+weight: 12
+---
+
+# Track an order
+
+```
+GET /api/v1/external/orders/{tracking_number}
+```
+
+```curl
+# _examples/track-order.curl
+```
+
+## Response `200 OK`
+
+```json
+{
+  "order": {
+    "id": "uuid",
+    "tracking_number": "TRK-X7K2",
+    "status": "IN_TRANSIT",
+    "recipient_name": "John Doe",
+    "recipient_email": "john@example.com",
+    "recipient_phone": "+2348123456789",
+    "pickup_address": "12 Marina, Lagos",
+    "delivery_address": "44 Ajose Adeogun, Victoria Island, Lagos",
+    "description": "Nike Air Force 1 - White",
+    "delivery_notes": "Call before delivery",
+    "package_size": "SMALL",
+    "package_weight": 2,
+    "delivery_speed": "EXPRESS",
+    "schedule_type": "IMMEDIATE",
+    "scheduled_for": null,
+    "rider_id": "uuid",
+    "rider_has_package": false,
+    "eta_minutes": 12,
+    "created_at": "2026-08-04T12:00:00.000Z",
+    "updated_at": "2026-08-04T12:10:00.000Z",
+    "delivered_at": null,
+    "cancellation_reason": null,
+    "cancellation_note": null,
+    "cancelled_at": null,
+    "cancelled_by": null,
+    "is_guest_delivery": true,
+    "tracking_token": "jwt-token",
+    "live_tracking": {
+      "enabled": true,
+      "available": true,
+      "source": "REALTIME",
+      "websocket_channel": "tracking:package:uuid",
+      "rider_location": {
+        "latitude": 6.4393,
+        "longitude": 3.4215,
+        "timestamp": 1754334000,
+        "status": "IN_TRANSIT"
+      }
+    },
+    "live_tracking_url": "https://app.traka.com/live-track?pkg=uuid&token=jwt-token"
+  }
+}
+```
+
+## Order statuses & lifecycle
+
+| Status | Meaning |
+| ------ | ------- |
+| `PENDING` | Created, awaiting pickup / rider assignment |
+| `IN_TRANSIT` | Rider picked up the package, en route |
+| `OUT_FOR_DELIVERY` | Rider is at/near the delivery location |
+| `DELIVERED` | Delivered and confirmed |
+| `CANCELLED` | Cancelled (cannot be confirmed) |
+
+```
+PENDING ──► IN_TRANSIT ──► OUT_FOR_DELIVERY ──► DELIVERED
+    │                                              ▲
+    └──────────────── CANCELLED ───────────────────┘
+```
+
+- Recipient updates are only allowed in `PENDING` — see
+  [Update recipient](/docs/orders/update-recipient).
+- Confirming a `DELIVERED` order is idempotent; confirming a `CANCELLED` order
+  returns `422`.
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `404` | `{ "error": "Order not found" }` | Unknown number **or order belongs to another tenant** |
+| `500` | `{ "error": "Failed to retrieve order" }` | Unexpected failure |
+
+> Orders are tenant-scoped: you can only track orders created by your own
+> business. Treat a `404` as "not found for this business".
+
+## Live tracking
+
+When a rider is assigned, `live_tracking` exposes `rider_location` and a
+`websocket_channel` for real-time updates. Use `live_tracking_url` to link the
+recipient to the public live-tracking page.
+
+## Next steps
+
+- [Update recipient](/docs/orders/update-recipient) — edit details while `PENDING`.
+- [Confirm delivery](/docs/orders/confirm) — mark the order `DELIVERED`.

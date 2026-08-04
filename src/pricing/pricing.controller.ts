@@ -22,6 +22,14 @@ export class PricingController {
         data: pricing
       });
     } catch (error: any) {
+      if (error.message?.includes('BULK_DELIVERIES_COMING_SOON')) {
+        res.status(503).json({
+          success: false,
+          error: error.message,
+          coming_soon: true
+        });
+        return;
+      }
       res.status(500).json({
         success: false,
         error: 'Failed to calculate pricing',

@@ -1,0 +1,78 @@
+---
+title: API keys
+description: Create, list, rotate, and revoke TRAKA API keys. Keys are shown once at creation.
+weight: 31
+---
+
+# API keys
+
+API key management is a **dashboard-level** operation: authenticate with your
+dashboard JWT and require the business **OWNER** or **ADMIN** role. Members with
+role `MEMBER` get `403`.
+
+## Endpoints
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| `POST` | `/api/businesses/{business_id}/api-keys` | Create API key (`{ "name": "..." }`) |
+| `GET` | `/api/businesses/{business_id}/api-keys` | List API keys (raw keys excluded) |
+| `DELETE` | `/api/businesses/{business_id}/api-keys/{key_id}` | Revoke API key |
+
+## Create a key
+
+```curl
+# _examples/create-api-key.curl
+```
+
+The response includes `raw_key` **exactly once** — store it immediately.
+
+```json
+{
+  "message": "API key created. Store the raw_key securely — it will not be shown again.",
+  "api_key": {
+    "id": "uuid",
+    "tenant_id": "uuid",
+    "name": "Production checkout",
+    "key_prefix": "sk_live_ABC1",
+    "status": "ACTIVE",
+    "created_by": "uuid",
+    "created_at": "2026-08-04T12:00:00.000Z",
+    "updated_at": "2026-08-04T12:00:00.000Z",
+    "raw_key": "sk_live_<48+ characters>"
+  }
+}
+```
+
+## Key fields
+
+| Field | Meaning |
+| ----- | ------- |
+| `key_prefix` | First 12 chars of the raw key (`sk_live_...`) — identify keys without storing the full value |
+| `status` | `ACTIVE` or `REVOKED` |
+| `last_used_at` | Last successful authenticated request |
+| `expires_at` | Optional expiry (null = never expires) |
+| `created_by` | User id that created the key |
+
+## Key rotation
+
+Rotate keys regularly and after any suspected leak:
+
+1. **Create** a new key (capture the `raw_key` once).
+2. **Deploy** your app with the new key.
+3. **Revoke** the old key:
+
+```http
+DELETE /api/businesses/{business_id}/api-keys/{key_id}
+Authorization: Bearer {jwt}
+```
+
+→ `200 { "message": "API key revoked successfully" }` or `404` if unknown.
+
+> ⚠️ Never store `sk_live_` keys in client-side code, browser storage, or git.
+> Use a secret manager. Keys shown in logs or screenshots should be rotated
+> immediately.
+
+## Next steps
+
+- [Authentication](/docs/authentication) — how keys are used on `/v1/external`.
+- [Webhooks](/docs/webhooks/overview) — manage webhook subscriptions with the same dashboard auth.

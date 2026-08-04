@@ -6,7 +6,8 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 
 - **Multi-User Registration**: Customer, Business, and Rider registration
 - **Unique Rider IDs**: Auto-generated IDs (TRK-XXXX) for easy identification
-- **Package Management**: Create, track, and manage deliveries with scheduling
+- **Package Management**: Create, track, and manage deliveries
+- **Package Limit**: Standard packages up to 40kg (bulk deliveries coming soon)
 - **Real-time Tracking**: GPS location updates and status tracking
 - **Business Verification**: Admin approval system for business tenants
 - **Role-based Access**: SUPER_ADMIN, ADMIN, MANAGER, RIDER, USER roles
@@ -14,13 +15,14 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 - **Wallet System**: Negative balance support with commission management
 - **Business Billing**: Prepaid wallet system with auto-recharge
 - **Delivery Matching**: City-scale matching with vehicle constraints
-- **Scheduled Deliveries**: IMMEDIATE, SCHEDULED, SAME_DAY, NEXT_DAY options
+- **Scheduled Deliveries**: Coming soon (waitlist opt-in available)
 - **Rider Referral System**: ₦1,000 bonus for both referrer and referred rider
 - **Service Area Jurisdiction**: Coverage validation with waitlist for unlaunched cities
 - **Multi-database**: PostgreSQL, Redis, and MongoDB integration
 - **JWT Authentication**: Secure token-based authentication
 - **Legal Content**: FAQ, Terms of Service, Commission Policy
 - **API Documentation**: Swagger and Postman collections
+- **Partner API**: API-key authenticated `/v1/external` endpoints with signed webhooks for third-party businesses
 
 ## Tech Stack
 
@@ -86,8 +88,9 @@ npm test
 - `POST /api/packages/{id}/confirm-delivery` - Confirm delivery
 
 ### Scheduling
-- `POST /api/scheduling/schedule` - Schedule delivery (IMMEDIATE/SCHEDULED/SAME_DAY/NEXT_DAY)
-- `POST /api/scheduling/process-pending` - Process pending deliveries (Admin)
+- `POST /api/scheduling/schedule` - Coming soon (returns 503, feature not launched)
+- `POST /api/scheduling/process-pending` - Coming soon (returns 503, feature not launched)
+- `POST /api/scheduling/opt-in/scheduled-delivery` - Join waitlist for scheduled delivery
 
 ### Delivery Matching
 - `POST /api/matching/dispatch` - Dispatch delivery to available riders
@@ -183,11 +186,18 @@ npm test
 ## Financial System
 
 ### Rider Wallet System
-- **Commission Rate**: 20% platform fee per delivery
+- **Commission Rate**: 20% platform fee per delivery (`RIDER_COMMISSION_RATE`)
 - **Negative Balance**: ₦2,000 credit limit with auto-suspension
 - **Payment Methods**: Digital (instant credit) vs Cash (creates debt)
 - **Auto-Settlement**: Debt cleared from future digital earnings
 - **Referral Bonus**: ₦1,000 for both referrer and referred rider on first delivery
+
+### Pricing Model
+- **Base Fee**: ₦500 + ₦100 per km + speed fee + fuel adjustment
+- **Platform Fee**: 20% for individual deliveries, 15% for business tenants
+- **Weight Multiplier**: Heavy packages pay a surcharge — ≤5kg ×1.0, 5–15kg ×1.25, 15–40kg ×1.5
+- **Size Descriptor**: Package size only estimates weight when none is provided
+- **Bulk Deliveries**: Packages over 40kg are coming soon
 
 ### Business Billing
 - **Prepaid System**: Businesses maintain wallet balance
@@ -198,9 +208,10 @@ npm test
 ## Delivery Matching
 
 ### Vehicle Constraints
-- **BICYCLE**: 3km range, 10kg capacity, traffic-sensitive
-- **MOTORCYCLE**: 15km range, 50kg capacity, moderate traffic impact
-- **VAN**: 50km range, 200kg capacity, low traffic sensitivity
+- **BICYCLE**: 1.5km range, 10kg capacity
+- **MOTORCYCLE**: 3km range, 40kg capacity
+- **CAR**: 5km range, 100kg capacity
+- **VAN**: 7km range, 200kg capacity
 
 ### Matching Algorithm
 - **Sequential Dispatch**: 6-second timeout per courier
@@ -230,6 +241,23 @@ pnpm test:critical
 ### Manual API Testing
 - Import `TRAKA_API.postman_collection.json` into Postman
 - View interactive API docs at `/api-docs`
+
+## Partner / Third-Party Integration
+
+Businesses can create, track, and confirm deliveries programmatically via the
+External API (`/api/v1/external`), authenticated with API keys and notified
+through HMAC-signed webhooks.
+
+See the **full guide**: [`docs/PARTNER_INTEGRATION.md`](docs/PARTNER_INTEGRATION.md)
+
+- **Base URL:** `https://api.traka.com/api/v1/external`
+- **Auth:** `X-API-Key: sk_live_...` (100 requests / 60s per key)
+- **Endpoints:** `POST /orders`, `POST /orders/bulk`, `GET /orders/:tracking_number`,
+  `PATCH /orders/:tracking_number/recipient`, `POST /orders/:tracking_number/confirm`, `POST /rides`
+- **Webhooks:** `order.created`, `order.status_changed`, `order.delivered`,
+  `order.confirmed`, `rider.assigned` (HMAC-SHA256 signed)
+- **Key & webhook management:** `/api/businesses/:business_id/api-keys` and
+  `/api/businesses/:business_id/webhooks` (owner/admin)
 
 ## Project Structure
 

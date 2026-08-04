@@ -32,6 +32,10 @@ export class QuoteController {
         error: error.message,
         body: req.body
       });
+      if (error.message?.includes('BULK_DELIVERIES_COMING_SOON')) {
+        res.status(503).json({ error: error.message, coming_soon: true });
+        return;
+      }
       res.status(500).json({ error: 'Failed to create quote' });
     }
   };

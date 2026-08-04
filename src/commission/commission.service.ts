@@ -2,6 +2,7 @@ import { CommissionRepository } from './commission.repository.js';
 import { CommissionModel, Commission, CommissionSummary } from './commission.model.js';
 import { RiderModel } from '../rider/rider.model.js';
 import { ReferralService } from '../referral/referral.service.js';
+import config from '../config/environment.js';
 
 export class CommissionService {
   private commissionRepository: CommissionRepository;
@@ -13,7 +14,7 @@ export class CommissionService {
   }
 
   async calculateCommission(packageId: string, riderId: string, deliveryFee: number): Promise<CommissionModel> {
-    const commissionRate = 0.15; // 15% commission rate
+    const commissionRate = config.financial.riderCommissionRate;
     const commissionAmount = deliveryFee * commissionRate;
 
     const commission = await this.commissionRepository.createCommission({

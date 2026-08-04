@@ -1,0 +1,2 @@
+curl "https://api.traka.com/api/v1/external/orders/TRK-X7K2" \
+  -H "X-API-Key: sk_live_..."

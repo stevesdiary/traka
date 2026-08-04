@@ -165,8 +165,9 @@ export const CreatePackageSchema = Joi.object({
     'any.only': 'Package size must be SMALL, MEDIUM, or LARGE',
     'any.required': 'Package size is required'
   }),
-  package_weight: Joi.number().positive().optional().messages({
-    'number.positive': 'Package weight must be a positive number'
+  package_weight: Joi.number().positive().max(40).optional().messages({
+    'number.positive': 'Package weight must be a positive number',
+    'number.max': 'Packages over 40kg are coming soon'
   }),
   delivery_speed: Joi.string().valid('STANDARD', 'EXPRESS', 'SAME_DAY').required().messages({
     'any.only': 'Delivery speed must be STANDARD, EXPRESS, or SAME_DAY',
@@ -633,7 +634,9 @@ const BulkOrderItemSchema = Joi.object({
   }),
   delivery_notes: Joi.string().optional(),
   package_size: Joi.string().valid('SMALL', 'MEDIUM', 'LARGE').optional().default('SMALL'),
-  package_weight: Joi.number().positive().optional(),
+  package_weight: Joi.number().positive().max(40).optional().messages({
+    'number.max': 'Packages over 40kg are coming soon'
+  }),
   delivery_speed: Joi.string().valid('STANDARD', 'EXPRESS', 'SAME_DAY').optional().default('STANDARD'),
   category: Joi.string().valid(
     'FOOD', 'SHOES', 'ELECTRONICS', 'CLOTHING', 'JEWELRY_VALUABLES',

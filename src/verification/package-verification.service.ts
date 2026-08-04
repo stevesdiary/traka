@@ -1,5 +1,6 @@
 import { redis } from '../config/database.js';
 import { EmailNotificationService } from '../notification/email.service.js';
+import { PackageRepository } from '../package/package.repository.js';
 
 export interface PackageVerification {
   package_id: string;
@@ -24,11 +25,12 @@ export interface QRCodeData {
 }
 
 export class PackageVerificationService {
-  private verifications: Map<string, PackageVerification> = new Map();
   private emailService: EmailNotificationService;
+  private packageRepository: PackageRepository;
 
   constructor() {
     this.emailService = new EmailNotificationService();
+    this.packageRepository = new PackageRepository();
   }
 
   async sendPickupCodeToSender(senderEmail: string, senderName: string, pickupCode: string, trackingNumber: string): Promise<void> {
@@ -83,7 +85,7 @@ export class PackageVerificationService {
     }
   }
 
-  generatePackageVerification(packageData: {
+  async generatePackageVerification(packageData: {
     package_id: string;
     tracking_number: string;
     sender_name: string;
@@ -92,10 +94,10 @@ export class PackageVerificationService {
     delivery_address: string;
     package_size: string;
     delivery_speed: string;
-  }): PackageVerification {
+  }): Promise<PackageVerification> {
     const pickup_pin = this.generatePIN();
     const delivery_pin = this.generatePIN();
-    
+
     const qrData: QRCodeData = {
       tracking_number: packageData.tracking_number,
       sender_name: packageData.sender_name,
@@ -107,63 +109,54 @@ export class PackageVerificationService {
       created_at: new Date().toISOString()
     };
 
-    const verification: PackageVerification = {
+    const qr_code_data = this.generateQRCodeData(qrData);
+
+    await this.packageRepository.updatePackage(packageData.package_id, {
+      pickup_pin,
+      delivery_pin,
+      qr_code_data,
+    });
+
+    return {
       package_id: packageData.package_id,
       pickup_pin,
       delivery_pin,
-      qr_code_data: this.generateQRCodeData(qrData),
+      qr_code_data,
       pickup_confirmed: false,
-      delivery_confirmed: false
+      delivery_confirmed: false,
     };
-
-    this.verifications.set(packageData.package_id, verification);
-    return verification;
   }
 
   async confirmPickup(package_id: string, pin: string): Promise<boolean> {
-    const verification = this.verifications.get(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
-    if (verification.pickup_confirmed) {
-      throw new Error('Package already picked up');
-    }
-
-    if (verification.pickup_pin !== pin) {
-      throw new Error('Invalid pickup PIN');
-    }
-
-    verification.pickup_confirmed = true;
-    verification.pickup_confirmed_at = new Date();
+    const pkg = await this.packageRepository.findById(package_id);
+    if (!pkg) throw new Error('Package verification not found');
+    if (pkg.pickup_confirmed) throw new Error('Package already picked up');
+    if (pkg.pickup_pin !== pin) throw new Error('Invalid pickup PIN');
     return true;
   }
 
   async confirmDelivery(package_id: string, pin: string): Promise<boolean> {
-    const verification = this.verifications.get(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
-    if (!verification.pickup_confirmed) {
-      throw new Error('Package must be picked up first');
-    }
-
-    if (verification.delivery_confirmed) {
-      throw new Error('Package already delivered');
-    }
-
-    if (verification.delivery_pin !== pin) {
-      throw new Error('Invalid delivery PIN');
-    }
-
-    verification.delivery_confirmed = true;
-    verification.delivery_confirmed_at = new Date();
+    const pkg = await this.packageRepository.findById(package_id);
+    if (!pkg) throw new Error('Package verification not found');
+    if (!pkg.pickup_confirmed) throw new Error('Package must be picked up first');
+    if (pkg.delivery_confirmed) throw new Error('Package already delivered');
+    if (pkg.delivery_pin !== pin) throw new Error('Invalid delivery PIN');
     return true;
   }
 
-  getVerificationStatus(package_id: string): PackageVerification | null {
-    return this.verifications.get(package_id) || null;
+  async getVerificationStatus(package_id: string): Promise<PackageVerification | null> {
+    const pkg = await this.packageRepository.findById(package_id);
+    if (!pkg || !pkg.pickup_pin) return null;
+    return {
+      package_id: pkg.id,
+      pickup_pin: pkg.pickup_pin,
+      delivery_pin: pkg.delivery_pin!,
+      qr_code_data: pkg.qr_code_data ?? '',
+      pickup_confirmed: pkg.pickup_confirmed,
+      delivery_confirmed: pkg.delivery_confirmed,
+      pickup_confirmed_at: pkg.pickup_confirmed_at,
+      delivery_confirmed_at: pkg.delivery_confirmed_at,
+    };
   }
 
   decodeQRCode(qr_code_data: string): QRCodeData {

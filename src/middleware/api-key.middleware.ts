@@ -38,9 +38,13 @@ export const requireApiKey = async (req: Request, res: Response, next: NextFunct
   if (count === 1) {
     await redis.expire(rateLimitKey, RATE_LIMIT_WINDOW_SECONDS);
   }
+  const ttl = await redis.ttl(rateLimitKey);
+
+  res.setHeader('X-RateLimit-Limit', String(RATE_LIMIT_REQUESTS));
+  res.setHeader('X-RateLimit-Remaining', String(Math.max(0, RATE_LIMIT_REQUESTS - count)));
+  res.setHeader('X-RateLimit-Reset', String(Math.max(0, ttl)));
 
   if (count > RATE_LIMIT_REQUESTS) {
-    const ttl = await redis.ttl(rateLimitKey);
     res.status(429).json({
       error: 'Rate limit exceeded. Maximum 100 requests per 60 seconds per API key.',
       retry_after_seconds: ttl,

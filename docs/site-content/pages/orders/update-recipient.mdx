@@ -1,0 +1,67 @@
+---
+title: Update recipient
+description: Change recipient details on a PENDING TRAKA order. Changing the address triggers a re-quote.
+weight: 13
+---
+
+# Update recipient
+
+```
+PATCH /api/v1/external/orders/{tracking_number}/recipient
+```
+
+Updates one or more recipient fields. At least one field is required. Only orders
+in `PENDING` status can be updated. Changing `delivery_address` recalculates the
+price and returns the new `pricing_breakdown`.
+
+## Request body (at least one field)
+
+```json
+{
+  "recipient_name": "John O. Doe",
+  "recipient_phone": "+2348133333333",
+  "recipient_email": "john.doe@example.com",
+  "delivery_address": "50 Ajose Adeogun, Victoria Island, Lagos"
+}
+```
+
+```curl
+# _examples/update-recipient.curl
+```
+
+## Response `200 OK`
+
+```json
+{
+  "message": "Recipient updated successfully",
+  "tracking_number": "TRK-X7K2",
+  "updated_fields": ["recipient_name", "recipient_phone", "recipient_email", "delivery_address"],
+  "pricing_breakdown": {
+    "base_fee": 500,
+    "distance_fee": 1400,
+    "speed_fee": 300,
+    "weight_multiplier": 1,
+    "platform_fee": 440,
+    "total_amount": 2640
+  }
+}
+```
+
+Note the re-quoted price: `delivery_address` changed, so the distance fee and
+`total_amount` are recalculated.
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `400` | `{ "error": "At least one field must be provided", "fields": [...] }` | No fields sent |
+| `400` | `{ "error": "Cannot update order in IN_TRANSIT status" }` | Order not `PENDING` |
+| `404` | `{ "error": "Order not found" }` | Unknown number or other tenant |
+| `500` | `{ "error": "Failed to update recipient" }` | Unexpected failure |
+
+> Update the address **early** — recipient changes are only allowed in `PENDING`
+> and always trigger a re-quote.
+
+## Next steps
+
+- [Confirm delivery](/docs/orders/confirm) — finalize the order once delivered.
