@@ -97,14 +97,43 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
  * Error logging middleware
  * Should be placed after all routes to catch errors
  */
+const SENSITIVE_BODY_KEYS = new Set([
+  'password', 'password_hash', 'current_password', 'new_password',
+  'token', 'access_token', 'refresh_token', 'id_token',
+  'secret', 'api_key', 'apikey', 'authorization',
+  'card_number', 'cvv', 'pin',
+  'totp_secret', 'otp', 'reset_code',
+]);
+
+const SENSITIVE_HEADERS = new Set([
+  'authorization', 'cookie', 'x-api-key', 'x-auth-token',
+]);
+
+function redactBody(body: unknown): unknown {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).map(([k, v]) =>
+      [k, SENSITIVE_BODY_KEYS.has(k.toLowerCase()) ? '[REDACTED]' : v]
+    )
+  );
+}
+
+function redactHeaders(headers: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(headers).map(([k, v]) =>
+      [k, SENSITIVE_HEADERS.has(k.toLowerCase()) ? '[REDACTED]' : v]
+    )
+  );
+}
+
 export const errorLogger = (err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error('Request error', {
     error: err.message,
     stack: err.stack,
     method: req.method,
     url: req.originalUrl,
-    body: req.body,
-    headers: req.headers,
+    body: redactBody(req.body),
+    headers: redactHeaders(req.headers as Record<string, unknown>),
     ip: req.ip,
   });
 
