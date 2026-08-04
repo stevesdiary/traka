@@ -22,6 +22,7 @@ A comprehensive logistics and package tracking system built with Node.js, TypeSc
 - **JWT Authentication**: Secure token-based authentication
 - **Legal Content**: FAQ, Terms of Service, Commission Policy
 - **API Documentation**: Swagger and Postman collections
+- **Partner API**: API-key authenticated `/v1/external` endpoints with signed webhooks for third-party businesses
 
 ## Tech Stack
 
@@ -240,6 +241,23 @@ pnpm test:critical
 ### Manual API Testing
 - Import `TRAKA_API.postman_collection.json` into Postman
 - View interactive API docs at `/api-docs`
+
+## Partner / Third-Party Integration
+
+Businesses can create, track, and confirm deliveries programmatically via the
+External API (`/api/v1/external`), authenticated with API keys and notified
+through HMAC-signed webhooks.
+
+See the **full guide**: [`docs/PARTNER_INTEGRATION.md`](docs/PARTNER_INTEGRATION.md)
+
+- **Base URL:** `https://api.traka.com/api/v1/external`
+- **Auth:** `X-API-Key: sk_live_...` (100 requests / 60s per key)
+- **Endpoints:** `POST /orders`, `POST /orders/bulk`, `GET /orders/:tracking_number`,
+  `PATCH /orders/:tracking_number/recipient`, `POST /orders/:tracking_number/confirm`, `POST /rides`
+- **Webhooks:** `order.created`, `order.status_changed`, `order.delivered`,
+  `order.confirmed`, `rider.assigned` (HMAC-SHA256 signed)
+- **Key & webhook management:** `/api/businesses/:business_id/api-keys` and
+  `/api/businesses/:business_id/webhooks` (owner/admin)
 
 ## Project Structure
 
