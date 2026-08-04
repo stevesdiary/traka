@@ -17,9 +17,9 @@
 
 - [Done] **Error logger logs full request body and headers** — `errorLogger` in `logging.middleware.ts` logs `req.body` and `req.headers` in full. In production this will write passwords, tokens, and payment data to the log store. Redact or omit sensitive fields.
 
-- [ ] **`requestPayout` never disburses funds** — `WalletService.requestPayout` deducts the balance and records a `WITHDRAWAL` transaction but never calls a payment gateway to send money to the rider's bank. Riders will lose balance with no actual payout.
+- [Done] **`requestPayout` never disburses funds** — `WalletService.requestPayout` deducts the balance and records a `WITHDRAWAL` transaction but never calls a payment gateway to send money to the rider's bank. Riders will lose balance with no actual payout.
 
-- [ ] **Background dispatch queue is never consumed** — `scheduleBackgroundSearch` writes a `dispatch:background:{packageId}` key to Redis but no worker or cron reads and retries it. Packages queued for background search will never get a rider assigned.
+- [Done] **Background dispatch queue is never consumed** — `scheduleBackgroundSearch` writes a `dispatch:background:{packageId}` key to Redis but no worker or cron reads and retries it. Packages queued for background search will never get a rider assigned.
 
 - [ ] **Delivery code email TTL is only 5 minutes** — `scheduleDeliveryCodeEmail` stores the delivery PIN with a 300-second TTL. If the rider takes longer than 5 minutes to arrive after the key is written, the recipient never receives their delivery code. Increase the TTL or trigger the email at a later stage (e.g. on `OUT_FOR_DELIVERY` status).
 
