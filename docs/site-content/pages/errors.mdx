@@ -1,0 +1,81 @@
+---
+title: Errors
+description: The TRAKA External API error format, status codes, and client handling checklist.
+weight: 40
+---
+
+# Errors
+
+The External API returns structured JSON errors. The shape is consistent across
+endpoints:
+
+```json
+{ "error": "Human-readable message" }
+```
+
+## Optional fields
+
+| Field | Meaning |
+| ----- | ------- |
+| `required` | Array of missing field names (`400` on create) |
+| `fields` | Array of acceptable fields (`400` on recipient update) |
+| `coming_soon` | `true` when the feature is not yet available (`503`) |
+| `details` | Internal details, **only in development** |
+| `retry_after_seconds` | Rate-limit retry wait (`429`) |
+
+## Status codes
+
+| Code | Meaning |
+| ---- | ------- |
+| `200` | Success |
+| `201` | Resource created |
+| `207` | Multi-status (bulk orders — partial success) |
+| `400` | Invalid request / missing fields / bad values |
+| `401` | Missing or invalid API key |
+| `403` | Authenticated but not allowed (dashboard-only, owner/admin) |
+| `404` | Order/tracking number not found (or other tenant) |
+| `422` | Business misconfiguration or out-of-coverage location |
+| `429` | Rate limit exceeded |
+| `500` | Unexpected server error |
+| `503` | Feature coming soon (bulk deliveries over 40 kg) |
+
+## Client checklist
+
+- **Retry `429`** using `retry_after_seconds` (or the `X-RateLimit-Reset` header).
+- **Treat `503` with `coming_soon: true` as "not available yet"** — not a
+  transient outage and not a validation failure. Do not auto-retry 40kg+ orders.
+- **Re-check `207` responses per item** — do not assume all bulk orders were created.
+- **Use exponential backoff** for `5xx` and network errors.
+
+## Examples
+
+Missing fields:
+
+```json
+{
+  "error": "Missing required fields",
+  "required": ["recipient_name", "pickup_address"]
+}
+```
+
+Rate limited:
+
+```json
+{
+  "error": "Rate limit exceeded. Maximum 100 requests per 60 seconds per API key.",
+  "retry_after_seconds": 45
+}
+```
+
+Coming soon:
+
+```json
+{
+  "error": "BULK_DELIVERIES_COMING_SOON: We only support packages up to 40kg for now",
+  "coming_soon": true
+}
+```
+
+## Next steps
+
+- [Webhooks delivery](/docs/webhooks/delivery) — error semantics for receiving webhooks.

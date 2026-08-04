@@ -20,6 +20,7 @@ import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
+import logger from '../utils/logger.js';
 
 export class PackageService {
   private packageRepository: PackageRepository;
@@ -150,7 +151,7 @@ export class PackageService {
     const sender_name = sender ? `${sender.first_name} ${sender.surname}` : 'Sender';
 
     // Generate verification codes and QR code
-    const verification = this.packageVerificationService.generatePackageVerification({
+    const verification = await this.packageVerificationService.generatePackageVerification({
       package_id: newPackage.id,
       tracking_number,
       sender_name,
@@ -168,16 +169,6 @@ export class PackageService {
         sender_name,
         verification.pickup_pin,
         tracking_number
-      );
-    }
-
-    // Schedule delivery code email (will be sent 5 minutes before arrival)
-    if (data.recipient_email) {
-      await this.packageVerificationService.scheduleDeliveryCodeEmail(
-        data.recipient_email,
-        data.recipient_name,
-        verification.delivery_pin,
-        newPackage.id
       );
     }
 
@@ -651,11 +642,6 @@ export class PackageService {
   }
 
   async confirmPickup(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
-    const verification = this.packageVerificationService.getVerificationStatus(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
     await this.packageVerificationService.confirmPickup(package_id, pin);
     await this.updatePackageStatus(package_id, 'IN_TRANSIT', tenant_id);
 
@@ -688,18 +674,18 @@ export class PackageService {
           packageData.delivery_address,
           trackingUrl
         )
-      ).catch(err => console.error('Failed to send tracking email', err));
+      ).catch(err => logger.error('Failed to send tracking email', { error: err?.message }));
     }
+
+    // Send delivery code to recipient now that the rider has the package
+    await this.packageVerificationService.triggerDeliveryCodeEmail(package_id).catch(err =>
+      logger.error('Failed to send delivery code email', { error: err?.message, package_id })
+    );
 
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
   }
 
   async confirmDelivery(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
-    const verification = this.packageVerificationService.getVerificationStatus(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
     await this.packageVerificationService.confirmDelivery(package_id, pin);
     await this.updatePackageStatus(package_id, 'DELIVERED', tenant_id);
 
@@ -873,7 +859,7 @@ export class PackageService {
           : undefined,
       };
     } catch (error) {
-      console.error("Auto-dispatch failed", error);
+      logger.error('Auto-dispatch failed', { error });
       return {
         assigned: false,
         attempts: 0,
@@ -1010,7 +996,7 @@ export class PackageService {
         };
       }
     } catch (error) {
-      console.error("Failed to read realtime rider location", error);
+      logger.error('Failed to read realtime rider location', { error });
     }
 
     if (rider.current_latitude != null && rider.current_longitude != null) {
@@ -1036,27 +1022,16 @@ export class PackageService {
   }
 
   private async generateTrackingNumber(): Promise<string> {
-    // Generate TRK-XXXX format with random alphanumeric (uppercase letters and numbers)
-    const nanoid = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 4);
-    let trackingNumber: string;
-    let attempts = 0;
-    const maxAttempts = 10;
+    const letters = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
+    const digits = customAlphabet('0123456789', 4);
 
-    while (attempts < maxAttempts) {
-      const randomCode = nanoid();
-      trackingNumber = `TRK-${randomCode}`;
-      
-      // Check if tracking number already exists
+    for (let i = 0; i < 10; i++) {
+      const trackingNumber = `${letters()}-${digits()}`;
       const existing = await this.packageRepository.findByTrackingNumber(trackingNumber);
-      if (!existing) {
-        return trackingNumber;
-      }
-      attempts++;
+      if (!existing) return trackingNumber;
     }
 
-    // Fallback: use timestamp-based code if all random attempts fail
-    const fallbackCode = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 6)();
-    return `TRK-${fallbackCode}`;
+    return `${letters()}-${digits()}`;
   }
 
   private generateGuestToken(): string {

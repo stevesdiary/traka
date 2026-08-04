@@ -1,0 +1,13 @@
+curl -X POST "https://api.traka.com/api/v1/external/rides" \
+  -H "X-API-Key: sk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipient_name": "Chioma",
+    "recipient_phone": "+2348144444444",
+    "pickup_address": "15 Adeola Odeku, Victoria Island, Lagos",
+    "delivery_address": "27 Opebi Rd, Ikeja, Lagos",
+    "description": "On-demand courier booking",
+    "package_size": "MEDIUM",
+    "package_weight": 4,
+    "is_fragile": true
+  }'

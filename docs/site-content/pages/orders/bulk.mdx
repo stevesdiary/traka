@@ -1,0 +1,97 @@
+---
+title: Bulk orders
+description: Create up to 50 TRAKA delivery orders in one request and handle partial success with a 207 response.
+weight: 11
+---
+
+# Bulk orders
+
+```
+POST /api/v1/external/orders/bulk
+```
+
+Create up to **50** orders in one request. Each element has the same fields as a
+[single order](/docs/orders). The response reports per-item success/failure — a
+bad item does not roll back the others.
+
+## Request body
+
+```json
+{
+  "orders": [
+    {
+      "recipient_name": "Ade",
+      "recipient_phone": "+2348011111111",
+      "pickup_address": "1 Allen Ave, Ikeja",
+      "delivery_address": "5 Broad St, Lagos Island",
+      "description": "Order #1001"
+    },
+    {
+      "recipient_name": "Tunde",
+      "recipient_phone": "+2348022222222",
+      "pickup_address": "1 Allen Ave, Ikeja",
+      "delivery_address": "9 Bode Thomas, Surulere",
+      "description": "Order #1002"
+    }
+  ]
+}
+```
+
+```curl
+# _examples/bulk-orders.curl
+```
+
+## Response `207 Multi-Status`
+
+```json
+{
+  "summary": { "total": 2, "created": 2, "failed": 0 },
+  "orders": [
+    {
+      "index": 0,
+      "tracking_number": "TRK-A1B2",
+      "status": "PENDING",
+      "tracking_url": "https://app.traka.com/track/TRK-A1B2",
+      "pricing_breakdown": {
+        "base_fee": 500,
+        "distance_fee": 800,
+        "speed_fee": 0,
+        "weight_multiplier": 1,
+        "platform_fee": 195,
+        "total_amount": 1495
+      }
+    }
+  ],
+  "errors": []
+}
+```
+
+`207` means **partial success is possible**. When some items fail, `errors`
+carries the reasons:
+
+```json
+{
+  "summary": { "total": 2, "created": 1, "failed": 1 },
+  "orders": [ { "index": 0, "tracking_number": "TRK-A1B2", "status": "PENDING" } ],
+  "errors": [
+    { "index": 1, "reason": "Missing required fields: recipient_phone" }
+  ]
+}
+```
+
+> ⚠️ Always iterate `errors` — never assume every order was created just because
+> the request succeeded.
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `400` | `{ "error": "orders must be a non-empty array" }` | Missing/invalid `orders` |
+| `400` | `{ "error": "Maximum 50 orders per bulk request" }` | More than 50 orders |
+| `422` | `{ "error": "Business has no active owner account..." }` | No active OWNER member |
+| `207` | `errors: [{ "index": 1, "reason": "..." }]` | Per-item failures (not a 4xx) |
+
+## Next steps
+
+- [Track an order](/docs/orders/track) — follow each `tracking_number`.
+- [Bulk limits & pricing](/docs/pricing-and-limits) — weight and size rules apply per item.

@@ -1,0 +1,85 @@
+---
+title: Verify signatures
+description: Verify TRAKA webhook deliveries with HMAC-SHA256 using your whsec_ secret.
+weight: 52
+---
+
+# Verify signatures
+
+Each delivery is signed with **HMAC-SHA256** using your webhook `secret` over the
+**raw request body** (exactly as received):
+
+```
+X-Traka-Signature = sha256=<hex(HMAC-SHA256(secret, raw_body))>
+```
+
+Always verify before trusting the payload.
+
+<Tabs>
+  <Tab label="Node.js">
+
+  ```node
+  // _examples/verify-webhook.node.ts
+  ```
+
+  </Tab>
+  <Tab label="Python">
+
+  ```python
+  # _examples/verify-webhook.python.py
+  ```
+
+  </Tab>
+</Tabs>
+
+## Node.js (full)
+
+```js
+import crypto from "node:crypto";
+
+const secret = process.env.TRAKA_WEBHOOK_SECRET; // whsec_...
+
+function verifySignature(req) {
+  const signature = req.headers["x-traka-signature"];
+  const timestamp = req.headers["x-traka-timestamp"];
+  if (!signature || !timestamp) return false;
+
+  // Optional: reject replays older than 5 minutes
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
+
+  const body = JSON.stringify(req.body); // MUST match the raw received body
+  const expected = `sha256=${crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex")}`;
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}
+```
+
+## Python (full)
+
+```python
+import hashlib, hmac
+
+def verify_signature(body: bytes, header: str, secret: str) -> bool:
+    expected = "sha256=" + hmac.new(
+        secret.encode(), body, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(header, expected)
+```
+
+> ⚠️ Use the **raw body bytes**, not a re-serialized object, or the signature
+> check will fail. In Express, that means reading the request as raw/string body
+> and hashing `rawBody` — not `req.body` re-stringified.
+
+## Full receiving checklist
+
+1. **Verify** the `X-Traka-Signature` (above).
+2. **Check** the `X-Traka-Timestamp` skew (≤ 5 minutes recommended).
+3. **Dedupe** on `X-Traka-Delivery-Id`.
+4. **Process** the event, then respond `2xx`.
+
+## Next steps
+
+- [Delivery & retries](/docs/webhooks/delivery) — response codes control retries.

@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { WalletController } from './wallet.controller.js';
 import { authenticateToken } from '../middleware/auth.middleware.js';
 import { requirePermission } from '../middleware/rolePermission.middleware.js';
+import { requireRole } from '../middleware/rolePermission.middleware.js';
 import { validateInput } from '../middleware/validation.middleware.js';
-import { Resource, Action } from '../utils/rolePermissions.js';
+import { Resource, Action, Role } from '../utils/rolePermissions.js';
 import { InitializeWalletFundingSchema, VerifyWalletFundingSchema } from '../utils/validators.js';
 import { PaymentGatewayController } from './payment-gateway.controller.js';
 
@@ -49,9 +50,9 @@ router.put('/bank-account', walletController.updateBankAccount);
 // Request payout / withdrawal
 router.post('/payout', walletController.requestPayout);
 
-// Process cash delivery (admin/system only)
+// Process cash delivery — riders for themselves, staff for any rider
 router.post('/cash-delivery',
-  requirePermission(Resource.PACKAGE, Action.UPDATE),
+  requireRole([Role.RIDER, Role.ADMIN, Role.MANAGER, Role.SUPER_ADMIN]),
   walletController.processCashDelivery
 );
 

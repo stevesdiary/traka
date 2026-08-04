@@ -1,0 +1,9 @@
+curl -X PATCH "https://api.traka.com/api/v1/external/orders/TRK-X7K2/recipient" \
+  -H "X-API-Key: sk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipient_name": "John O. Doe",
+    "recipient_phone": "+2348133333333",
+    "recipient_email": "john.doe@example.com",
+    "delivery_address": "50 Ajose Adeogun, Victoria Island, Lagos"
+  }'

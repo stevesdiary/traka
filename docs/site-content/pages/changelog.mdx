@@ -1,0 +1,40 @@
+---
+title: Changelog
+description: Release history for the TRAKA developer platform.
+weight: 70
+---
+
+# Changelog
+
+All notable changes to the TRAKA developer platform.
+
+## 2026-08-04
+
+### Added
+
+- **Webhook delivery hardening** — webhook deliveries now run through a durable
+  queue with up to 5 automatic retries and exponential backoff (~30s → 8m).
+  `4xx` responses or exhausted retries **auto-disable** the subscription.
+- **Delivery audit log** — `GET /api/businesses/{business_id}/webhooks/{webhook_id}/deliveries`
+  exposes per-attempt `status`, `attempt_count`, `last_status_code`, and
+  `last_error`.
+- **Rate-limit headers** — the External API now returns `X-RateLimit-Limit`,
+  `X-RateLimit-Remaining`, and `X-RateLimit-Reset` on every response.
+- **Partner integration docs** — this docs site, powered by
+  `docs/PARTNER_INTEGRATION.md` and `swagger.yaml`.
+- **OpenAPI coverage** — full External API, API key management, and webhook
+  management endpoints added to `swagger.yaml` with an API-key security scheme.
+
+## v1 — Initial developer API
+
+### Added
+
+- External Orders API — create, bulk-create, track, update recipient, confirm.
+- On-demand Rides API.
+- API key authentication (`X-API-Key`) with 100 req/60s rate limits.
+- Signed webhooks (HMAC-SHA256) with event subscriptions.
+
+---
+
+Older entries are added as releases ship. Subscribe to webhooks on the
+`changelog` event set to be notified (coming soon).

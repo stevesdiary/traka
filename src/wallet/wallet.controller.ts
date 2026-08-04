@@ -99,15 +99,32 @@ export class WalletController {
 
   processCashDelivery = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { riderId, totalFare, packageId } = req.body;
+      const requesterId = req.user?.id;
+      const requesterRole = req.user?.role;
+      if (!requesterId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const { totalFare, packageId } = req.body;
+      const isStaff = ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(requesterRole ?? '');
+      const riderId: string = isStaff ? (req.body.riderId ?? requesterId) : requesterId;
 
       if (!riderId || !totalFare || !packageId) {
         res.status(400).json({ error: 'Missing required fields' });
         return;
       }
 
-      await this.walletService.processCashDelivery(riderId, totalFare, packageId);
+      if (!isStaff) {
+        const { PackageRepository } = await import('../package/package.repository.js');
+        const pkg = await new PackageRepository().findById(packageId);
+        if (!pkg || pkg.rider_id !== requesterId) {
+          res.status(403).json({ error: 'Forbidden: package not assigned to you' });
+          return;
+        }
+      }
 
+      await this.walletService.processCashDelivery(riderId, totalFare, packageId);
       res.json({ message: 'Cash delivery processed successfully' });
     } catch (error: any) {
       res.status(500).json({ error: config.isDevelopment ? error.message : 'Internal server error' });

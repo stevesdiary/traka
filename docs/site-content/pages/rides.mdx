@@ -1,0 +1,86 @@
+---
+title: On-demand rides
+description: Book a SAME_DAY on-demand courier ride with the TRAKA External API.
+weight: 20
+---
+
+# On-demand rides
+
+```
+POST /api/v1/external/rides
+```
+
+Books a `SAME_DAY` courier ride. The response mirrors orders but nests under
+`ride`. Rides are tracked, updated, and confirmed exactly like orders.
+
+## Request body
+
+| Field | Type | Required | Default | Notes |
+| ----- | ---- | -------- | ------- | ----- |
+| `recipient_name` | string | **yes** | — | Recipient full name |
+| `recipient_phone` | string | **yes** | — | Recipient phone number |
+| `pickup_address` | string | **yes** | — | Pickup location |
+| `delivery_address` | string | **yes** | — | Delivery location |
+| `recipient_email` | string | no | — | Delivery notifications |
+| `description` | string | no | `On-demand courier booking` | Ride description |
+| `delivery_notes` | string | no | — | Rider instructions |
+| `package_size` | string | no | `SMALL` | `SMALL`, `MEDIUM`, `LARGE` |
+| `package_weight` | number | no | size default | Actual weight in kg (max `40`) |
+| `is_fragile` | boolean | no | `false` | Fragile flag |
+
+> `delivery_speed` is forced to `SAME_DAY`, `category` to `On-demand`, and
+> `payment_method`/`payment_by` default to `CASH`/`SENDER` for rides. All other
+> order rules apply (40kg limit, service-area coverage, tenant scoping).
+
+## Example
+
+```curl
+# _examples/book-ride.curl
+```
+
+## Response `201 Created`
+
+```json
+{
+  "message": "Ride booked successfully",
+  "ride": {
+    "id": "uuid",
+    "tracking_number": "TRK-Q1W2",
+    "status": "PENDING",
+    "tracking_url": "https://app.traka.com/track/TRK-Q1W2",
+    "dispatch": {
+      "assigned": true,
+      "attempts": 2,
+      "message": "Rider assigned",
+      "rider_id": "uuid",
+      "eta_seconds": 900
+    },
+    "pricing_breakdown": {
+      "base_fee": 500,
+      "distance_fee": 600,
+      "speed_fee": 150,
+      "weight_multiplier": 1,
+      "platform_fee": 188,
+      "total_amount": 1438
+    }
+  }
+}
+```
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `400` | `{ "error": "Missing required fields", "required": [...] }` | Missing required field |
+| `422` | `{ "error": "Business has no active owner account. Cannot book rides." }` | No active OWNER member |
+| `422` | `{ "error": "...OUT_OF_COVERAGE..." }` | Outside service area |
+| `503` | `{ "error": "...BULK_DELIVERIES_COMING_SOON...", "coming_soon": true }` | Weight over `40kg` |
+| `500` | `{ "error": "Failed to book ride" }` | Unexpected failure |
+
+> Rides are tracked and confirmed exactly like orders — `GET`, `PATCH recipient`,
+> and `POST confirm` all work with the ride's `tracking_number`.
+
+## Next steps
+
+- [Track an order](/docs/orders/track) — use the ride's `tracking_number`.
+- [Pricing & limits](/docs/pricing-and-limits) — `SAME_DAY` adds a speed fee.

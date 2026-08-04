@@ -12,7 +12,7 @@ scripts/
 .env.staging
 biome.json
 jest.config.js
-docs/
+
 .gitattributes
 jest.config
 # traka-client/

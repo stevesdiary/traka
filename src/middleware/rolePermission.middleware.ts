@@ -51,3 +51,13 @@ export const canCreate = (resource: Resource) => requirePermission(resource, Act
 export const canUpdate = (resource: Resource) => requirePermission(resource, Action.UPDATE);
 export const canDelete = (resource: Resource) => requirePermission(resource, Action.DELETE);
 export const canHardDelete = (resource: Resource) => requirePermission(resource, Action.HARD_DELETE);
+
+export const requireRole = (roles: Role[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+    if (!roles.includes(req.user.role as Role)) {
+      return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+    next();
+  };
+};

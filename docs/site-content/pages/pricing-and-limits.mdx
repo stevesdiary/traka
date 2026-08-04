@@ -1,0 +1,77 @@
+---
+title: Pricing & limits
+description: How TRAKA prices deliveries — base fee, distance, speed, weight multipliers, platform fee — and the 40kg package limit.
+weight: 30
+---
+
+# Pricing & package limits
+
+## Package limits
+
+- **Maximum package weight: 40 kg.** Orders heavier than 40 kg are **coming soon**
+  and return `503` with `coming_soon: true` — they are not rejected as validation
+  errors, so handle `503` explicitly in your client.
+- If `package_weight` is omitted, the size default is used:
+
+| `package_size` | Default weight |
+| -------------- | -------------- |
+| `SMALL` | 1 kg |
+| `MEDIUM` | 5 kg |
+| `LARGE` | 12 kg |
+
+## Price calculation
+
+```
+subtotal = (base_fee + distance_fee + speed_fee + fuel_adjustment) × weight_multiplier
+platform_fee = subtotal × platform_fee_rate
+total_amount = subtotal + platform_fee   (rounded)
+```
+
+| Component | Value |
+| --------- | ----- |
+| `base_fee` | ₦500 |
+| `distance_fee` | ₦100 / km (straight-line distance) |
+| `speed_fee` | `STANDARD` ₦0, `EXPRESS` ₦300, `SAME_DAY` ₦150 |
+| `fuel_adjustment` | ₦0 while fuel ≤ ₦1,100/L; scales with distance & fuel price above baseline |
+| `weight_multiplier` | ≤5 kg ×1.0, 5–15 kg ×1.25, 15–40 kg ×1.5 |
+| `platform_fee_rate` | Business tenants: 15% (configurable via `PLATFORM_FEE_RATE_BUSINESS`) |
+
+### Weight multipliers
+
+| Weight | Multiplier |
+| ------ | ---------- |
+| ≤ 5 kg | × 1.0 |
+| 5 – 15 kg | × 1.25 |
+| 15 – 40 kg | × 1.5 |
+
+## Example `pricing_breakdown`
+
+```json
+{
+  "base_fee": 500,
+  "distance_fee": 1200,
+  "speed_fee": 300,
+  "weight_multiplier": 1.25,
+  "platform_fee": 312,
+  "total_amount": 2312
+}
+```
+
+## Payments
+
+| `payment_method` | Effect |
+| ---------------- | ------ |
+| `DIGITAL` | Order is `PAID` immediately |
+| `CASH` / `BANK_TRANSFER` | `payment_status` is `PENDING` until settled |
+
+## Reducing costs
+
+- Prefer `STANDARD` unless speed matters — `EXPRESS` adds ₦300, `SAME_DAY` adds ₦150.
+- Keep packages ≤ 5 kg to stay at the ×1.0 weight multiplier.
+- Changing the `delivery_address` on a `PENDING` order re-quotes the price —
+  plan addresses carefully.
+
+## Next steps
+
+- [Errors](/docs/errors) — how to handle `503 coming_soon` correctly.
+- [API keys](/docs/api-keys) — manage access to pricing-related endpoints.
