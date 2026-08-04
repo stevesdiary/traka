@@ -150,7 +150,7 @@ export class PackageService {
     const sender_name = sender ? `${sender.first_name} ${sender.surname}` : 'Sender';
 
     // Generate verification codes and QR code
-    const verification = this.packageVerificationService.generatePackageVerification({
+    const verification = await this.packageVerificationService.generatePackageVerification({
       package_id: newPackage.id,
       tracking_number,
       sender_name,
@@ -651,11 +651,6 @@ export class PackageService {
   }
 
   async confirmPickup(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
-    const verification = this.packageVerificationService.getVerificationStatus(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
     await this.packageVerificationService.confirmPickup(package_id, pin);
     await this.updatePackageStatus(package_id, 'IN_TRANSIT', tenant_id);
 
@@ -695,11 +690,6 @@ export class PackageService {
   }
 
   async confirmDelivery(package_id: string, pin: string, tenant_id: string | null): Promise<any> {
-    const verification = this.packageVerificationService.getVerificationStatus(package_id);
-    if (!verification) {
-      throw new Error('Package verification not found');
-    }
-
     await this.packageVerificationService.confirmDelivery(package_id, pin);
     await this.updatePackageStatus(package_id, 'DELIVERED', tenant_id);
 
