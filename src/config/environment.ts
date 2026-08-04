@@ -128,6 +128,12 @@ export const config = {
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
   },
 
+  webhook: {
+    retries: parseInt(process.env.WEBHOOK_RETRIES || '5', 10),
+    retryBaseDelayMs: parseInt(process.env.WEBHOOK_RETRY_BASE_MS || '30000', 10),
+    timeoutMs: parseInt(process.env.WEBHOOK_TIMEOUT_MS || '10000', 10)
+  },
+
   observability: {
     lokiUrl: process.env.LOKI_URL,
     otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318/v1/traces',
