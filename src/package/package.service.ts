@@ -438,12 +438,22 @@ export class PackageService {
       JSON.stringify({ packageId, userId, amount, reference, createdAt: Date.now() })
     );
 
-    // Use Paystack to generate a dedicated virtual account for this payment
-    // Falls back to TRAKA's static account if gateway not configured
+    const accountNumber = process.env.TRAKA_BANK_ACCOUNT_NUMBER;
+    const accountName = process.env.TRAKA_BANK_ACCOUNT_NAME || 'TRAKA Technologies Ltd';
+    const bankName = process.env.TRAKA_BANK_NAME;
+
+    if (!accountNumber || !bankName) {
+      logger.error('Bank account details not configured — refusing transfer payment', {
+        hasAccountNumber: Boolean(accountNumber),
+        hasBankName: Boolean(bankName)
+      });
+      throw new Error('TRANSFER_PAYMENT_UNAVAILABLE: Bank account not configured. Please use digital payment.');
+    }
+
     const trakaAccount = {
-      account_number: process.env.TRAKA_BANK_ACCOUNT_NUMBER || '0123456789',
-      account_name: process.env.TRAKA_BANK_ACCOUNT_NAME || 'TRAKA Technologies Ltd',
-      bank_name: process.env.TRAKA_BANK_NAME || 'Guaranty Trust Bank',
+      account_number: accountNumber,
+      account_name: accountName,
+      bank_name: bankName,
     };
 
     return {
@@ -1136,15 +1146,6 @@ export class PackageService {
 
     // Universal link that opens app if installed, otherwise web browser
     return `${webUrl}/track/${tracking_number}${tokenParam}`;
-  }
-
-  private generateDeepLink(
-    tracking_number: string,
-    guest_token?: string
-  ): string {
-    const appScheme = process.env.APP_SCHEME || "traka";
-    const tokenParam = guest_token ? `&token=${guest_token}` : "";
-    return `${appScheme}://track?number=${tracking_number}${tokenParam}`;
   }
 
   private async sendTrackingNotification(packageData: any): Promise<void> {
