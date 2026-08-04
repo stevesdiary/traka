@@ -1,8 +1,10 @@
 import { PromotionRepository } from './promotion.repository.js';
 import { PromotionModel } from './promotion.model.js';
+import { RiderRepository } from '../rider/rider.repository.js';
 
 export class PromotionService {
   private repository = new PromotionRepository();
+  private riderRepository = new RiderRepository();
 
   async createPromotion(data: {
     code: string;
@@ -14,6 +16,11 @@ export class PromotionService {
     max_uses_per_user?: number;
     start_date: Date | string;
     end_date: Date | string;
+    applies_to?: 'DELIVERY_FEE' | 'TOTAL';
+    target_audience?: 'ALL' | 'CUSTOMERS' | 'RIDERS';
+    season?: string;
+    min_amount?: number;
+    stackable?: boolean;
     is_active?: boolean;
     created_by?: string;
   }): Promise<PromotionModel> {
@@ -118,31 +125,17 @@ export class PromotionService {
     currency?: string;
     package_id?: string;
   }) {
-    const promotion = await this.getActivePromotion(params.code);
-
-    const totalUses = await this.repository.countUsage(promotion.id);
-    if (promotion.max_uses !== null && promotion.max_uses !== undefined && totalUses >= promotion.max_uses) {
-      throw new Error('Promotion usage limit reached');
-    }
-
-    const userUses = await this.repository.countUsageByUser(promotion.id, params.user_id);
-    if (
-      promotion.max_uses_per_user !== null &&
-      promotion.max_uses_per_user !== undefined &&
-      userUses >= promotion.max_uses_per_user
-    ) {
-      throw new Error('User has reached promotion usage limit');
-    }
-
-    const discountAmount = params.amount !== undefined
-      ? this.calculateDiscount(Number(params.amount), promotion)
-      : undefined;
+    const { promotion, discount_amount } = await this.validatePromotionForAmount(
+      params.code,
+      params.user_id,
+      params.amount
+    );
 
     const usage = await this.repository.createUsage({
       promotion_id: promotion.id,
       user_id: params.user_id,
       package_id: params.package_id,
-      discount_amount: discountAmount,
+      discount_amount,
       currency: params.currency || 'NGN',
       used_at: new Date()
     });
@@ -155,9 +148,78 @@ export class PromotionService {
         discount_type: promotion.discount_type,
         discount_value: Number(promotion.discount_value)
       },
-      discount_amount: discountAmount,
+      discount_amount,
       usage_id: usage.id
     };
+  }
+
+  async validatePromotionForAmount(
+    code: string,
+    user_id: string,
+    amount?: number
+  ): Promise<{ promotion: PromotionModel; discount_amount: number }> {
+    const promotion = await this.getActivePromotion(code);
+
+    const totalUses = await this.repository.countUsage(promotion.id);
+    if (promotion.max_uses !== null && promotion.max_uses !== undefined && totalUses >= promotion.max_uses) {
+      throw new Error('Promotion usage limit reached');
+    }
+
+    const userUses = await this.repository.countUsageByUser(promotion.id, user_id);
+    if (
+      promotion.max_uses_per_user !== null &&
+      promotion.max_uses_per_user !== undefined &&
+      userUses >= promotion.max_uses_per_user
+    ) {
+      throw new Error('User has reached promotion usage limit');
+    }
+
+    if (promotion.min_amount !== null && promotion.min_amount !== undefined) {
+      const minAmount = Number(promotion.min_amount);
+      const orderAmount = amount !== undefined ? Number(amount) : 0;
+      if (orderAmount > 0 && orderAmount < minAmount) {
+        throw new Error(`This promotion requires a minimum order of ${minAmount}`);
+      }
+    }
+
+    const audience = (promotion.target_audience || 'ALL') as string;
+    if (audience === 'RIDERS') {
+      const rider = await this.riderRepository.getRiderByUserId(user_id);
+      if (!rider) {
+        throw new Error('This promotion is only available to riders');
+      }
+    } else if (audience === 'CUSTOMERS') {
+      const rider = await this.riderRepository.getRiderByUserId(user_id);
+      if (rider) {
+        throw new Error('This promotion is only available to customers');
+      }
+    }
+
+    const discountAmount = amount !== undefined
+      ? this.calculateDiscount(Number(amount), promotion)
+      : undefined;
+
+    return {
+      promotion,
+      discount_amount: discountAmount ?? 0
+    };
+  }
+
+  async recordUsage(data: {
+    promotion_id: string;
+    user_id: string;
+    package_id?: string;
+    discount_amount?: number;
+    currency?: string;
+  }): Promise<void> {
+    await this.repository.createUsage({
+      promotion_id: data.promotion_id,
+      user_id: data.user_id,
+      package_id: data.package_id,
+      discount_amount: data.discount_amount,
+      currency: data.currency || 'NGN',
+      used_at: new Date()
+    });
   }
 
   private async getActivePromotion(code: string): Promise<PromotionModel> {

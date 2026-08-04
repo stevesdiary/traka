@@ -69,6 +69,39 @@ export class PromotionModel extends Model {
   declare end_date: Date;
 
   @Column({
+    type: DataType.ENUM('DELIVERY_FEE', 'TOTAL'),
+    defaultValue: 'DELIVERY_FEE',
+    allowNull: false
+  })
+  declare applies_to: string;
+
+  @Column({
+    type: DataType.ENUM('ALL', 'CUSTOMERS', 'RIDERS'),
+    defaultValue: 'ALL',
+    allowNull: false
+  })
+  declare target_audience: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true
+  })
+  declare season: string | undefined;
+
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: true
+  })
+  declare min_amount: number | undefined;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
+  })
+  declare stackable: boolean;
+
+  @Column({
     type: DataType.BOOLEAN,
     defaultValue: true
   })

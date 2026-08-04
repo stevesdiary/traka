@@ -35,4 +35,15 @@ export class UserRepository extends BaseRepository<UserModel> {
   async updateByPhone(phone: string, updates: Partial<UserModel>): Promise<void> {
     await this.model.update(updates, { where: { phone } });
   }
+
+  async findByReferralCode(referralCode: string): Promise<UserModel | null> {
+    return this.model.findOne({ where: { referral_code: referralCode } });
+  }
+
+  async updateReferralCode(userId: string, referralCode: string): Promise<void> {
+    await this.model.update(
+      { referral_code: referralCode, referral_code_updated_at: new Date() },
+      { where: { id: userId } }
+    );
+  }
 }

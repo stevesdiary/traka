@@ -14,6 +14,7 @@ import { UserAddressModel } from '../address/address.model.js';
 import { RatingModel } from '../rating/rating.model.js';
 import { NotificationModel, NotificationPreferenceModel } from '../notification/notification.model.js';
 import { ReferralModel } from '../referral/referral.model.js';
+import { CustomerReferralModel } from '../referral/customer-referral.model.js';
 import { ServiceAreaModel } from '../service-area/service-area.model.js';
 import { WaitlistModel } from '../waitlist/waitlist.model.js';
 import { QuoteModel } from '../quote/quote.model.js';
@@ -64,6 +65,7 @@ sequelize.addModels([
   NotificationModel,
   NotificationPreferenceModel,
   ReferralModel,
+  CustomerReferralModel,
   ServiceAreaModel,
   WaitlistModel,
   QuoteModel,

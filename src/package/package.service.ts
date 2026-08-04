@@ -17,6 +17,8 @@ import { trackingStartedEmail, liveTrackingEmail } from "../notification/email-t
 import { TrackingTokenService } from "../tracking/tracking-token.service.js";
 import { SMSService } from "../notification/sms.service.js";
 import { webhookService } from "../webhook/webhook.service.js";
+import { ReferralService } from "../referral/referral.service.js";
+import { PromotionService } from "../promotion/promotion.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
@@ -32,6 +34,8 @@ export class PackageService {
   private notificationService: NotificationService;
   private emailService: EmailNotificationService;
   private smsService: SMSService;
+  private referralService: ReferralService;
+  private promotionService: PromotionService;
 
   constructor() {
     this.packageRepository = new PackageRepository();
@@ -44,6 +48,8 @@ export class PackageService {
     this.notificationService = new NotificationService();
     this.emailService = new EmailNotificationService();
     this.smsService = new SMSService();
+    this.referralService = new ReferralService();
+    this.promotionService = new PromotionService();
   }
 
   async createPackage(
@@ -62,6 +68,7 @@ export class PackageService {
       is_fragile?: boolean;
       payment_method?: 'DIGITAL' | 'CASH' | 'BANK_TRANSFER';
       payment_by?: 'SENDER' | 'RECIPIENT';
+      promo_code?: string;
     },
     sender_id: string,
     tenant_id: string | null
@@ -103,6 +110,53 @@ export class PackageService {
     };
     
     const pricing = await this.pricingService.calculateDeliveryPrice(pricingRequest);
+
+    // Apply referral discount (20% off delivery fee for first N orders)
+    const referralDiscount = await this.referralService.getActiveReferralDiscount(sender_id);
+    let deliveryFee = pricing.total_amount - pricing.platform_fee;
+    let totalAmount = pricing.total_amount;
+    let discountPercent: number | undefined;
+    let discountAmount: number | undefined;
+
+    if (referralDiscount) {
+      discountPercent = Number(referralDiscount.discount_percent ?? 0);
+      discountAmount = Math.round(pricing.total_amount * discountPercent / 100);
+      totalAmount = pricing.total_amount - discountAmount;
+      deliveryFee = totalAmount - pricing.platform_fee;
+    }
+
+    // Apply promo code (seasonal promos) after referral discount
+    let promoCode: string | undefined;
+    let promoDiscountAmount: number | undefined;
+    let promotionId: string | undefined;
+
+    if (data.promo_code) {
+      promoCode = data.promo_code.trim().toUpperCase();
+
+      const promoInfo = await this.promotionService.validatePromotionForAmount(
+        promoCode,
+        sender_id,
+        totalAmount
+      );
+
+      if (referralDiscount && !promoInfo.promotion.stackable) {
+        throw new Error('This promotion cannot be combined with your referral discount');
+      }
+
+      const appliesTo = (promoInfo.promotion.applies_to || 'DELIVERY_FEE') as string;
+      const promoBase = appliesTo === 'TOTAL' ? totalAmount : deliveryFee;
+      const validated = await this.promotionService.validatePromotionForAmount(
+        promoCode,
+        sender_id,
+        promoBase
+      );
+
+      promoDiscountAmount = validated.discount_amount;
+      promotionId = validated.promotion.id;
+      totalAmount = totalAmount - promoDiscountAmount;
+      deliveryFee = totalAmount - pricing.platform_fee;
+    }
+
     // Check if recipient has an account by phone or email
     const existingRecipient =
       (await this.userRepository.findByPhone(data.recipient_phone)) ||
@@ -131,10 +185,14 @@ export class PackageService {
       delivery_speed: data.delivery_speed,
       category: data.category,
       is_fragile: data.is_fragile || false,
-      delivery_fee: pricing.total_amount - pricing.platform_fee,
+      delivery_fee: deliveryFee,
       platform_fee: pricing.platform_fee,
-      total_amount: pricing.total_amount,
+      total_amount: totalAmount,
       estimated_distance_km: pricing.estimated_distance_km,
+      discount_percent: discountPercent,
+      discount_amount: discountAmount,
+      promo_code: promoCode,
+      promo_discount_amount: promoDiscountAmount,
       guest_tracking_token: guest_tracking_token || undefined,
       tenant_id,
       payment_method: data.payment_method || 'DIGITAL',
@@ -144,6 +202,21 @@ export class PackageService {
     };
 
     const newPackage = await this.packageRepository.createPackage(packageData);
+
+    // Consume one referral discount order (after successful creation)
+    if (referralDiscount) {
+      await this.referralService.recordDiscountedOrder(referralDiscount);
+    }
+
+    // Record promo usage (after successful creation)
+    if (promotionId && promoCode) {
+      await this.promotionService.recordUsage({
+        promotion_id: promotionId,
+        user_id: sender_id,
+        package_id: newPackage.id,
+        discount_amount: promoDiscountAmount
+      });
+    }
 
     // Get sender information
     const sender = await this.userRepository.findById(sender_id);
@@ -214,7 +287,11 @@ export class PackageService {
         size_fee: pricing.size_fee,
         speed_fee: pricing.speed_fee,
         platform_fee: pricing.platform_fee,
-        total_amount: pricing.total_amount
+        discount_percent: discountPercent ?? 0,
+        discount_amount: discountAmount ?? 0,
+        promo_code: promoCode ?? null,
+        promo_discount_amount: promoDiscountAmount ?? 0,
+        total_amount: totalAmount
       },
       tracking_url: this.generateTrackingUrl(
         tracking_number,

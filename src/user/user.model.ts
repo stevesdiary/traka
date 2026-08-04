@@ -99,4 +99,17 @@ export class UserModel extends Model <UserModel> {
     defaultValue: false
   })
   declare totp_enabled: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    unique: true
+  })
+  declare referral_code?: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true
+  })
+  declare referral_code_updated_at?: Date;
 }

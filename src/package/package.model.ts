@@ -141,6 +141,32 @@ export class PackageModel extends Model {
   })
   declare estimated_distance_km: number | undefined;
 
+  // Referral discount fields
+  @Column({
+    type: DataType.DECIMAL(5, 2),
+    allowNull: true
+  })
+  declare discount_percent: number | undefined;
+
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: true
+  })
+  declare discount_amount: number | undefined;
+
+  // Promo discount fields
+  @Column({
+    type: DataType.STRING,
+    allowNull: true
+  })
+  declare promo_code: string | undefined;
+
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: true
+  })
+  declare promo_discount_amount: number | undefined;
+
   // Payment fields
   @Column({
     type: DataType.ENUM('DIGITAL', 'CASH', 'BANK_TRANSFER'),
