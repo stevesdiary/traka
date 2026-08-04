@@ -3,7 +3,7 @@ import { UserRepository } from "../user/user.repository.js";
 import { PricingService, PricingRequest } from "../pricing/pricing.service.js";
 import { PackageVerificationService } from "../verification/package-verification.service.js";
 import { ServiceAreaService } from "../service-area/service-area.service.js";
-import { GeocodingService } from "../utils/geocoding.service.js";
+import { GeocodingService, type GeocodingResult } from "../utils/geocoding.service.js";
 import { DispatchService } from "../matching/services/DispatchService.js";
 import { VehicleType } from "../matching/config/vehicles.js";
 import { CourierPresenceService } from "../matching/services/CourierPresenceService.js";
@@ -74,34 +74,38 @@ export class PackageService {
     sender_id: string,
     tenant_id: string | null
   ): Promise<any> {
-    // Geocode addresses to get coordinates and city/state (fall back to Lagos on failure)
-    const LAGOS_DEFAULT = { latitude: 6.5244, longitude: 3.3792, city: 'Lagos', state: 'Lagos', country: 'Nigeria', formatted_address: '' };
-    const pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address).catch(() => LAGOS_DEFAULT);
-    const deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address).catch(() => LAGOS_DEFAULT);
-
-    // Check service area coverage — skip if geocoding fell back to default
-    if (pickupGeo !== LAGOS_DEFAULT) {
-      const pickupCoverage = await this.serviceAreaService.checkCoverage({
-        city: pickupGeo.city,
-        state: pickupGeo.state,
-        latitude: pickupGeo.latitude,
-        longitude: pickupGeo.longitude
+    // Geocode addresses to get coordinates and city/state
+    let pickupGeo: GeocodingResult;
+    let deliveryGeo: GeocodingResult;
+    try {
+      pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address);
+      deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address);
+    } catch (error) {
+      logger.error('Geocoding failed — refusing to create package without verified coverage', {
+        error: error instanceof Error ? error.message : String(error)
       });
-      if (!pickupCoverage.covered) {
-        throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
-      }
+      throw new Error('LOCATION_VERIFICATION_FAILED: Could not verify pickup/delivery location. Please try again or use a more specific address.');
     }
 
-    if (deliveryGeo !== LAGOS_DEFAULT) {
-      const deliveryCoverage = await this.serviceAreaService.checkCoverage({
-        city: deliveryGeo.city,
-        state: deliveryGeo.state,
-        latitude: deliveryGeo.latitude,
-        longitude: deliveryGeo.longitude
-      });
-      if (!deliveryCoverage.covered) {
-        throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
-      }
+    // Check service area coverage — fail closed, never skip when geocoding is unavailable
+    const pickupCoverage = await this.serviceAreaService.checkCoverage({
+      city: pickupGeo.city,
+      state: pickupGeo.state,
+      latitude: pickupGeo.latitude,
+      longitude: pickupGeo.longitude
+    });
+    if (!pickupCoverage.covered) {
+      throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
+    }
+
+    const deliveryCoverage = await this.serviceAreaService.checkCoverage({
+      city: deliveryGeo.city,
+      state: deliveryGeo.state,
+      latitude: deliveryGeo.latitude,
+      longitude: deliveryGeo.longitude
+    });
+    if (!deliveryCoverage.covered) {
+      throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
     }
 
     // Calculate pricing

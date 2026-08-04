@@ -1,5 +1,6 @@
 import { WaitlistModel } from './waitlist.model.js';
 import { EmailNotificationService } from '../notification/email.service.js';
+import { sequelize } from '../config/database.js';
 
 export class WaitlistService {
   private emailService = new EmailNotificationService();
@@ -48,16 +49,19 @@ export class WaitlistService {
   }
 
   async getWaitlistByCity() {
-    const entries = await WaitlistModel.findAll({
-      attributes: ['city', 'location'],
-      group: ['city', 'location'],
+    const rows = await WaitlistModel.findAll({
+      attributes: [
+        [sequelize.fn('COALESCE', sequelize.col('city'), sequelize.col('location')), 'city'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: [sequelize.fn('COALESCE', sequelize.col('city'), sequelize.col('location'))],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
       raw: true
     });
 
     const grouped: Record<string, number> = {};
-    for (const entry of entries) {
-      const key = entry.city || entry.location;
-      grouped[key] = (grouped[key] || 0) + 1;
+    for (const row of rows as Array<{ city: string; count: number | string }>) {
+      grouped[row.city] = Number(row.count);
     }
 
     return grouped;
