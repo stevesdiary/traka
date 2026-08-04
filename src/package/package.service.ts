@@ -1026,27 +1026,16 @@ export class PackageService {
   }
 
   private async generateTrackingNumber(): Promise<string> {
-    // Generate TRK-XXXX format with random alphanumeric (uppercase letters and numbers)
-    const nanoid = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 4);
-    let trackingNumber: string;
-    let attempts = 0;
-    const maxAttempts = 10;
+    const letters = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
+    const digits = customAlphabet('0123456789', 4);
 
-    while (attempts < maxAttempts) {
-      const randomCode = nanoid();
-      trackingNumber = `TRK-${randomCode}`;
-      
-      // Check if tracking number already exists
+    for (let i = 0; i < 10; i++) {
+      const trackingNumber = `${letters()}-${digits()}`;
       const existing = await this.packageRepository.findByTrackingNumber(trackingNumber);
-      if (!existing) {
-        return trackingNumber;
-      }
-      attempts++;
+      if (!existing) return trackingNumber;
     }
 
-    // Fallback: use timestamp-based code if all random attempts fail
-    const fallbackCode = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 6)();
-    return `TRK-${fallbackCode}`;
+    return `${letters()}-${digits()}`;
   }
 
   private generateGuestToken(): string {
