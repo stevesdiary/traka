@@ -80,3 +80,21 @@ export const deleteWebhook = async (req: Request, res: Response): Promise<void> 
     res.status(500).json({ error: 'Failed to delete webhook', ...(config.isDevelopment && { details: error.message }) });
   }
 };
+
+export const listDeliveries = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { business_id, webhook_id } = req.params;
+
+    if (!(await assertMembership(userId, business_id, res))) return;
+
+    const deliveries = await webhookService.listDeliveries(webhook_id, business_id);
+    res.json({ deliveries });
+  } catch (error: any) {
+    if (error.message === 'Webhook subscription not found') {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    res.status(500).json({ error: 'Failed to retrieve webhook deliveries', ...(config.isDevelopment && { details: error.message }) });
+  }
+};

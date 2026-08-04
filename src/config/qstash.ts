@@ -1,6 +1,10 @@
 import { Client, Receiver } from '@upstash/qstash';
 import logger from '../utils/logger.js';
 
+export function isQStashConfigured(): boolean {
+  return Boolean(process.env.QSTASH_TOKEN);
+}
+
 export const qstash = new Client({
   token: process.env.QSTASH_TOKEN!,
 });
@@ -74,6 +78,29 @@ export class QueueService {
       logger.warn('QStash signature verification failed', { error });
       return false;
     }
+  }
+
+  // Publish a webhook delivery with retry/backoff/dead-letter handled by QStash
+  async publishWebhookDelivery(options: {
+    url: string;
+    body: unknown;
+    retries: number;
+    retryDelay: string;
+    failureCallback: string;
+  }): Promise<string> {
+    const result = await qstash.publishJSON({
+      url: options.url,
+      body: options.body,
+      retries: options.retries,
+      retryDelay: options.retryDelay,
+      failureCallback: options.failureCallback,
+    });
+
+    logger.info('Webhook delivery queued', {
+      messageId: result.messageId,
+      destination: options.url,
+    });
+    return result.messageId;
   }
 }
 

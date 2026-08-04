@@ -1,6 +1,7 @@
 import { redis } from '../config/database.js';
 import crypto from 'crypto';
 import { SSRFProtection } from './ssrf-protection.js';
+import logger from './logger.js';
 
 type GeocodingProvider = 'nominatim' | 'photon';
 
@@ -53,7 +54,7 @@ export class GeocodingService {
           allowed.add(hostname);
         }
       } catch (error) {
-        console.warn(`Invalid geocoding provider URL: ${baseUrl}`, error);
+        logger.warn('Invalid geocoding provider URL', { baseUrl, error });
       }
     }
 
@@ -242,9 +243,9 @@ export class GeocodingService {
   private async writeToCache(cacheKey: string, result: GeocodingResult, label: string): Promise<void> {
     try {
       await redis.setEx(cacheKey, this.CACHE_TTL, JSON.stringify(result));
-      console.log(`💾 ${label}`);
+      logger.debug('Geocoding result cached', { label });
     } catch (error) {
-      console.warn('Redis cache write failed:', error);
+      logger.warn('Redis cache write failed', { error });
     }
   }
 
@@ -255,11 +256,11 @@ export class GeocodingService {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        console.log(`Geocoding cache hit: ${address}`);
+        logger.debug('Geocoding cache hit', { address });
         return typeof cached === 'string' ? JSON.parse(cached) : cached as any;
       }
     } catch (error) {
-      console.warn('Redis cache read failed:', error);
+      logger.warn('Redis cache read failed', { error });
     }
 
     try {
@@ -285,13 +286,13 @@ export class GeocodingService {
         } catch (providerError) {
           const message = providerError instanceof Error ? providerError.message : String(providerError);
           providerErrors.push(`${provider}: ${message}`);
-          console.warn(`Geocoding provider failed (${provider}): ${message}`);
+          logger.warn('Geocoding provider failed', { provider, message });
         }
       }
 
       throw new Error(`Address not found (${providerErrors.join(' | ')})`);
     } catch (error: any) {
-      console.error('Geocoding error:', error);
+      logger.error('Geocoding error', { error: error.message });
       throw new Error(`Failed to geocode address: ${error.message}`);
     }
   }
@@ -303,11 +304,11 @@ export class GeocodingService {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        console.log(`✅ Reverse geocoding cache hit: ${latitude},${longitude}`);
+        logger.debug('Reverse geocoding cache hit', { latitude, longitude });
         return typeof cached === 'string' ? JSON.parse(cached) : cached as any;
       }
     } catch (error) {
-      console.warn('Redis cache read failed:', error);
+      logger.warn('Redis cache read failed', { error });
     }
 
     try {
@@ -337,13 +338,13 @@ export class GeocodingService {
         } catch (providerError) {
           const message = providerError instanceof Error ? providerError.message : String(providerError);
           providerErrors.push(`${provider}: ${message}`);
-          console.warn(`Reverse geocoding provider failed (${provider}): ${message}`);
+          logger.warn('Reverse geocoding provider failed', { provider, message });
         }
       }
 
       throw new Error(`Location not found (${providerErrors.join(' | ')})`);
     } catch (error: any) {
-      console.error('Reverse geocoding error:', error);
+      logger.error('Reverse geocoding error', { error: error.message });
       throw new Error(`Failed to reverse geocode: ${error.message}`);
     }
   }
@@ -361,7 +362,7 @@ export class GeocodingService {
 
       return cityMatch && stateMatch;
     } catch (error) {
-      console.error('Service area validation error:', error);
+      logger.error('Service area validation error', { error });
       return false;
     }
   }

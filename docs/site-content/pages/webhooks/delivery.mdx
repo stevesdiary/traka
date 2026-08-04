@@ -1,0 +1,79 @@
+---
+title: Webhook delivery & retries
+description: How TRAKA delivers webhooks — timeout, exponential backoff retries, auto-disable on 4xx or exhaustion, and the deliveries audit log.
+weight: 53
+---
+
+# Webhook delivery & retries
+
+Webhook deliveries run through a **durable queue with automatic retries**.
+
+## Delivery policy
+
+| Setting | Value |
+| ------- | ----- |
+| Timeout | 10 seconds per attempt |
+| Retries | up to 5 retries (6 total attempts) |
+| Backoff | exponential — ~30s, 1m, 2m, 4m, 8m after the first attempt |
+| Config | `WEBHOOK_RETRIES`, `WEBHOOK_RETRY_BASE_MS`, `WEBHOOK_TIMEOUT_MS` |
+
+### What gets retried
+
+- Network errors
+- Timeouts
+- HTTP `5xx` responses
+
+### What does NOT get retried
+
+- **HTTP `4xx` responses** — e.g. a dead URL returning `404` won't self-heal.
+  The delivery is marked `FAILED` and the subscription is **auto-disabled**.
+- **Exhausted retries** — if all retries run out, the delivery is marked `DEAD`
+  and the subscription is **auto-disabled** so it stops burning attempts.
+  Re-enable by creating a new subscription with a healthy URL.
+
+## Audit log
+
+Inspect every attempt via the deliveries endpoint:
+
+```
+GET /api/businesses/{business_id}/webhooks/{webhook_id}/deliveries
+Authorization: Bearer {jwt}
+```
+
+Each record exposes:
+
+| Field | Meaning |
+| ----- | ------- |
+| `status` | `PENDING`, `SUCCEEDED`, `FAILED`, `DEAD` |
+| `attempt_count` | Attempts made so far |
+| `max_attempts` | Attempts allowed before giving up |
+| `last_status_code` | HTTP status from the last attempt |
+| `last_error` | Last failure reason |
+| `last_attempt_at` | When the last attempt happened |
+
+A subscription's `failure_count` resets to `0` after a successful delivery.
+
+## Receiving best practices
+
+- **Respond `2xx` as fast as possible** (ideally within 10s). Do heavy work
+  asynchronously after responding.
+- **Return `4xx`** for anything you can never process (invalid signature,
+  unknown event) — TRAKA will mark it failed and stop.
+- **Return `5xx`** for transient failures — TRAKA backs off and retries.
+- **Verify** the `X-Traka-Signature` before trusting the payload.
+- **Dedupe** on `delivery_id` in case a slow network causes a retry to arrive late.
+
+## Typical failure flow
+
+```
+delivery enqueued ──► attempt 1 (timeout)
+                       └─► retry ~30s ──► attempt 2 (5xx)
+                                        └─► retry ~1m ──► attempt 3 (4xx)
+                                                         └─► FAILED
+                                                             subscription auto-disabled
+```
+
+## Next steps
+
+- [Verify signatures](/docs/webhooks/verification) — the first line of defense.
+- [Errors](/docs/errors) — the same status-code semantics apply to receiving webhooks.

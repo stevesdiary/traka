@@ -1,0 +1,21 @@
+curl -X POST "https://api.traka.com/api/v1/external/orders/bulk" \
+  -H "X-API-Key: sk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orders": [
+      {
+        "recipient_name": "Ade",
+        "recipient_phone": "+2348011111111",
+        "pickup_address": "1 Allen Ave, Ikeja",
+        "delivery_address": "5 Broad St, Lagos Island",
+        "description": "Order #1001"
+      },
+      {
+        "recipient_name": "Tunde",
+        "recipient_phone": "+2348022222222",
+        "pickup_address": "1 Allen Ave, Ikeja",
+        "delivery_address": "9 Bode Thomas, Surulere",
+        "description": "Order #1002"
+      }
+    ]
+  }'

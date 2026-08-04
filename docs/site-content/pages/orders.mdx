@@ -1,0 +1,118 @@
+---
+title: Create an order
+description: Create a TRAKA delivery order with a single POST request and get a tracking number, price breakdown, and dispatch result.
+weight: 10
+---
+
+# Create an order
+
+```
+POST /api/v1/external/orders
+```
+
+Creates a delivery order and attempts to auto-assign a rider. Returns the
+`tracking_number`, a full `pricing_breakdown`, and the `dispatch` result.
+
+## Request body
+
+| Field | Type | Required | Default | Notes |
+| ----- | ---- | -------- | ------- | ----- |
+| `recipient_name` | string | **yes** | — | Recipient full name |
+| `recipient_phone` | string | **yes** | — | Recipient phone number |
+| `recipient_email` | string | no | — | For delivery notifications & PIN email |
+| `pickup_address` | string | **yes** | — | Pickup location |
+| `delivery_address` | string | **yes** | — | Delivery location |
+| `description` | string | **yes** | — | What is being delivered |
+| `delivery_notes` | string | no | — | Instructions for the rider |
+| `package_size` | string | no | `SMALL` | `SMALL`, `MEDIUM`, or `LARGE` |
+| `package_weight` | number | no | size default | Actual weight in kg (max `40`) |
+| `delivery_speed` | string | no | `STANDARD` | `STANDARD`, `EXPRESS`, `SAME_DAY` |
+| `category` | string | no | `General` | Order category |
+| `is_fragile` | boolean | no | `false` | Marks package as fragile |
+| `payment_method` | string | no | `DIGITAL` | `DIGITAL`, `CASH`, `BANK_TRANSFER` |
+| `payment_by` | string | no | `SENDER` | `SENDER` or `RECIPIENT` |
+
+## Example
+
+<Tabs>
+  <Tab label="curl">
+
+  ```curl
+  # _examples/create-order.curl
+  ```
+
+  </Tab>
+  <Tab label="Node.js">
+
+  ```node
+  // _examples/create-order.node.ts
+  ```
+
+  </Tab>
+  <Tab label="Python">
+
+  ```python
+  # _examples/create-order.python.py
+  ```
+
+  </Tab>
+</Tabs>
+
+## Response `201 Created`
+
+```json
+{
+  "message": "Order created successfully",
+  "order": {
+    "id": "uuid",
+    "tracking_number": "TRK-X7K2",
+    "status": "PENDING",
+    "tracking_url": "https://app.traka.com/track/TRK-X7K2",
+    "pricing_breakdown": {
+      "base_fee": 500,
+      "distance_fee": 1200,
+      "speed_fee": 300,
+      "weight_multiplier": 1,
+      "platform_fee": 375,
+      "total_amount": 2875
+    },
+    "dispatch": {
+      "assigned": true,
+      "attempts": 3,
+      "message": "Rider assigned",
+      "rider_id": "uuid",
+      "eta_seconds": 1800
+    }
+  }
+}
+```
+
+| Field | Description |
+| ----- | ----------- |
+| `order.id` | Order UUID |
+| `order.tracking_number` | Tracking number (`TRK-XXXX`) |
+| `order.status` | Initial status (`PENDING`) |
+| `order.tracking_url` | Public tracking page URL |
+| `order.pricing_breakdown` | Fee breakdown — see [Pricing](/docs/pricing-and-limits) |
+| `order.dispatch` | Auto-dispatch result (`assigned`, `attempts`, `message`, optional `rider_id`, `eta_seconds`) |
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `400` | `{ "error": "Missing required fields", "required": [...] }` | Missing a required field |
+| `422` | `{ "error": "Business has no active owner account. Cannot create orders." }` | No active OWNER member |
+| `422` | `{ "error": "...OUT_OF_COVERAGE..." }` | Pickup or delivery outside service area |
+| `503` | `{ "error": "...BULK_DELIVERIES_COMING_SOON...", "coming_soon": true }` | `package_weight` over `40kg` |
+| `500` | `{ "error": "Failed to create order" }` | Unexpected failure |
+
+## Notes
+
+- Orders start in `PENDING`. See the [lifecycle](/docs/orders/track).
+- A `503` here means **coming soon** (40kg+), not an outage — don't auto-retry.
+- Store the `tracking_number`; you'll need it for tracking, updates, and confirmations.
+
+## Next steps
+
+- [Bulk orders](/docs/orders/bulk) — create up to 50 at once.
+- [Track an order](/docs/orders/track) — follow the lifecycle.

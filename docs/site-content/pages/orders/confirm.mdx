@@ -1,0 +1,53 @@
+---
+title: Confirm delivery
+description: Mark a TRAKA order as delivered. Idempotent and fires the order.confirmed webhook.
+weight: 14
+---
+
+# Confirm delivery
+
+```
+POST /api/v1/external/orders/{tracking_number}/confirm
+```
+
+Marks an order as `DELIVERED` and fires the `order.confirmed` webhook. Safe to
+call repeatedly (idempotent).
+
+```curl
+# _examples/confirm-delivery.curl
+```
+
+## Response `200 OK`
+
+```json
+{
+  "message": "Delivery confirmed",
+  "tracking_number": "TRK-X7K2",
+  "status": "DELIVERED"
+}
+```
+
+If the order is already delivered:
+
+```json
+{
+  "message": "Order already marked as delivered",
+  "status": "DELIVERED"
+}
+```
+
+## Errors
+
+| Status | Body | When |
+| ------ | ---- | ---- |
+| `404` | `{ "error": "Order not found" }` | Unknown number or other tenant |
+| `422` | `{ "error": "Cannot confirm a cancelled order" }` | Order was cancelled |
+| `500` | `{ "error": "Failed to confirm delivery" }` | Unexpected failure |
+
+> Confirming a `DELIVERED` order is idempotent; confirming a `CANCELLED` order
+> returns `422`.
+
+## Next steps
+
+- [Webhooks](/docs/webhooks/overview) — `order.confirmed` is fired on this call.
+- [Errors](/docs/errors) — full error reference.

@@ -10,6 +10,7 @@ import logger from './utils/logger.js';
 import config from './config/environment.js';
 import { createApp } from './app.js';
 import { initializeWebSocket } from './websocket/websocket.service.js';
+import { startBackgroundDispatchCron } from './matching/background-dispatch.cron.js';
 // import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
 
 const app = createApp();
@@ -23,6 +24,7 @@ const startServer = async () => {
     // Start cron jobs
     // RiderCleanupCron.startCronJob();
     QuoteExpirationCron.startCronJob();
+    startBackgroundDispatchCron();
     // startDispatchTimeoutCron();
 
     const server = app.listen(port, '0.0.0.0', () => {

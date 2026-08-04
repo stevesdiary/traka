@@ -1,0 +1,68 @@
+---
+title: Authentication
+description: How API key authentication and rate limits work on the TRAKA External API.
+weight: 3
+---
+
+# Authentication
+
+## API key auth
+
+Every `/v1/external` request must include your API key in the `X-API-Key` header:
+
+```http
+X-API-Key: sk_live_...
+```
+
+| Header | Description |
+| ------ | ----------- |
+| `X-API-Key` | Your live API key (`sk_live_...`). Required on all external requests. |
+
+### Errors
+
+| Status | Body |
+| ------ | ---- |
+| `401` | `{ "error": "API key required. Provide it via the X-API-Key header." }` |
+| `401` | `{ "error": "Invalid or revoked API key." }` |
+
+> ⚠️ Never expose `sk_live_` keys in browser or mobile code. Keys should only
+> exist on your servers. If one leaks, [revoke it immediately](/docs/api-keys).
+
+## Rate limits
+
+Each API key is limited to **100 requests per 60 seconds**.
+
+### When you exceed the limit
+
+```json
+// 429 Too Many Requests
+{
+  "error": "Rate limit exceeded. Maximum 100 requests per 60 seconds per API key.",
+  "retry_after_seconds": 45
+}
+```
+
+### Rate-limit headers
+
+Every response includes these headers:
+
+| Header | Meaning |
+| ------ | ------- |
+| `X-RateLimit-Limit` | Requests allowed per window (`100`) |
+| `X-RateLimit-Remaining` | Requests left in the current window |
+| `X-RateLimit-Reset` | Seconds until the window resets |
+
+> Design your integration to retry `429`s with backoff. Use `retry_after_seconds`
+> or `X-RateLimit-Reset` to decide when to retry.
+
+## Management vs external auth
+
+| Surface | Auth | Role required |
+| ------- | ---- | ------------- |
+| `/api/v1/external/*` | `X-API-Key` | any active key |
+| `/api/businesses/{id}/api-keys`, `/webhooks` | `Authorization: Bearer {jwt}` | business `OWNER` or `ADMIN` (`MEMBER` → `403`) |
+
+## Next steps
+
+- [Create an order](/docs/orders) — your first authenticated call.
+- [API keys & rotation](/docs/api-keys) — manage and rotate keys safely.

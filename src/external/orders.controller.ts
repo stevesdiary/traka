@@ -98,6 +98,10 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       res.status(422).json({ error: error.message });
       return;
     }
+    if (error.message?.includes('BULK_DELIVERIES_COMING_SOON')) {
+      res.status(503).json({ error: error.message, coming_soon: true });
+      return;
+    }
     res.status(500).json({ error: 'Failed to create order', ...(config.isDevelopment && { details: error.message }) });
   }
 };
