@@ -1,0 +1,6 @@
+curl -X POST "https://api.traka.com/api/v1/businesses/{business_id}/api-keys" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production checkout"
+  }'

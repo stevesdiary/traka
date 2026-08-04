@@ -1,0 +1,124 @@
+---
+title: Webhook payloads
+description: The exact delivery format and per-event payloads TRAKA sends to your webhook endpoint.
+weight: 51
+---
+
+# Webhook payloads
+
+## Delivery format
+
+TRAKA `POST`s the payload to your URL with JSON content type:
+
+```http
+POST https://app.acme.com/traka-webhook
+Content-Type: application/json
+X-Traka-Signature: sha256=5c4e6c7f...
+X-Traka-Event: order.created
+X-Traka-Delivery-Id: 8f14e45f-ceea-467c-81a9-5c5f3a5c0a23
+X-Traka-Timestamp: 1754334000
+```
+
+Body:
+
+```json
+{
+  "event": "order.created",
+  "data": { ...event payload... },
+  "delivery_id": "8f14e45f-ceea-467c-81a9-5c5f3a5c0a23",
+  "timestamp": 1754334000
+}
+```
+
+- `timestamp` is Unix seconds at delivery time.
+- `delivery_id` uniquely identifies this delivery — **dedupe on it** (retries or
+  slow networks may deliver duplicates).
+
+## Event payloads
+
+### `order.created`
+
+```json
+{
+  "tracking_number": "TRK-X7K2",
+  "status": "PENDING",
+  "recipient_name": "John Doe",
+  "delivery_address": "44 Ajose Adeogun, Victoria Island, Lagos",
+  "pricing_breakdown": {
+    "base_fee": 500,
+    "distance_fee": 1200,
+    "speed_fee": 300,
+    "weight_multiplier": 1,
+    "platform_fee": 375,
+    "total_amount": 2875
+  }
+}
+```
+
+Rides add `type: "ride"` and `dispatch`:
+
+```json
+{
+  "tracking_number": "TRK-Q1W2",
+  "status": "PENDING",
+  "type": "ride",
+  "dispatch": {
+    "assigned": true,
+    "attempts": 2,
+    "rider_id": "uuid",
+    "eta_seconds": 900
+  }
+}
+```
+
+### `order.status_changed`
+
+```json
+{
+  "package_id": "uuid",
+  "status": "IN_TRANSIT",
+  "updated_at": "2026-08-04T12:10:00.000Z"
+}
+```
+
+### `order.delivered`
+
+```json
+{
+  "package_id": "uuid",
+  "status": "DELIVERED",
+  "updated_at": "2026-08-04T13:05:00.000Z"
+}
+```
+
+### `order.confirmed`
+
+```json
+{
+  "tracking_number": "TRK-X7K2",
+  "status": "DELIVERED"
+}
+```
+
+### `rider.assigned`
+
+```json
+{
+  "package_id": "uuid",
+  "tracking_number": "TRK-X7K2",
+  "rider_id": "uuid",
+  "eta_seconds": 1800
+}
+```
+
+## Handling pattern
+
+1. Verify the signature — [Verify signatures](/docs/webhooks/verification).
+2. Dedupe on `delivery_id`.
+3. Switch on `event` (or `data.type === "ride"` to special-case rides).
+4. Respond `2xx` fast — see [Delivery & retries](/docs/webhooks/delivery).
+
+## Next steps
+
+- [Verify signatures](/docs/webhooks/verification) — trust the payload.
+- [Delivery & retries](/docs/webhooks/delivery) — what happens on failure.

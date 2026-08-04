@@ -1,0 +1,86 @@
+---
+title: Webhooks overview
+description: Receive real-time TRAKA order events on your server without polling. Create a subscription, choose events, and get signed deliveries.
+weight: 50
+---
+
+# Webhooks
+
+Webhooks notify your server in real time when order state changes — no polling
+required. Every delivery is signed (HMAC-SHA256) so you can verify authenticity.
+
+## Creating a subscription
+
+Subscriptions are managed with your dashboard JWT (business `OWNER`/`ADMIN`).
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| `POST` | `/api/businesses/{business_id}/webhooks` | Create a subscription |
+| `GET` | `/api/businesses/{business_id}/webhooks` | List subscriptions |
+| `DELETE` | `/api/businesses/{business_id}/webhooks/{webhook_id}` | Delete a subscription |
+| `GET` | `/api/businesses/{business_id}/webhooks/{webhook_id}/deliveries` | List recent delivery attempts (latest 50) |
+
+```curl
+# _examples/create-webhook.curl
+```
+
+```http
+POST /api/businesses/{business_id}/webhooks
+Authorization: Bearer {jwt}
+Content-Type: application/json
+
+{
+  "url": "https://app.acme.com/traka-webhook",
+  "events": ["order.created", "order.delivered", "rider.assigned"]
+}
+```
+
+Response `201 Created` — note the `secret` is shown **once**:
+
+```json
+{
+  "message": "Webhook subscription created. Use the secret to verify incoming requests.",
+  "webhook": {
+    "id": "uuid",
+    "tenant_id": "uuid",
+    "url": "https://app.acme.com/traka-webhook",
+    "secret": "whsec_<random>",
+    "events": ["order.created", "order.delivered", "rider.assigned"],
+    "status": "ACTIVE",
+    "last_delivery_at": null,
+    "failure_count": 0,
+    "created_at": "2026-08-04T12:00:00.000Z",
+    "updated_at": "2026-08-04T12:00:00.000Z"
+  }
+}
+```
+
+> ⚠️ The `secret` (`whsec_...`) is only returned once. You need it to verify
+> incoming signatures — store it in a secret manager.
+
+## Events
+
+| Event | Fires when |
+| ----- | ---------- |
+| `order.created` | An order or ride is created |
+| `order.status_changed` | Order status changes (e.g. to `IN_TRANSIT`) |
+| `order.delivered` | Order reaches `DELIVERED` via the rider flow |
+| `order.confirmed` | Delivery confirmed via the External API |
+| `rider.assigned` | A rider is auto-assigned to the order |
+| `*` | All of the above (wildcard) |
+
+See [Event payloads](/docs/webhooks/payloads) for the data each event carries.
+
+## Subscription rules
+
+- `url` must be a public `http`/`https` endpoint. Private IPs and `localhost`
+  are rejected with `400 INVALID_URL`.
+- Unknown events are rejected with `400 UNKNOWN_EVENTS: <events>`.
+- `events` must be a non-empty array.
+- A subscription that fails too many deliveries is **auto-disabled** — see
+  [Delivery & retries](/docs/webhooks/delivery).
+
+## Next steps
+
+- [Verify signatures](/docs/webhooks/verification) — secure your endpoint.
+- [Delivery & retries](/docs/webhooks/delivery) — retry policy and the deliveries log.

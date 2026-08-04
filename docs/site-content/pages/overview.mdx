@@ -1,0 +1,52 @@
+---
+title: Overview
+description: TRAKA lets businesses create, track, and confirm deliveries programmatically and get notified in real time via webhooks.
+weight: 1
+---
+
+# TRAKA Developer Docs
+
+Build delivery, pickup, and on-demand courier rides into your website or app.
+The TRAKA **External API** is the surface built for third-party businesses that
+want to create and track orders programmatically.
+
+- **Base URL (production):** `https://api.traka.com/api/v1/external`
+- **Base URL (development):** `http://localhost:4000/api/v1/external`
+- **Authentication:** API key via the `X-API-Key` header
+- **Real-time updates:** signed webhooks
+
+## What you can build
+
+| Capability | Endpoint | Docs |
+| ---------- | -------- | ---- |
+| Create delivery orders | `POST /orders` | [Create an order](/docs/orders) |
+| Bulk-create up to 50 orders | `POST /orders/bulk` | [Bulk orders](/docs/orders/bulk) |
+| Track any order | `GET /orders/{tracking_number}` | [Track an order](/docs/orders/track) |
+| Book on-demand rides | `POST /rides` | [On-demand rides](/docs/rides) |
+| Confirm delivery | `POST /orders/{tracking_number}/confirm` | [Confirm delivery](/docs/orders/confirm) |
+| Get notified of changes | webhooks | [Webhooks](/docs/webhooks/overview) |
+
+## How it works
+
+1. **Create a business** and get a live API key — [Getting started](/docs/getting-started).
+2. **Create orders** and store the `tracking_number`.
+3. **Track & confirm** as the delivery moves through its
+   [lifecycle](/docs/orders/track).
+4. **Receive webhooks** for state changes instead of polling — signed, retried,
+   and auditable via the [deliveries log](/docs/webhooks/delivery).
+
+> The External API is **tenant-scoped**. An API key can only read and manage
+> orders created by its own business — it can never see or mutate another
+> tenant's orders.
+
+## Security at a glance
+
+- Every external request requires `X-API-Key: sk_live_...`.
+- Webhooks carry an HMAC-SHA256 signature you must verify before trusting them.
+- Raw API keys and webhook secrets are shown **exactly once** at creation.
+
+## Next steps
+
+- [Getting started](/docs/getting-started) — set up your account and first order.
+- [API reference](/docs/api-reference) — the full interactive OpenAPI spec.
+- [Webhooks](/docs/webhooks/overview) — real-time order events.

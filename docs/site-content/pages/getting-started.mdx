@@ -1,0 +1,105 @@
+---
+title: Getting started
+description: Create a business, generate an API key, and send your first TRAKA delivery order in a few minutes.
+weight: 2
+---
+
+# Getting started
+
+## Prerequisites
+
+1. A TRAKA business account with an **ACTIVE** tenant.
+2. A business member with the **OWNER** or **ADMIN** role to create API keys.
+3. An API key. Only one raw key value is ever shown — store it immediately.
+
+## 1. Create a business
+
+If you don't already have one, create a business via the dashboard API. This
+returns `membership_role: "OWNER"` — the business id is your `tenant_id` for
+the steps below.
+
+```http
+POST /api/businesses
+Authorization: Bearer {jwt}
+Content-Type: application/json
+
+{
+  "business_name": "Acme Stores",
+  "business_address": "12 Marina, Lagos",
+  "contact_person": "Jane Doe",
+  "phone": "+2348012345678"
+}
+```
+
+Response: `201 Created` with the `business` object and the owner membership.
+
+## 2. Create an API key
+
+```curl
+curl -X POST "https://api.traka.com/api/v1/businesses/{business_id}/api-keys" \
+  -H "Authorization: Bearer {jwt}" \
+  -H "Content-Type: application/json" \
+  -d '{ "name": "Production checkout" }'
+```
+
+Response `201 Created`:
+
+```json
+{
+  "message": "API key created. Store the raw_key securely — it will not be shown again.",
+  "api_key": {
+    "id": "uuid",
+    "tenant_id": "uuid",
+    "name": "Production checkout",
+    "key_prefix": "sk_live_ABC1",
+    "status": "ACTIVE",
+    "created_by": "uuid",
+    "created_at": "2026-08-04T12:00:00.000Z",
+    "updated_at": "2026-08-04T12:00:00.000Z",
+    "raw_key": "sk_live_<48+ characters>"
+  }
+}
+```
+
+> ⚠️ The `raw_key` value is **only returned once**. Treat it like a password —
+> store it in a secret manager immediately.
+
+## 3. Send your first order
+
+See [Create an order](/docs/orders) for a full walkthrough. The short version:
+
+```bash
+curl -X POST "https://api.traka.com/api/v1/external/orders" \
+  -H "X-API-Key: sk_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipient_name": "John Doe",
+    "recipient_phone": "+2348123456789",
+    "pickup_address": "12 Marina, Lagos",
+    "delivery_address": "44 Ajose Adeogun, Victoria Island, Lagos",
+    "description": "Nike Air Force 1 - White",
+    "package_size": "SMALL",
+    "delivery_speed": "EXPRESS"
+  }'
+```
+
+On success you get a `201` with `order.tracking_number` (e.g. `TRK-X7K2`) —
+use it for [tracking](/docs/orders/track), [recipient updates](/docs/orders/update-recipient),
+and [confirmation](/docs/orders/confirm).
+
+## 4. (Optional) Subscribe to webhooks
+
+See [Webhooks](/docs/webhooks/overview) to receive order events in real time.
+
+## Environments
+
+| Environment | Base URL |
+| ----------- | -------- |
+| Production | `https://api.traka.com/api/v1/external` |
+| Development | `http://localhost:4000/api/v1/external` |
+| Interactive OpenAPI | `http://localhost:4000/api-docs` (dev) |
+
+## Next steps
+
+- [Authentication](/docs/authentication) — API keys and rate limits.
+- [Create an order](/docs/orders) — the first real integration.
