@@ -1,5 +1,7 @@
 import { WaitlistModel } from './waitlist.model.js';
 import { EmailNotificationService } from '../notification/email.service.js';
+import { sequelize } from '../config/database.js';
+import logger from '../utils/logger.js';
 
 export class WaitlistService {
   private emailService = new EmailNotificationService();
@@ -43,21 +45,24 @@ export class WaitlistService {
     try {
       await this.emailService.sendEmail(email, 'Welcome to TRAKA Waitlist', htmlContent);
     } catch (error) {
-      console.error('Failed to send waitlist email:', error);
+      logger.error('Failed to send waitlist email', { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
   async getWaitlistByCity() {
-    const entries = await WaitlistModel.findAll({
-      attributes: ['city', 'location'],
-      group: ['city', 'location'],
+    const rows = (await WaitlistModel.findAll({
+      attributes: [
+        [sequelize.fn('COALESCE', sequelize.col('city'), sequelize.col('location')), 'city'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: [sequelize.fn('COALESCE', sequelize.col('city'), sequelize.col('location'))],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
       raw: true
-    });
+    })) as unknown as Array<{ city: string; count: number | string }>;
 
     const grouped: Record<string, number> = {};
-    for (const entry of entries) {
-      const key = entry.city || entry.location;
-      grouped[key] = (grouped[key] || 0) + 1;
+    for (const row of rows) {
+      grouped[row.city] = Number(row.count);
     }
 
     return grouped;
@@ -109,7 +114,7 @@ export class WaitlistService {
     try {
       await this.emailService.sendEmail(email, `TRAKA is Now in ${city}!`, htmlContent);
     } catch (error) {
-      console.error('Failed to send launch email:', error);
+      logger.error('Failed to send launch email', { error: error instanceof Error ? error.message : String(error) });
     }
   }
 }

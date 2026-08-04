@@ -1,3 +1,5 @@
+import logger from '../utils/logger.js';
+
 export class SchedulingCronService {
   private isRunning = false;
 
@@ -7,11 +9,11 @@ export class SchedulingCronService {
     // Placeholder for cron functionality
     // Would use node-cron in production
     this.isRunning = true;
-    console.log('📅 Scheduling cron service started');
+    logger.info('Scheduling cron service started');
   }
 
   stop(): void {
     this.isRunning = false;
-    console.log('📅 Scheduling cron service stopped');
+    logger.info('Scheduling cron service stopped');
   }
 }

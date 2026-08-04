@@ -65,6 +65,9 @@ importers:
       helmet:
         specifier: ^7.1.0
         version: 7.2.0
+      http-terminator:
+        specifier: ^3.2.0
+        version: 3.2.0
       joi:
         specifier: ^17.11.0
         version: 17.13.3
@@ -2978,6 +2981,10 @@ packages:
     resolution: {integrity: sha512-rBMvIzlpA8v6E+SJZoo++HAYqsLrkg7MSfIinMPFhmkorw7X+dOXVJQs+QT69zGkzMyfDnIMN2Wid1+NbL3T+A==}
     engines: {node: '>= 0.4'}
 
+  delay@5.0.0:
+    resolution: {integrity: sha512-ReEBKkIfe4ya47wlPYf/gu5ib6yUG0/Aez0JQZQz94kiWtRQvZIQbTiehsnwHvLSWJnQdhVeqYue7Id1dKr0qw==}
+    engines: {node: '>=10'}
+
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
@@ -3161,6 +3168,10 @@ packages:
 
   fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
+
+  fast-printf@1.6.10:
+    resolution: {integrity: sha512-GwTgG9O4FVIdShhbVF3JxOgSBY2+ePGsu2V/UONgoCPzF9VY6ZdBMKsHKCYQHZwNk3qNouUolRDsgVxcVA5G1w==}
+    engines: {node: '>=10.0'}
 
   fast-safe-stringify@2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
@@ -3403,6 +3414,10 @@ packages:
   http-proxy-agent@5.0.0:
     resolution: {integrity: sha512-n2hY8YdoRE1i7r6M0w9DIw5GgZN0G25P8zLCRQ8rjXtTU3vsNFBI/vWK/UIeE6g5MUUz6avwAPXmL6Fy9D/90w==}
     engines: {node: '>= 6'}
+
+  http-terminator@3.2.0:
+    resolution: {integrity: sha512-JLjck1EzPaWjsmIf8bziM3p9fgR1Y3JoUKAkyYEbZmFrIvJM6I8vVJfBGWlEtV9IWOvzNnaTtjuwZeBY2kwB4g==}
+    engines: {node: '>=14'}
 
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -4073,6 +4088,10 @@ packages:
     resolution: {integrity: sha512-s73XxOZ4zpt1edZYZzvhqFa6uvQc1vwUa0K0BdtIZgQMAJj9IbebH+JkgKZc9h+B05PKHLOTl4ajG1BmNrVZlw==}
     engines: {node: '>=6'}
 
+  p-finally@1.0.0:
+    resolution: {integrity: sha512-LICb2p9CB7FS+0eR1oqWnHhp0FljGLZCWBE9aix0Uye9W8LTQPwMTYVGWQWIw9RdQiDg4+epXQODwIYJtSJaow==}
+    engines: {node: '>=4'}
+
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
     engines: {node: '>=6'}
@@ -4085,9 +4104,17 @@ packages:
     resolution: {integrity: sha512-R79ZZ/0wAxKGu3oYMlz8jy/kbhsNrS7SKZ7PxEHBgJ5+F2mtFW2fK2cOtBh1cHYkQsbzFV7I+EoRKe6Yt0oK7A==}
     engines: {node: '>=8'}
 
+  p-timeout@3.2.0:
+    resolution: {integrity: sha512-rhIwUycgwwKcP9yTOOFK/AKsAopjjCakVqLHePO3CC6Mir1Z99xT+R63jZxAT5lFZLa2inS5h+ZS2GvR99/FBg==}
+    engines: {node: '>=8'}
+
   p-try@2.2.0:
     resolution: {integrity: sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==}
     engines: {node: '>=6'}
+
+  p-wait-for@3.2.0:
+    resolution: {integrity: sha512-wpgERjNkLrBiFmkMEjuZJEWKKDrNfHCKA1OhyN1wg1FrLkULbviEy6py1AyJUgZ72YWFbZ38FIpnqvVqAlDUwA==}
+    engines: {node: '>=8'}
 
   parse-json@5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
@@ -4367,6 +4394,10 @@ packages:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
     engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
+  roarr@7.21.7:
+    resolution: {integrity: sha512-6X9ID9jb83kPkDxm5xLb9rZdGm6ksdDjpeL0iW5weKelJFi+NVBSowRpEuH8CdpX2x+7RW0TZaezibE7yQB7pg==}
+    engines: {node: '>=18.0'}
+
   router@2.2.0:
     resolution: {integrity: sha512-nLTrUKm2UyiL7rlhapu/Zl45FwNgkZGaCpZbIHajDYgwlJCOzLSk+cIPAnsEqV955GjILJnKbdQC1nVPz+gAYQ==}
     engines: {node: '>= 18'}
@@ -4386,6 +4417,9 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+
+  semver-compare@1.0.0:
+    resolution: {integrity: sha512-YM3/ITh2MJ5MtzaM429anh+x2jiLVjqILF4m4oyQB18W7Ggea7BfqdH/wGMK7dDiMghv/6WG7znWMwUDzJiXow==}
 
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -4772,6 +4806,10 @@ packages:
   type-fest@0.21.3:
     resolution: {integrity: sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==}
     engines: {node: '>=10'}
+
+  type-fest@2.19.0:
+    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
+    engines: {node: '>=12.20'}
 
   type-fest@4.41.0:
     resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
@@ -8594,6 +8632,8 @@ snapshots:
       gopd: 1.2.0
     optional: true
 
+  delay@5.0.0: {}
+
   delayed-stream@1.0.0: {}
 
   delegates@1.0.0:
@@ -8818,6 +8858,8 @@ snapshots:
       micromatch: 4.0.8
 
   fast-json-stable-stringify@2.1.0: {}
+
+  fast-printf@1.6.10: {}
 
   fast-safe-stringify@2.1.1: {}
 
@@ -9153,6 +9195,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
     optional: true
+
+  http-terminator@3.2.0:
+    dependencies:
+      delay: 5.0.0
+      p-wait-for: 3.2.0
+      roarr: 7.21.7
+      type-fest: 2.19.0
 
   https-proxy-agent@5.0.1:
     dependencies:
@@ -9962,6 +10011,8 @@ snapshots:
 
   p-cancelable@1.1.0: {}
 
+  p-finally@1.0.0: {}
+
   p-limit@2.3.0:
     dependencies:
       p-try: 2.2.0
@@ -9974,7 +10025,15 @@ snapshots:
     dependencies:
       p-limit: 2.3.0
 
+  p-timeout@3.2.0:
+    dependencies:
+      p-finally: 1.0.0
+
   p-try@2.2.0: {}
+
+  p-wait-for@3.2.0:
+    dependencies:
+      p-timeout: 3.2.0
 
   parse-json@5.2.0:
     dependencies:
@@ -10290,6 +10349,12 @@ snapshots:
 
   reusify@1.1.0: {}
 
+  roarr@7.21.7:
+    dependencies:
+      fast-printf: 1.6.10
+      safe-stable-stringify: 2.5.0
+      semver-compare: 1.0.0
+
   router@2.2.0:
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
@@ -10312,6 +10377,8 @@ snapshots:
   safe-stable-stringify@2.5.0: {}
 
   safer-buffer@2.1.2: {}
+
+  semver-compare@1.0.0: {}
 
   semver@5.7.2:
     optional: true
@@ -10772,6 +10839,8 @@ snapshots:
   type-detect@4.0.8: {}
 
   type-fest@0.21.3: {}
+
+  type-fest@2.19.0: {}
 
   type-fest@4.41.0: {}
 

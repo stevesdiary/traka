@@ -18,4 +18,13 @@ export class ServiceAreaModel extends Model {
 
   @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: true })
   declare is_active: boolean;
+
+  @Column({ type: DataType.DECIMAL(10, 7), allowNull: true })
+  declare latitude: number | null;
+
+  @Column({ type: DataType.DECIMAL(10, 7), allowNull: true })
+  declare longitude: number | null;
+
+  @Column({ type: DataType.DECIMAL(8, 2), allowNull: true })
+  declare radius_km: number | null;
 }

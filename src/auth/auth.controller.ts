@@ -178,6 +178,10 @@ export const registerCustomer = async (req: Request, res: Response): Promise<voi
       res.status(409).json({ error: error.message });
       return;
     }
+    if (error.message.includes('Invalid') || error.message.includes('Cannot refer yourself') || error.message.includes('already have')) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -14,7 +14,8 @@ import {
   VerifiedPayment,
   WalletFundingIntent,
   WebhookProcessResult,
-  WalletType
+  WalletType,
+  DisbursementResult
 } from './payment-gateway.types.js';
 
 interface PaymentGatewayClient {
@@ -22,6 +23,7 @@ interface PaymentGatewayClient {
   verifyPayment(reference: string): Promise<VerifiedPayment>;
   verifyWebhookSignature(rawBody: Buffer | undefined, headers: Record<string, any>): boolean;
   parseWebhookPayload(payload: any): VerifiedPayment | null;
+  disburseFunds?(data: { amount: number; accountNumber: string; bankCode: string; accountName: string; reference: string; narration: string }): Promise<DisbursementResult>;
 }
 
 const INTENT_PREFIX = 'payment:intent:';
@@ -411,6 +413,34 @@ class KudaGatewayClient implements PaymentGatewayClient {
       raw: payload
     };
   }
+
+  async disburseFunds(data: {
+    amount: number;
+    accountNumber: string;
+    bankCode: string;
+    accountName: string;
+    reference: string;
+    narration: string;
+  }): Promise<DisbursementResult> {
+    const response = await this.post<any>('/Transactions/InitiateSingleTransfer', {
+      requestReference: data.reference,
+      amount: data.amount,
+      narration: data.narration,
+      beneficiaryBankCode: data.bankCode,
+      beneficiaryAccount: data.accountNumber,
+      beneficiaryName: data.accountName,
+      senderName: this.virtualAccountName,
+      nameEnquirySessionID: '',
+    });
+
+    if (!response?.status) {
+      return { reference: data.reference, status: 'FAILED', message: response?.message || 'Transfer failed' };
+    }
+
+    const txStatus = String(response?.data?.transactionStatus || 'SUCCESSFUL').toUpperCase();
+    const status = txStatus === 'SUCCESSFUL' || txStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING';
+    return { reference: data.reference, status, message: response?.message || 'Transfer initiated' };
+  }
 }
 
 export class PaymentGatewayService {
@@ -439,6 +469,29 @@ export class PaymentGatewayService {
 
   private getGateway(provider: PaymentProvider): PaymentGatewayClient {
     return this.gateways[provider];
+  }
+
+  async disburseWalletPayout(userId: string, amount: number, reference: string): Promise<DisbursementResult> {
+    const provider = this.resolveProvider();
+    const gateway = this.getGateway(provider);
+
+    if (!gateway.disburseFunds) {
+      throw new Error(`Payment provider ${provider} does not support disbursements`);
+    }
+
+    const wallet = await this.walletService.getWallet(userId);
+    if (!wallet?.bank_code || !wallet?.account_number || !wallet?.account_name) {
+      throw new Error('Incomplete bank account details. Add a bank account before requesting a payout.');
+    }
+
+    return gateway.disburseFunds({
+      amount,
+      accountNumber: wallet.account_number,
+      bankCode: wallet.bank_code,
+      accountName: wallet.account_name,
+      reference,
+      narration: 'TRAKA rider wallet payout',
+    });
   }
 
   private generateReference(provider: PaymentProvider): string {

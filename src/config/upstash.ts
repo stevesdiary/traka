@@ -40,6 +40,20 @@ export const redis = {
     return await upstashRedis.ttl(key);
   },
 
+  async keys(pattern: string): Promise<string[]> {
+    const matchedKeys: string[] = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, elements] = await upstashRedis.scan(cursor, {
+        match: pattern,
+        count: 100
+      });
+      matchedKeys.push(...elements);
+      cursor = nextCursor;
+    } while (cursor !== '0');
+    return matchedKeys;
+  },
+
   async incr(key: string): Promise<number> {
     return await upstashRedis.incr(key);
   },

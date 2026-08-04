@@ -1,4 +1,5 @@
 import { URL } from 'url';
+import logger from './logger.js';
 
 /**
  * SSRF Protection Utility
@@ -52,14 +53,14 @@ export class SSRFProtection {
 
       // Check protocol
       if (!ALLOWED_PROTOCOLS.includes(url.protocol)) {
-        console.warn(`SSRF: Blocked protocol ${url.protocol}`);
+        logger.warn(`SSRF: Blocked protocol ${url.protocol}`);
         return false;
       }
 
       // Check hostname against blocked list
       const hostname = url.hostname.toLowerCase();
       if (BLOCKED_HOSTNAMES.includes(hostname)) {
-        console.warn(`SSRF: Blocked hostname ${hostname}`);
+        logger.warn(`SSRF: Blocked hostname ${hostname}`);
         return false;
       }
 
@@ -68,7 +69,7 @@ export class SSRFProtection {
         // Check against blocked IP ranges
         for (const range of BLOCKED_IP_RANGES) {
           if (range.test(hostname)) {
-            console.warn(`SSRF: Blocked IP range ${hostname}`);
+            logger.warn(`SSRF: Blocked IP range ${hostname}`);
             return false;
           }
         }
@@ -81,13 +82,13 @@ export class SSRFProtection {
       );
 
       if (!isAllowed) {
-        console.warn(`SSRF: Domain not in whitelist ${hostname}`);
+        logger.warn(`SSRF: Domain not in whitelist ${hostname}`);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.warn(`SSRF: Invalid URL ${urlString}`);
+      logger.warn(`SSRF: Invalid URL ${urlString}`);
       return false;
     }
   }
@@ -127,9 +128,9 @@ export class SSRFProtection {
         try {
           // Allow internal URLs for database connections
           const parsedUrl = new URL(url);
-          console.log(`✅ Config URL validated: ${field} (${parsedUrl.hostname})`);
+          logger.info(`Config URL validated: ${field} (${parsedUrl.hostname})`);
         } catch (error) {
-          console.warn(`⚠️  Invalid config URL: ${field}`);
+          logger.warn(`Invalid config URL: ${field}`);
         }
       }
     }

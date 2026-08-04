@@ -209,7 +209,7 @@ export class RiderService {
         );
       }
     } catch (error) {
-      console.error("Failed to sync courier location", error);
+      logger.error("Failed to sync courier location", { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
@@ -235,7 +235,7 @@ export class RiderService {
         });
       }
     } catch (error) {
-      console.error("Failed to emit rider location update", error);
+      logger.error("Failed to emit rider location update", { error: error instanceof Error ? error.message : String(error) });
     }
 
     return await this.attachRatingStats(rider);
@@ -304,7 +304,7 @@ export class RiderService {
         `Dear ${fullName},\n\nYour rider account (${rider.rider_id}) has been deactivated. If you believe this is an error, please contact support.`,
       );
     } catch (error) {
-      console.error("Failed to send deletion notification:", error);
+      logger.error("Failed to send deletion notification", { error: error instanceof Error ? error.message : String(error) });
     }
   }
 

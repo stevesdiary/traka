@@ -37,7 +37,8 @@ export const CustomerRegistrationSchema = Joi.object({
   terms_accepted: Joi.boolean().valid(true).required().messages({
     'any.only': 'You must accept the Terms of Service',
     'any.required': 'You must accept the Terms of Service'
-  })
+  }),
+  referral_code: Joi.string().trim().max(20).optional()
 });
 
 export const BusinessRegistrationSchema = Joi.object({
@@ -190,7 +191,10 @@ export const CreatePackageSchema = Joi.object({
     'any.required': 'Package category is required'
   }),
   is_fragile: Joi.boolean().optional().default(false),
-  payment_method: Joi.string().valid('DIGITAL', 'CASH', 'BANK_TRANSFER').optional().default('DIGITAL')
+  payment_method: Joi.string().valid('DIGITAL', 'CASH', 'BANK_TRANSFER').optional().default('DIGITAL'),
+  promo_code: Joi.string().trim().uppercase().min(3).max(30).optional().messages({
+    'string.min': 'Promo code must be at least 3 characters long'
+  })
 });
 
 export const GuestTrackingSchema = Joi.object({
@@ -490,6 +494,11 @@ export const CreatePromotionSchema = Joi.object({
     'date.greater': 'End date must be after start date',
     'any.required': 'End date is required'
   }),
+  applies_to: Joi.string().valid('DELIVERY_FEE', 'TOTAL').optional(),
+  target_audience: Joi.string().valid('ALL', 'CUSTOMERS', 'RIDERS').optional(),
+  season: Joi.string().max(60).optional(),
+  min_amount: Joi.number().positive().optional(),
+  stackable: Joi.boolean().optional(),
   is_active: Joi.boolean().optional()
 });
 
@@ -503,6 +512,11 @@ export const UpdatePromotionSchema = Joi.object({
   max_uses_per_user: Joi.number().integer().positive().optional(),
   start_date: Joi.date().optional(),
   end_date: Joi.date().optional(),
+  applies_to: Joi.string().valid('DELIVERY_FEE', 'TOTAL').optional(),
+  target_audience: Joi.string().valid('ALL', 'CUSTOMERS', 'RIDERS').optional(),
+  season: Joi.string().max(60).optional(),
+  min_amount: Joi.number().positive().optional(),
+  stackable: Joi.boolean().optional(),
   is_active: Joi.boolean().optional()
 });
 

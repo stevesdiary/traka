@@ -4,7 +4,7 @@ import { EmailNotificationService } from '../../notification/email.service.js';
 import logger from '../../utils/logger.js';
 
 export class DispatchTimeoutService {
-  private static readonly TIMEOUT_MINUTES = 10;
+  private static readonly TIMEOUT_MINUTES = 30;
   private static readonly DISPATCH_ATTEMPT_PREFIX = 'dispatch:attempt:';
   private emailService = new EmailNotificationService();
 
@@ -43,7 +43,7 @@ export class DispatchTimeoutService {
     await packageData.update({
       status: 'CANCELLED',
       cancellation_reason: 'LONG_PICKUP_TIME',
-      cancellation_note: 'No rider available within 10 minutes',
+      cancellation_note: 'No rider available within 30 minutes',
       cancelled_at: new Date()
     });
 
@@ -61,7 +61,7 @@ export class DispatchTimeoutService {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>No Rider Available</h2>
         <p>Hi ${packageData.sender?.first_name || 'there'},</p>
-        <p>We're sorry, but we couldn't find an available rider for your delivery within 10 minutes.</p>
+        <p>We're sorry, but we couldn't find an available rider for your delivery within 30 minutes.</p>
         <p><strong>Tracking Number:</strong> ${packageData.tracking_number}</p>
         <p><strong>Pickup Address:</strong> ${packageData.pickup_address || 'N/A'}</p>
         <p><strong>Delivery Address:</strong> ${packageData.delivery_address}</p>

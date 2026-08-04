@@ -4,13 +4,15 @@ import './instrument.js';
 import './config/environment.js';
 
 import { connectDatabases, disconnectDatabases } from './config/database.js';
-// import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
+import { RiderCleanupCron } from './rider/rider-cleanup.cron.js';
 import { QuoteExpirationCron } from './quote/quote-expiration.cron.js';
 import logger from './utils/logger.js';
 import config from './config/environment.js';
 import { createApp } from './app.js';
 import { initializeWebSocket } from './websocket/websocket.service.js';
-// import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
+import { startBackgroundDispatchCron } from './matching/background-dispatch.cron.js';
+import { startDispatchTimeoutCron } from './matching/dispatch-timeout.cron.js';
+import { createHttpTerminator } from 'http-terminator';
 
 const app = createApp();
 const port = config.server.port;
@@ -21,9 +23,10 @@ const startServer = async () => {
     await connectDatabases();
 
     // Start cron jobs
-    // RiderCleanupCron.startCronJob();
+    RiderCleanupCron.startCronJob();
     QuoteExpirationCron.startCronJob();
-    // startDispatchTimeoutCron();
+    startBackgroundDispatchCron();
+    startDispatchTimeoutCron();
 
     const server = app.listen(port, '0.0.0.0', () => {
       logger.info(`TRAKA API started successfully`, {
@@ -38,14 +41,25 @@ const startServer = async () => {
     // Initialize WebSocket
     initializeWebSocket(server);
 
-    // Graceful shutdown
+    // Graceful shutdown — drain in-flight requests before closing
+    const httpTerminator = createHttpTerminator({
+      server,
+      gracefulTerminationTimeout: 10_000
+    });
+
     const gracefulShutdown = async (signal: string) => {
       logger.info(`Received ${signal}. Starting graceful shutdown...`);
-      server.close(async () => {
+      try {
+        await httpTerminator.terminate();
         await disconnectDatabases();
         logger.info('Server shut down gracefully');
         process.exit(0);
-      });
+      } catch (error) {
+        logger.error('Graceful shutdown failed', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        process.exit(1);
+      }
     };
 
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

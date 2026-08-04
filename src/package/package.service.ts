@@ -3,7 +3,7 @@ import { UserRepository } from "../user/user.repository.js";
 import { PricingService, PricingRequest } from "../pricing/pricing.service.js";
 import { PackageVerificationService } from "../verification/package-verification.service.js";
 import { ServiceAreaService } from "../service-area/service-area.service.js";
-import { GeocodingService } from "../utils/geocoding.service.js";
+import { GeocodingService, type GeocodingResult } from "../utils/geocoding.service.js";
 import { DispatchService } from "../matching/services/DispatchService.js";
 import { VehicleType } from "../matching/config/vehicles.js";
 import { CourierPresenceService } from "../matching/services/CourierPresenceService.js";
@@ -17,9 +17,12 @@ import { trackingStartedEmail, liveTrackingEmail } from "../notification/email-t
 import { TrackingTokenService } from "../tracking/tracking-token.service.js";
 import { SMSService } from "../notification/sms.service.js";
 import { webhookService } from "../webhook/webhook.service.js";
+import { ReferralService } from "../referral/referral.service.js";
+import { PromotionService } from "../promotion/promotion.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
+import logger from '../utils/logger.js';
 
 export class PackageService {
   private packageRepository: PackageRepository;
@@ -32,6 +35,8 @@ export class PackageService {
   private notificationService: NotificationService;
   private emailService: EmailNotificationService;
   private smsService: SMSService;
+  private referralService: ReferralService;
+  private promotionService: PromotionService;
 
   constructor() {
     this.packageRepository = new PackageRepository();
@@ -44,6 +49,8 @@ export class PackageService {
     this.notificationService = new NotificationService();
     this.emailService = new EmailNotificationService();
     this.smsService = new SMSService();
+    this.referralService = new ReferralService();
+    this.promotionService = new PromotionService();
   }
 
   async createPackage(
@@ -62,34 +69,43 @@ export class PackageService {
       is_fragile?: boolean;
       payment_method?: 'DIGITAL' | 'CASH' | 'BANK_TRANSFER';
       payment_by?: 'SENDER' | 'RECIPIENT';
+      promo_code?: string;
     },
     sender_id: string,
     tenant_id: string | null
   ): Promise<any> {
-    // Geocode addresses to get coordinates and city/state (fall back to Lagos on failure)
-    const LAGOS_DEFAULT = { latitude: 6.5244, longitude: 3.3792, city: 'Lagos', state: 'Lagos', country: 'Nigeria', formatted_address: '' };
-    const pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address).catch(() => LAGOS_DEFAULT);
-    const deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address).catch(() => LAGOS_DEFAULT);
-
-    // Check service area coverage — skip if geocoding fell back to default
-    if (pickupGeo !== LAGOS_DEFAULT) {
-      const pickupCoverage = await this.serviceAreaService.checkCoverage(
-        pickupGeo.city,
-        pickupGeo.state
-      );
-      if (!pickupCoverage.covered) {
-        throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
-      }
+    // Geocode addresses to get coordinates and city/state
+    let pickupGeo: GeocodingResult;
+    let deliveryGeo: GeocodingResult;
+    try {
+      pickupGeo = await this.geocodingService.geocodeAddress(data.pickup_address);
+      deliveryGeo = await this.geocodingService.geocodeAddress(data.delivery_address);
+    } catch (error) {
+      logger.error('Geocoding failed — refusing to create package without verified coverage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw new Error('LOCATION_VERIFICATION_FAILED: Could not verify pickup/delivery location. Please try again or use a more specific address.');
     }
 
-    if (deliveryGeo !== LAGOS_DEFAULT) {
-      const deliveryCoverage = await this.serviceAreaService.checkCoverage(
-        deliveryGeo.city,
-        deliveryGeo.state
-      );
-      if (!deliveryCoverage.covered) {
-        throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
-      }
+    // Check service area coverage — fail closed, never skip when geocoding is unavailable
+    const pickupCoverage = await this.serviceAreaService.checkCoverage({
+      city: pickupGeo.city,
+      state: pickupGeo.state,
+      latitude: pickupGeo.latitude,
+      longitude: pickupGeo.longitude
+    });
+    if (!pickupCoverage.covered) {
+      throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
+    }
+
+    const deliveryCoverage = await this.serviceAreaService.checkCoverage({
+      city: deliveryGeo.city,
+      state: deliveryGeo.state,
+      latitude: deliveryGeo.latitude,
+      longitude: deliveryGeo.longitude
+    });
+    if (!deliveryCoverage.covered) {
+      throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
     }
 
     // Calculate pricing
@@ -103,6 +119,53 @@ export class PackageService {
     };
     
     const pricing = await this.pricingService.calculateDeliveryPrice(pricingRequest);
+
+    // Apply referral discount (20% off delivery fee for first N orders)
+    const referralDiscount = await this.referralService.getActiveReferralDiscount(sender_id);
+    let deliveryFee = pricing.total_amount - pricing.platform_fee;
+    let totalAmount = pricing.total_amount;
+    let discountPercent: number | undefined;
+    let discountAmount: number | undefined;
+
+    if (referralDiscount) {
+      discountPercent = Number(referralDiscount.discount_percent ?? 0);
+      discountAmount = Math.round(pricing.total_amount * discountPercent / 100);
+      totalAmount = pricing.total_amount - discountAmount;
+      deliveryFee = totalAmount - pricing.platform_fee;
+    }
+
+    // Apply promo code (seasonal promos) after referral discount
+    let promoCode: string | undefined;
+    let promoDiscountAmount: number | undefined;
+    let promotionId: string | undefined;
+
+    if (data.promo_code) {
+      promoCode = data.promo_code.trim().toUpperCase();
+
+      const promoInfo = await this.promotionService.validatePromotionForAmount(
+        promoCode,
+        sender_id,
+        totalAmount
+      );
+
+      if (referralDiscount && !promoInfo.promotion.stackable) {
+        throw new Error('This promotion cannot be combined with your referral discount');
+      }
+
+      const appliesTo = (promoInfo.promotion.applies_to || 'DELIVERY_FEE') as string;
+      const promoBase = appliesTo === 'TOTAL' ? totalAmount : deliveryFee;
+      const validated = await this.promotionService.validatePromotionForAmount(
+        promoCode,
+        sender_id,
+        promoBase
+      );
+
+      promoDiscountAmount = validated.discount_amount;
+      promotionId = validated.promotion.id;
+      totalAmount = totalAmount - promoDiscountAmount;
+      deliveryFee = totalAmount - pricing.platform_fee;
+    }
+
     // Check if recipient has an account by phone or email
     const existingRecipient =
       (await this.userRepository.findByPhone(data.recipient_phone)) ||
@@ -131,10 +194,14 @@ export class PackageService {
       delivery_speed: data.delivery_speed,
       category: data.category,
       is_fragile: data.is_fragile || false,
-      delivery_fee: pricing.total_amount - pricing.platform_fee,
+      delivery_fee: deliveryFee,
       platform_fee: pricing.platform_fee,
-      total_amount: pricing.total_amount,
+      total_amount: totalAmount,
       estimated_distance_km: pricing.estimated_distance_km,
+      discount_percent: discountPercent,
+      discount_amount: discountAmount,
+      promo_code: promoCode,
+      promo_discount_amount: promoDiscountAmount,
       guest_tracking_token: guest_tracking_token || undefined,
       tenant_id,
       payment_method: data.payment_method || 'DIGITAL',
@@ -144,6 +211,21 @@ export class PackageService {
     };
 
     const newPackage = await this.packageRepository.createPackage(packageData);
+
+    // Consume one referral discount order (after successful creation)
+    if (referralDiscount) {
+      await this.referralService.recordDiscountedOrder(referralDiscount);
+    }
+
+    // Record promo usage (after successful creation)
+    if (promotionId && promoCode) {
+      await this.promotionService.recordUsage({
+        promotion_id: promotionId,
+        user_id: sender_id,
+        package_id: newPackage.id,
+        discount_amount: promoDiscountAmount
+      });
+    }
 
     // Get sender information
     const sender = await this.userRepository.findById(sender_id);
@@ -168,16 +250,6 @@ export class PackageService {
         sender_name,
         verification.pickup_pin,
         tracking_number
-      );
-    }
-
-    // Schedule delivery code email (will be sent 5 minutes before arrival)
-    if (data.recipient_email) {
-      await this.packageVerificationService.scheduleDeliveryCodeEmail(
-        data.recipient_email,
-        data.recipient_name,
-        verification.delivery_pin,
-        newPackage.id
       );
     }
 
@@ -214,7 +286,11 @@ export class PackageService {
         speed_fee: pricing.speed_fee,
         weight_multiplier: pricing.weight_multiplier,
         platform_fee: pricing.platform_fee,
-        total_amount: pricing.total_amount
+        discount_percent: discountPercent ?? 0,
+        discount_amount: discountAmount ?? 0,
+        promo_code: promoCode ?? null,
+        promo_discount_amount: promoDiscountAmount ?? 0,
+        total_amount: totalAmount
       },
       tracking_url: this.generateTrackingUrl(
         tracking_number,
@@ -362,12 +438,22 @@ export class PackageService {
       JSON.stringify({ packageId, userId, amount, reference, createdAt: Date.now() })
     );
 
-    // Use Paystack to generate a dedicated virtual account for this payment
-    // Falls back to TRAKA's static account if gateway not configured
+    const accountNumber = process.env.TRAKA_BANK_ACCOUNT_NUMBER;
+    const accountName = process.env.TRAKA_BANK_ACCOUNT_NAME || 'TRAKA Technologies Ltd';
+    const bankName = process.env.TRAKA_BANK_NAME;
+
+    if (!accountNumber || !bankName) {
+      logger.error('Bank account details not configured — refusing transfer payment', {
+        hasAccountNumber: Boolean(accountNumber),
+        hasBankName: Boolean(bankName)
+      });
+      throw new Error('TRANSFER_PAYMENT_UNAVAILABLE: Bank account not configured. Please use digital payment.');
+    }
+
     const trakaAccount = {
-      account_number: process.env.TRAKA_BANK_ACCOUNT_NUMBER || '0123456789',
-      account_name: process.env.TRAKA_BANK_ACCOUNT_NAME || 'TRAKA Technologies Ltd',
-      bank_name: process.env.TRAKA_BANK_NAME || 'Guaranty Trust Bank',
+      account_number: accountNumber,
+      account_name: accountName,
+      bank_name: bankName,
     };
 
     return {
@@ -683,8 +769,13 @@ export class PackageService {
           packageData.delivery_address,
           trackingUrl
         )
-      ).catch(err => console.error('Failed to send tracking email', err));
+      ).catch(err => logger.error('Failed to send tracking email', { error: err?.message }));
     }
+
+    // Send delivery code to recipient now that the rider has the package
+    await this.packageVerificationService.triggerDeliveryCodeEmail(package_id).catch(err =>
+      logger.error('Failed to send delivery code email', { error: err?.message, package_id })
+    );
 
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
   }
@@ -863,7 +954,7 @@ export class PackageService {
           : undefined,
       };
     } catch (error) {
-      console.error("Auto-dispatch failed", error);
+      logger.error('Auto-dispatch failed', { error });
       return {
         assigned: false,
         attempts: 0,
@@ -1000,7 +1091,7 @@ export class PackageService {
         };
       }
     } catch (error) {
-      console.error("Failed to read realtime rider location", error);
+      logger.error('Failed to read realtime rider location', { error });
     }
 
     if (rider.current_latitude != null && rider.current_longitude != null) {
@@ -1026,27 +1117,16 @@ export class PackageService {
   }
 
   private async generateTrackingNumber(): Promise<string> {
-    // Generate TRK-XXXX format with random alphanumeric (uppercase letters and numbers)
-    const nanoid = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 4);
-    let trackingNumber: string;
-    let attempts = 0;
-    const maxAttempts = 10;
+    const letters = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
+    const digits = customAlphabet('0123456789', 4);
 
-    while (attempts < maxAttempts) {
-      const randomCode = nanoid();
-      trackingNumber = `TRK-${randomCode}`;
-      
-      // Check if tracking number already exists
+    for (let i = 0; i < 10; i++) {
+      const trackingNumber = `${letters()}-${digits()}`;
       const existing = await this.packageRepository.findByTrackingNumber(trackingNumber);
-      if (!existing) {
-        return trackingNumber;
-      }
-      attempts++;
+      if (!existing) return trackingNumber;
     }
 
-    // Fallback: use timestamp-based code if all random attempts fail
-    const fallbackCode = customAlphabet('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789', 6)();
-    return `TRK-${fallbackCode}`;
+    return `${letters()}-${digits()}`;
   }
 
   private generateGuestToken(): string {
@@ -1066,15 +1146,6 @@ export class PackageService {
 
     // Universal link that opens app if installed, otherwise web browser
     return `${webUrl}/track/${tracking_number}${tokenParam}`;
-  }
-
-  private generateDeepLink(
-    tracking_number: string,
-    guest_token?: string
-  ): string {
-    const appScheme = process.env.APP_SCHEME || "traka";
-    const tokenParam = guest_token ? `&token=${guest_token}` : "";
-    return `${appScheme}://track?number=${tracking_number}${tokenParam}`;
   }
 
   private async sendTrackingNotification(packageData: any): Promise<void> {

@@ -32,6 +32,10 @@ export class PackageRepository extends BaseRepository<PackageModel> {
     platform_fee?: number;
     total_amount?: number;
     estimated_distance_km?: number;
+    discount_percent?: number;
+    discount_amount?: number;
+    promo_code?: string;
+    promo_discount_amount?: number;
     guest_tracking_token?: string | null;
     tenant_id: string | null;
   }): Promise<PackageModel> {

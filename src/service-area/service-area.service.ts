@@ -1,5 +1,13 @@
 import { ServiceAreaModel } from './service-area.model.js';
 import { redis } from '../config/database.js';
+import logger from '../utils/logger.js';
+
+export interface CheckCoverageInput {
+  city?: string;
+  state?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
 export class ServiceAreaService {
   private CACHE_KEY = 'service_areas:active';
@@ -20,22 +28,78 @@ export class ServiceAreaService {
       await redis.setEx(this.CACHE_KEY, this.CACHE_TTL, JSON.stringify(areas));
       return areas;
     } catch (error) {
-      console.error('Error fetching active cities:', error);
+      logger.error('Error fetching active cities:', error);
       throw error;
     }
   }
 
-  async checkCoverage(city: string, state: string): Promise<{ covered: boolean; city?: string }> {
-    if (!city?.trim() || !state?.trim()) {
-      return { covered: false };
+  async checkCoverage(input: CheckCoverageInput): Promise<{ covered: boolean; city?: string }> {
+    const hasCoordinates =
+      typeof input.latitude === 'number' && Number.isFinite(input.latitude) &&
+      typeof input.longitude === 'number' && Number.isFinite(input.longitude);
+
+    if (hasCoordinates) {
+      const geoMatch = await this.checkCoverageByCoordinates(input.latitude!, input.longitude!);
+      if (geoMatch) return geoMatch;
     }
 
+    if (input.city?.trim() && input.state?.trim()) {
+      const stringMatch = await this.checkCoverageByCityState(input.city, input.state);
+      if (stringMatch.covered) return stringMatch;
+    }
+
+    return { covered: false };
+  }
+
+  private async checkCoverageByCoordinates(
+    latitude: number,
+    longitude: number
+  ): Promise<{ covered: boolean; city?: string } | null> {
+    const areas = await ServiceAreaModel.findAll({ where: { is_active: true } });
+
+    const geoCodedAreas = areas.filter(area => {
+      const areaLat = Number(area.latitude);
+      const areaLng = Number(area.longitude);
+      const areaRadius = Number(area.radius_km);
+      return Number.isFinite(areaLat) && Number.isFinite(areaLng) && Number.isFinite(areaRadius);
+    });
+
+    // Legacy data without coordinates — fall back to city/state matching
+    if (geoCodedAreas.length === 0) return null;
+
+    let nearest: ServiceAreaModel | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const area of geoCodedAreas) {
+      const distance = this.distanceKm(
+        latitude,
+        longitude,
+        Number(area.latitude),
+        Number(area.longitude)
+      );
+      if (distance < nearestDistance) {
+        nearest = area;
+        nearestDistance = distance;
+      }
+    }
+
+    if (nearest && nearestDistance <= Number(nearest.radius_km)) {
+      return { covered: true, city: nearest.city };
+    }
+
+    return null;
+  }
+
+  private async checkCoverageByCityState(
+    city: string,
+    state: string
+  ): Promise<{ covered: boolean; city?: string }> {
     // Try exact match first
     const exactMatch = await ServiceAreaModel.findOne({
-      where: { 
+      where: {
         city: city,
         state: state,
-        is_active: true 
+        is_active: true
       }
     });
 
@@ -65,10 +129,27 @@ export class ServiceAreaService {
     return { covered: false };
   }
 
+  private distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371;
+    const dLat = this.toRad(lat2 - lat1);
+    const dLon = this.toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(a));
+  }
+
+  private toRad(degrees: number): number {
+    return (degrees * Math.PI) / 180;
+  }
+
   async addServiceArea(data: {
     city: string;
     state: string;
     country: string;
+    latitude?: number;
+    longitude?: number;
+    radius_km?: number;
   }) {
     const area = await ServiceAreaModel.create(data);
     await redis.del(this.CACHE_KEY);

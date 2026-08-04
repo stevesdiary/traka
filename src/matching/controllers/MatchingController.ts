@@ -87,7 +87,7 @@ export class MatchingController {
         status
       });
     } catch (error: any) {
-      console.error('Update status error:', error);
+      logger.error('Update status error', { courierId: req.params.courierId, error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to update status' });
     }
   };
@@ -101,7 +101,7 @@ export class MatchingController {
         courier: state
       });
     } catch (error: any) {
-      console.error('Get courier state error:', error);
+      logger.error('Get courier state error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to get courier state' });
     }
   };
@@ -181,7 +181,7 @@ export class MatchingController {
         count: matches.length
       });
     } catch (error: any) {
-      console.error('Find couriers error:', error);
+      logger.error('Find couriers error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to find couriers' });
     }
   };
@@ -239,7 +239,7 @@ export class MatchingController {
         });
       }
     } catch (error: any) {
-      console.error('Request delivery error:', error);
+      logger.error('Request delivery error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to request delivery' });
     }
   };
@@ -268,7 +268,7 @@ export class MatchingController {
         });
       }
     } catch (error: any) {
-      console.error('Accept offer error:', error);
+      logger.error('Accept offer error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to accept offer' });
     }
   };
@@ -290,7 +290,7 @@ export class MatchingController {
         courierId
       });
     } catch (error: any) {
-      console.error('Reject offer error:', error);
+      logger.error('Reject offer error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to reject offer' });
     }
   };
@@ -313,7 +313,7 @@ export class MatchingController {
         count: couriers.length
       });
     } catch (error: any) {
-      console.error('Get available couriers error:', error);
+      logger.error('Get available couriers error', { error: error.message, stack: error.stack });
       res.status(500).json({ error: 'Failed to get available couriers' });
     }
   };

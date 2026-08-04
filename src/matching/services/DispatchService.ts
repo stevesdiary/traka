@@ -33,7 +33,7 @@ export class DispatchService {
 
     await redis.setEx(lockKey, 60, '1'); // 1 minute lock
 
-    // Start tracking dispatch attempt with 10-minute timeout
+    // Start tracking dispatch attempt with 30-minute timeout
     await this.timeoutService.trackDispatchAttempt(request.id);
 
     try {
@@ -194,7 +194,7 @@ export class DispatchService {
     }));
 
     // In production, send push notifications to all eligible couriers
-    console.log(`Broadcasting delivery ${request.id} to ${offers.length} couriers`);
+    logger.info('Broadcasting delivery to couriers', { requestId: request.id, courierCount: offers.length });
 
     // Wait for first acceptance (simplified - in production use pub/sub)
     const responseKey = `${broadcastKey}:response`;

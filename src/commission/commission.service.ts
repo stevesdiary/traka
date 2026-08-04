@@ -3,6 +3,7 @@ import { CommissionModel, Commission, CommissionSummary } from './commission.mod
 import { RiderModel } from '../rider/rider.model.js';
 import { ReferralService } from '../referral/referral.service.js';
 import config from '../config/environment.js';
+import logger from '../utils/logger.js';
 
 export class CommissionService {
   private commissionRepository: CommissionRepository;
@@ -30,7 +31,7 @@ export class CommissionService {
     try {
       await this.referralService.processReferralReward(riderId);
     } catch (error) {
-      console.error('Referral reward processing failed:', error);
+      logger.error('Referral reward processing failed', { riderId, error: error instanceof Error ? error.message : String(error) });
     }
 
     return commission;

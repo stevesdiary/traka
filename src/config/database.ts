@@ -14,6 +14,7 @@ import { UserAddressModel } from '../address/address.model.js';
 import { RatingModel } from '../rating/rating.model.js';
 import { NotificationModel, NotificationPreferenceModel } from '../notification/notification.model.js';
 import { ReferralModel } from '../referral/referral.model.js';
+import { CustomerReferralModel } from '../referral/customer-referral.model.js';
 import { ServiceAreaModel } from '../service-area/service-area.model.js';
 import { WaitlistModel } from '../waitlist/waitlist.model.js';
 import { QuoteModel } from '../quote/quote.model.js';
@@ -66,6 +67,7 @@ sequelize.addModels([
   NotificationModel,
   NotificationPreferenceModel,
   ReferralModel,
+  CustomerReferralModel,
   ServiceAreaModel,
   WaitlistModel,
   QuoteModel,
@@ -91,9 +93,12 @@ export const connectDatabases = async () => {
     await sequelize.authenticate();
     logger.info('PostgreSQL connected successfully');
 
-    // Sync models (create tables if they don't exist)
-    await sequelize.sync({ alter: false });
-    logger.info('Database models synchronized');
+    // Sync models (create tables if they don't exist) — dev convenience only.
+    // Production relies on migrations (see scripts/migrate.ts + migrations/).
+    if (!config.isProduction) {
+      await sequelize.sync({ alter: false });
+      logger.info('Database models synchronized');
+    }
 
     // Initialize Upstash Redis (serverless, no connection needed)
     await redis.connect();

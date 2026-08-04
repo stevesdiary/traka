@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer';
+import logger from '../utils/logger.js';
 
 interface ImageProcessingOptions {
   width?: number;
@@ -13,7 +14,7 @@ class ImageProcessingService {
     try {
       const sharp = await this.loadSharp();
       if (!sharp) {
-        console.warn('Sharp not available, returning original image');
+        logger.warn('Sharp not available, returning original image');
         return buffer;
       }
 
@@ -42,7 +43,7 @@ class ImageProcessingService {
 
       return await processor.toBuffer();
     } catch (error) {
-      console.error('Image processing failed:', error);
+      logger.error('Image processing failed', { error: error instanceof Error ? error.message : String(error) });
       return buffer;
     }
   }

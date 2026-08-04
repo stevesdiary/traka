@@ -8,6 +8,7 @@ import { VerificationService } from '../verification/verification.service.js';
 import { JWTPayload } from '../types/index.js';
 import { EmailNotificationService } from '../notification/email.service.js';
 import { welcomeCustomerEmail, welcomeBusinessEmail, welcomeRiderEmail } from '../notification/email-templates.js';
+import { ReferralService } from '../referral/referral.service.js';
 import logger from '../utils/logger.js';
 
 const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN']);
@@ -26,11 +27,13 @@ export class AuthService {
   private userRepository: UserRepository;
   private riderRepository: RiderRepository;
   private tenantRepository: TenantRepository;
+  private referralService: ReferralService;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.riderRepository = new RiderRepository();
     this.tenantRepository = new TenantRepository();
+    this.referralService = new ReferralService();
   }
 
   async requestPasswordReset(email: string): Promise<void> {
@@ -116,6 +119,7 @@ export class AuthService {
     first_name: string;
     surname: string;
     phone: string;
+    referral_code?: string;
     terms_accepted: true;
   }): Promise<{ token: string; user: any }> {
     const existingUser = await this.userRepository.findByEmail(userData.email);
@@ -146,6 +150,10 @@ export class AuthService {
     };
 
     const token = jwt.sign(payload, config.jwt.secret, { ...JWT_SIGN_OPTIONS, expiresIn: '24h' });
+
+    if (userData.referral_code && userData.referral_code.trim()) {
+      await this.referralService.applyCustomerReferral(user.id, userData.referral_code);
+    }
 
     emailService.sendEmail(
       { email: user.email, name: userData.first_name },

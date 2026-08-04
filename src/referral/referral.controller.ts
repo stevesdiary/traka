@@ -6,18 +6,20 @@ export class ReferralController {
 
   getMyReferralCode = async (req: Request, res: Response): Promise<void> => {
     try {
-      const riderId = req.user!.userId;
-      
-      if (req.user!.role !== 'RIDER') {
-        res.status(403).json({ error: 'Only riders can access referral codes' });
-        return;
-      }
+      const userId = req.user!.userId;
+      const role = req.user!.role;
 
-      const referralCode = await this.referralService.getRiderReferralCode(riderId);
+      const referralCode = role === 'RIDER'
+        ? await this.referralService.getRiderReferralCode(userId)
+        : await this.referralService.getCustomerReferralCode(userId);
 
       res.json({
         message: 'Referral code retrieved',
-        referral_code: referralCode
+        referral: {
+          code: referralCode,
+          user_id: userId,
+          usage_count: 0
+        }
       });
     } catch (error: any) {
       res.status(500).json({ error: 'Failed to get referral code' });
@@ -26,26 +28,30 @@ export class ReferralController {
 
   applyReferralCode = async (req: Request, res: Response): Promise<void> => {
     try {
-      const riderId = req.user!.userId;
-      const { referral_code } = req.body;
+      const userId = req.user!.userId;
+      const role = req.user!.role;
+      const { referral_code, code } = req.body;
+      const referralCode = referral_code || code;
 
-      if (req.user!.role !== 'RIDER') {
-        res.status(403).json({ error: 'Only riders can apply referral codes' });
-        return;
-      }
-
-      if (!referral_code) {
+      if (!referralCode) {
         res.status(400).json({ error: 'Referral code is required' });
         return;
       }
 
-      await this.referralService.applyReferralCode(riderId, referral_code);
+      if (role === 'RIDER') {
+        await this.referralService.applyReferralCode(userId, referralCode);
+        res.json({
+          message: 'Referral code applied successfully. Complete your first delivery to earn ₦1,000!'
+        });
+        return;
+      }
 
+      await this.referralService.applyCustomerReferral(userId, referralCode);
       res.json({
-        message: 'Referral code applied successfully. Complete your first delivery to earn ₦1,000!'
+        message: 'Referral applied successfully. You get 20% off your first 3 delivery fees!'
       });
     } catch (error: any) {
-      if (error.message.includes('Invalid') || error.message.includes('Cannot') || error.message.includes('already')) {
+      if (error.message.includes('Invalid') || error.message.includes('Cannot') || error.message.includes('already') || error.message.includes('discount')) {
         res.status(400).json({ error: error.message });
         return;
       }
@@ -55,24 +61,25 @@ export class ReferralController {
 
   updateReferralCode = async (req: Request, res: Response): Promise<void> => {
     try {
-      const riderId = req.user!.userId;
-      const { referral_code } = req.body;
+      const userId = req.user!.userId;
+      const role = req.user!.role;
+      const { referral_code, code } = req.body;
+      const referralCode = referral_code || code;
 
-      if (req.user!.role !== 'RIDER') {
-        res.status(403).json({ error: 'Only riders can update referral codes' });
-        return;
-      }
-
-      if (!referral_code) {
+      if (!referralCode) {
         res.status(400).json({ error: 'Referral code is required' });
         return;
       }
 
-      await this.referralService.updateReferralCode(riderId, referral_code);
+      if (role === 'RIDER') {
+        await this.referralService.updateReferralCode(userId, referralCode);
+      } else {
+        await this.referralService.updateCustomerReferralCode(userId, referralCode);
+      }
 
       res.json({
         message: 'Referral code updated successfully',
-        referral_code: referral_code.toUpperCase()
+        referral_code: referralCode.toUpperCase()
       });
     } catch (error: any) {
       if (error.message.includes('must be') || error.message.includes('already taken') || error.message.includes('can update')) {
@@ -85,14 +92,12 @@ export class ReferralController {
 
   getReferralStats = async (req: Request, res: Response): Promise<void> => {
     try {
-      const riderId = req.user!.userId;
-      
-      if (req.user!.role !== 'RIDER') {
-        res.status(403).json({ error: 'Only riders can access referral stats' });
-        return;
-      }
+      const userId = req.user!.userId;
+      const role = req.user!.role;
 
-      const stats = await this.referralService.getReferralStats(riderId);
+      const stats = role === 'RIDER'
+        ? await this.referralService.getReferralStats(userId)
+        : await this.referralService.getCustomerReferralStats(userId);
 
       res.json({
         message: 'Referral stats retrieved',
