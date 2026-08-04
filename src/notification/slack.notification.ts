@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { SSRFProtection } from '../utils/ssrf-protection.js';
+import logger from '../utils/logger.js';
 
 interface SlackErrorPayload {
   error: Error;
@@ -22,14 +23,14 @@ export class SlackNotificationService {
     
     // Validate webhook URL
     if (this.webhookUrl && !SSRFProtection.isUrlSafe(this.webhookUrl)) {
-      console.warn('Slack webhook URL failed SSRF validation');
+      logger.warn('Slack webhook URL failed SSRF validation');
       this.webhookUrl = '';
     }
   }
 
   async sendErrorNotification(payload: SlackErrorPayload): Promise<void> {
     if (!this.webhookUrl) {
-      console.warn('Slack webhook URL not configured');
+      logger.warn('Slack webhook URL not configured');
       return;
     }
 
@@ -103,7 +104,7 @@ export class SlackNotificationService {
 
       await axios.post(this.webhookUrl, slackMessage);
     } catch (slackError) {
-      console.error('Failed to send Slack notification:', slackError);
+      logger.error('Failed to send Slack notification', { error: slackError instanceof Error ? slackError.message : String(slackError) });
     }
   }
 
@@ -143,7 +144,7 @@ export class SlackNotificationService {
 
       await axios.post(this.webhookUrl, slackMessage);
     } catch (error) {
-      console.error('Failed to send critical alert:', error);
+      logger.error('Failed to send critical alert', { error: error instanceof Error ? error.message : String(error) });
     }
   }
 
@@ -197,7 +198,7 @@ export class SlackNotificationService {
 
       await axios.post(this.webhookUrl, slackMessage);
     } catch (error) {
-      console.error('Failed to send business alert:', error);
+      logger.error('Failed to send business alert', { error: error instanceof Error ? error.message : String(error) });
     }
   }
 }

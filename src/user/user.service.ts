@@ -1,5 +1,6 @@
 import { UserRepository } from './user.repository.js';
 import bcrypt from 'bcrypt';
+import logger from '../utils/logger.js';
 
 export class UserManagementService {
   private userRepository: UserRepository;
@@ -50,7 +51,7 @@ export class UserManagementService {
       type: userData.role,
       tenant_id
     });
-    console.log("Customer registered successfully:", user);
+    logger.info('Customer registered', { user_id: user.id, email: user.email, tenant_id });
 
     return {
       // id: user.id,

@@ -1,5 +1,6 @@
 import { sequelize } from '../config/database.js';
 import { BusinessWalletRepository } from './business-wallet.repository.js';
+import logger from '../utils/logger.js';
 
 export class BusinessWalletService {
   private businessWalletRepository = new BusinessWalletRepository();
@@ -54,7 +55,7 @@ export class BusinessWalletService {
       if (updatedWallet && 
           updatedWallet.auto_recharge_enabled && 
           updatedWallet.balance <= updatedWallet.auto_recharge_threshold) {
-        console.log(`Auto-recharge triggered for tenant ${tenantId}`);
+        logger.info('Auto-recharge triggered', { tenantId });
       }
 
       await t.commit();
