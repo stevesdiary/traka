@@ -15,7 +15,7 @@
 
 - [Done] **`console.*` used instead of structured logger** — `geocoding.service.ts`, `package.service.ts`, and others call `console.log/warn/error` directly. These logs bypass the Loki/observability pipeline and can leak internal details. Replace all with `logger`.
 
-- [ ] **Error logger logs full request body and headers** — `errorLogger` in `logging.middleware.ts` logs `req.body` and `req.headers` in full. In production this will write passwords, tokens, and payment data to the log store. Redact or omit sensitive fields.
+- [Done] **Error logger logs full request body and headers** — `errorLogger` in `logging.middleware.ts` logs `req.body` and `req.headers` in full. In production this will write passwords, tokens, and payment data to the log store. Redact or omit sensitive fields.
 
 - [ ] **`requestPayout` never disburses funds** — `WalletService.requestPayout` deducts the balance and records a `WITHDRAWAL` transaction but never calls a payment gateway to send money to the rider's bank. Riders will lose balance with no actual payout.
 

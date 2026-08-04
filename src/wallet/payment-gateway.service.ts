@@ -14,7 +14,8 @@ import {
   VerifiedPayment,
   WalletFundingIntent,
   WebhookProcessResult,
-  WalletType
+  WalletType,
+  DisbursementResult
 } from './payment-gateway.types.js';
 
 interface PaymentGatewayClient {
@@ -22,6 +23,7 @@ interface PaymentGatewayClient {
   verifyPayment(reference: string): Promise<VerifiedPayment>;
   verifyWebhookSignature(rawBody: Buffer | undefined, headers: Record<string, any>): boolean;
   parseWebhookPayload(payload: any): VerifiedPayment | null;
+  disburseFunds?(data: { amount: number; accountNumber: string; bankCode: string; accountName: string; reference: string; narration: string }): Promise<DisbursementResult>;
 }
 
 const INTENT_PREFIX = 'payment:intent:';
@@ -411,7 +413,34 @@ class KudaGatewayClient implements PaymentGatewayClient {
       raw: payload
     };
   }
-}
+
+  async disburseFunds(data: {
+    amount: number;
+    accountNumber: string;
+    bankCode: string;
+    accountName: string;
+    reference: string;
+    narration: string;
+  }): Promise<DisbursementResult> {
+    const response = await this.post<any>('/Transactions/InitiateSingleTransfer', {
+      requestReference: data.reference,
+      amount: data.amount,
+      narration: data.narration,
+      beneficiaryBankCode: data.bankCode,
+      beneficiaryAccount: data.accountNumber,
+      beneficiaryName: data.accountName,
+      senderName: this.virtualAccountName,
+      nameEnquirySessionID: '',
+    });
+
+    if (!response?.status) {
+      return { reference: data.reference, status: 'FAILED', message: response?.message || 'Transfer failed' };
+    }
+
+    const txStatus = String(response?.data?.transactionStatus || 'SUCCESSFUL').toUpperCase();
+    const status = txStatus === 'SUCCESSFUL' || txStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING';
+    return { reference: data.reference, status, message: response?.message || 'Transfer initiated' };
+  }
 
 export class PaymentGatewayService {
   private walletService = new WalletService();

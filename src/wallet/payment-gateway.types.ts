@@ -45,6 +45,12 @@ export interface VerifiedPayment {
   fallbackUserId?: string;
 }
 
+export interface DisbursementResult {
+  reference: string;
+  status: 'SUCCESS' | 'PENDING' | 'FAILED';
+  message: string;
+}
+
 export type WalletType = 'PERSONAL' | 'BUSINESS';
 
 export interface WalletFundingIntent {
