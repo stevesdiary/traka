@@ -17,7 +17,7 @@ export class ServiceAreaController {
 
   async checkCoverage(req: Request, res: Response) {
     try {
-      const { error } = checkCoverageSchema.validate(req.query);
+      const { error, value } = checkCoverageSchema.validate(req.query);
       if (error) {
         return res.status(400).json({
           success: false,
@@ -25,12 +25,12 @@ export class ServiceAreaController {
         });
       }
 
-      const { city, state } = req.query;
-
-      const result = await serviceAreaService.checkCoverage(
-        String(city),
-        String(state)
-      );
+      const result = await serviceAreaService.checkCoverage({
+        city: value.city,
+        state: value.state,
+        latitude: value.latitude,
+        longitude: value.longitude
+      });
 
       res.json({
         success: true,

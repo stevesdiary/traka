@@ -221,7 +221,7 @@ export class WalletService {
     return wallet ? Number(wallet.balance) : 0;
   }
 
-  async requestPayout(userId: string, amount: number): Promise<{ message: string; balance: number }> {
+  async requestPayout(userId: string, amount: number): Promise<{ message: string; balance: number; disbursementStatus?: string }> {
     const t = await sequelize.transaction();
     try {
       const wallet = await this.walletRepository.findByUserId(userId);
@@ -242,8 +242,23 @@ export class WalletService {
         description: `Withdrawal to ${wallet.bank_name} ${wallet.account_number}`,
       }, t);
 
+      // Disburse funds via the payment gateway before committing so a failed
+      // transfer rolls the balance deduction back.
+      const { PaymentGatewayService } = await import('./payment-gateway.service.js');
+      const paymentGateway = new PaymentGatewayService();
+      const disbursement = await paymentGateway.disburseWalletPayout(userId, amount, reference);
+
+      if (disbursement.status === 'FAILED') {
+        await t.rollback();
+        throw new Error(`Payout failed: ${disbursement.message}`);
+      }
+
       await t.commit();
-      return { message: 'Withdrawal initiated successfully', balance: balance - amount };
+      return {
+        message: disbursement.status === 'SUCCESS' ? 'Withdrawal successful' : 'Withdrawal initiated successfully',
+        balance: balance - amount,
+        disbursementStatus: disbursement.status,
+      };
     } catch (error) {
       await t.rollback();
       throw error;

@@ -441,6 +441,7 @@ class KudaGatewayClient implements PaymentGatewayClient {
     const status = txStatus === 'SUCCESSFUL' || txStatus === 'SUCCESS' ? 'SUCCESS' : 'PENDING';
     return { reference: data.reference, status, message: response?.message || 'Transfer initiated' };
   }
+}
 
 export class PaymentGatewayService {
   private walletService = new WalletService();
@@ -468,6 +469,29 @@ export class PaymentGatewayService {
 
   private getGateway(provider: PaymentProvider): PaymentGatewayClient {
     return this.gateways[provider];
+  }
+
+  async disburseWalletPayout(userId: string, amount: number, reference: string): Promise<DisbursementResult> {
+    const provider = this.resolveProvider();
+    const gateway = this.getGateway(provider);
+
+    if (!gateway.disburseFunds) {
+      throw new Error(`Payment provider ${provider} does not support disbursements`);
+    }
+
+    const wallet = await this.walletService.getWallet(userId);
+    if (!wallet?.bank_code || !wallet?.account_number || !wallet?.account_name) {
+      throw new Error('Incomplete bank account details. Add a bank account before requesting a payout.');
+    }
+
+    return gateway.disburseFunds({
+      amount,
+      accountNumber: wallet.account_number,
+      bankCode: wallet.bank_code,
+      accountName: wallet.account_name,
+      reference,
+      narration: 'TRAKA rider wallet payout',
+    });
   }
 
   private generateReference(provider: PaymentProvider): string {

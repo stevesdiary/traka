@@ -81,20 +81,24 @@ export class PackageService {
 
     // Check service area coverage — skip if geocoding fell back to default
     if (pickupGeo !== LAGOS_DEFAULT) {
-      const pickupCoverage = await this.serviceAreaService.checkCoverage(
-        pickupGeo.city,
-        pickupGeo.state
-      );
+      const pickupCoverage = await this.serviceAreaService.checkCoverage({
+        city: pickupGeo.city,
+        state: pickupGeo.state,
+        latitude: pickupGeo.latitude,
+        longitude: pickupGeo.longitude
+      });
       if (!pickupCoverage.covered) {
         throw new Error('PICKUP_OUT_OF_COVERAGE: Pickup location is outside our service area');
       }
     }
 
     if (deliveryGeo !== LAGOS_DEFAULT) {
-      const deliveryCoverage = await this.serviceAreaService.checkCoverage(
-        deliveryGeo.city,
-        deliveryGeo.state
-      );
+      const deliveryCoverage = await this.serviceAreaService.checkCoverage({
+        city: deliveryGeo.city,
+        state: deliveryGeo.state,
+        latitude: deliveryGeo.latitude,
+        longitude: deliveryGeo.longitude
+      });
       if (!deliveryCoverage.covered) {
         throw new Error('DELIVERY_OUT_OF_COVERAGE: Delivery location is outside our service area');
       }
