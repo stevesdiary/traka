@@ -1,11 +1,11 @@
 # Production Readiness Checklist
 
 ## Critical
-- [ ] **In-memory package verification state** — `PackageVerificationService` stores pickup/delivery PINs in a class-level `Map`. PINs are lost on restart and won't work across multiple instances. Persist PINs to the `packages` table (columns `pickup_pin`, `delivery_pin` already exist) or Redis with a long TTL.
+- [Done] **In-memory package verification state** — `PackageVerificationService` stores pickup/delivery PINs in a class-level `Map`. PINs are lost on restart and won't work across multiple instances. Persist PINs to the `packages` table (columns `pickup_pin`, `delivery_pin` already exist) or Redis with a long TTL.
 
 - [ ] **Rider cleanup and dispatch timeout crons are commented out** — `RiderCleanupCron` and `startDispatchTimeoutCron` are both disabled in `index.ts`. The 360-day auto-hard-delete and dispatch timeout recovery will never run. Re-enable them (or replace `setInterval` with `node-cron`).
 
-- [ ] **`processCashDelivery` has no authentication check** — `wallet.controller.ts` reads `riderId` directly from `req.body` with no auth or ownership check. Any unauthenticated caller can debit any rider's wallet.
+- [Done] **`processCashDelivery` has no authentication check** — `wallet.controller.ts` reads `riderId` directly from `req.body` with no auth or ownership check. Any unauthenticated caller can debit any rider's wallet.
 
 - [ ] **Refresh token secret falls back to access token secret** — In `token.service.ts`, `REFRESH_SECRET` falls back to `JWT_SECRET` when `JWT_REFRESH_SECRET` is not set. A compromised access token secret would also compromise all refresh tokens. Set a dedicated `JWT_REFRESH_SECRET` env var and remove the fallback.
 

@@ -9,10 +9,9 @@ const AUTH_COOKIE_NAME = 'traka_token';
 const REFRESH_COOKIE_NAME = 'traka_refresh';
 const ACCESS_TOKEN_EXPIRES: any = (process.env.JWT_EXPIRES_IN as any) ?? '30m';
 const REFRESH_TOKEN_EXPIRES_DAYS = Number(process.env.JWT_REFRESH_EXPIRES_DAYS || '30');
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? process.env.JWT_SECRET;
-if (!process.env.JWT_SECRET || !REFRESH_SECRET) {
-  throw new Error('JWT_SECRET is required');
-}
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required');
+if (!REFRESH_SECRET) throw new Error('JWT_REFRESH_SECRET env var is required');
 
 const hashToken = (token: string) => {
   return crypto.createHash('sha256').update(token).digest('hex');
