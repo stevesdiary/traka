@@ -20,6 +20,7 @@ import { webhookService } from "../webhook/webhook.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
+import logger from '../utils/logger.js';
 
 export class PackageService {
   private packageRepository: PackageRepository;
@@ -683,7 +684,7 @@ export class PackageService {
           packageData.delivery_address,
           trackingUrl
         )
-      ).catch(err => console.error('Failed to send tracking email', err));
+      ).catch(err => logger.error('Failed to send tracking email', { error: err?.message }));
     }
 
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
@@ -863,7 +864,7 @@ export class PackageService {
           : undefined,
       };
     } catch (error) {
-      console.error("Auto-dispatch failed", error);
+      logger.error('Auto-dispatch failed', { error });
       return {
         assigned: false,
         attempts: 0,
@@ -1000,7 +1001,7 @@ export class PackageService {
         };
       }
     } catch (error) {
-      console.error("Failed to read realtime rider location", error);
+      logger.error('Failed to read realtime rider location', { error });
     }
 
     if (rider.current_latitude != null && rider.current_longitude != null) {

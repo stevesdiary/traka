@@ -1,6 +1,7 @@
 import { fuelPriceService } from './fuel-price.service.js';
 import { GeocodingService } from '../utils/geocoding.service.js';
 import config from '../config/environment.js';
+import logger from '../utils/logger.js';
 
 export interface PricingRequest {
   pickup_address: string;
@@ -58,7 +59,7 @@ export class PricingService {
     try {
       return await this.geocodingService.geocodeAddress(address);
     } catch {
-      console.warn(`Geocoding failed for "${address}", using Lagos default coordinates`);
+      logger.warn('Geocoding failed, using Lagos default coordinates', { address });
       return PricingService.LAGOS_DEFAULT;
     }
   }

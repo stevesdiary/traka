@@ -7,13 +7,13 @@
 
 - [Done] **`processCashDelivery` has no authentication check** — `wallet.controller.ts` reads `riderId` directly from `req.body` with no auth or ownership check. Any unauthenticated caller can debit any rider's wallet.
 
-- [ ] **Refresh token secret falls back to access token secret** — In `token.service.ts`, `REFRESH_SECRET` falls back to `JWT_SECRET` when `JWT_REFRESH_SECRET` is not set. A compromised access token secret would also compromise all refresh tokens. Set a dedicated `JWT_REFRESH_SECRET` env var and remove the fallback.
+- [Done] **Refresh token secret falls back to access token secret** — In `token.service.ts`, `REFRESH_SECRET` falls back to `JWT_SECRET` when `JWT_REFRESH_SECRET` is not set. A compromised access token secret would also compromise all refresh tokens. Set a dedicated `JWT_REFRESH_SECRET` env var and remove the fallback.
 
 ---
 
 ## High
 
-- [ ] **`console.*` used instead of structured logger** — `geocoding.service.ts`, `package.service.ts`, and others call `console.log/warn/error` directly. These logs bypass the Loki/observability pipeline and can leak internal details. Replace all with `logger`.
+- [Done] **`console.*` used instead of structured logger** — `geocoding.service.ts`, `package.service.ts`, and others call `console.log/warn/error` directly. These logs bypass the Loki/observability pipeline and can leak internal details. Replace all with `logger`.
 
 - [ ] **Error logger logs full request body and headers** — `errorLogger` in `logging.middleware.ts` logs `req.body` and `req.headers` in full. In production this will write passwords, tokens, and payment data to the log store. Redact or omit sensitive fields.
 
