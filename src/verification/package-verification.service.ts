@@ -1,4 +1,3 @@
-import { redis } from '../config/database.js';
 import { EmailNotificationService } from '../notification/email.service.js';
 import { PackageRepository } from '../package/package.repository.js';
 
@@ -69,20 +68,10 @@ export class PackageVerificationService {
     );
   }
 
-  async scheduleDeliveryCodeEmail(recipientEmail: string, recipientName: string, deliveryCode: string, packageId: string): Promise<void> {
-    const key = `delivery_code_scheduled:${packageId}`;
-    await redis.setEx(key, 300, JSON.stringify({ recipientEmail, recipientName, deliveryCode }));
-  }
-
   async triggerDeliveryCodeEmail(packageId: string): Promise<void> {
-    const key = `delivery_code_scheduled:${packageId}`;
-    const data = await redis.get(key);
-    
-    if (data) {
-      const { recipientEmail, recipientName, deliveryCode } = JSON.parse(data);
-      await this.sendDeliveryCodeToRecipient(recipientEmail, recipientName, deliveryCode);
-      await redis.del(key);
-    }
+    const pkg = await this.packageRepository.findById(packageId);
+    if (!pkg || !pkg.recipient_email || !pkg.delivery_pin) return;
+    await this.sendDeliveryCodeToRecipient(pkg.recipient_email, pkg.recipient_name, pkg.delivery_pin);
   }
 
   async generatePackageVerification(packageData: {

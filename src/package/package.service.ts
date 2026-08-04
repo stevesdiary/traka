@@ -172,16 +172,6 @@ export class PackageService {
       );
     }
 
-    // Schedule delivery code email (will be sent 5 minutes before arrival)
-    if (data.recipient_email) {
-      await this.packageVerificationService.scheduleDeliveryCodeEmail(
-        data.recipient_email,
-        data.recipient_name,
-        verification.delivery_pin,
-        newPackage.id
-      );
-    }
-
     // Send tracking notification to recipient
     await this.sendTrackingNotification(newPackage);
     const dispatch = await this.attemptAutoDispatch(
@@ -686,6 +676,11 @@ export class PackageService {
         )
       ).catch(err => logger.error('Failed to send tracking email', { error: err?.message }));
     }
+
+    // Send delivery code to recipient now that the rider has the package
+    await this.packageVerificationService.triggerDeliveryCodeEmail(package_id).catch(err =>
+      logger.error('Failed to send delivery code email', { error: err?.message, package_id })
+    );
 
     return { message: 'Package pickup confirmed', status: 'IN_TRANSIT' };
   }

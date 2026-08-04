@@ -21,7 +21,7 @@
 
 - [Done] **Background dispatch queue is never consumed** — `scheduleBackgroundSearch` writes a `dispatch:background:{packageId}` key to Redis but no worker or cron reads and retries it. Packages queued for background search will never get a rider assigned.
 
-- [ ] **Delivery code email TTL is only 5 minutes** — `scheduleDeliveryCodeEmail` stores the delivery PIN with a 300-second TTL. If the rider takes longer than 5 minutes to arrive after the key is written, the recipient never receives their delivery code. Increase the TTL or trigger the email at a later stage (e.g. on `OUT_FOR_DELIVERY` status).
+- [Done] **Delivery code email TTL is only 5 minutes** — `scheduleDeliveryCodeEmail` stores the delivery PIN with a 300-second TTL. If the rider takes longer than 5 minutes to arrive after the key is written, the recipient never receives their delivery code. Increase the TTL or trigger the email at a later stage (e.g. on `OUT_FOR_DELIVERY` status).
 
 ---
 
