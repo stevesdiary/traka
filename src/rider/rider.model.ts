@@ -33,9 +33,9 @@ export class RiderModel extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false
+    allowNull: true
   })
-  declare license_number: string;
+  declare license_number: string | null;
 
   @Column({
     type: DataType.ENUM('BICYCLE', 'MOTORCYCLE'),
@@ -45,9 +45,9 @@ export class RiderModel extends Model {
 
   @Column({
     type: DataType.STRING,
-    allowNull: false
+    allowNull: true
   })
-  declare vehicle_plate: string;
+  declare vehicle_plate: string | null;
 
   @Column(DataType.STRING)
   declare profile_photo: string | undefined;
@@ -113,9 +113,9 @@ export interface RiderProfile {
   rider_id: string;
   user_id: string;
   business_id?: string;
-  license_number: string;
+  license_number?: string | null;
   vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
-  vehicle_plate: string;
+  vehicle_plate?: string | null;
   profile_photo?: string;
   license_photo?: string;
   vehicle_photo?: string;
@@ -134,8 +134,8 @@ export interface RiderProfile {
 export interface RiderRegistration {
   email: string;
   password: string;
-  license_number: string;
+  license_number?: string;
   vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
-  vehicle_plate: string;
+  vehicle_plate?: string;
   business_id?: string;
 }

@@ -3,6 +3,8 @@ import { DeliveryRequest, CourierState } from '../models/CourierState.js';
 import { MatchingEngine, CourierMatch } from './MatchingEngine.js';
 import { MATCHING_CONFIG } from '../config/vehicles.js';
 import { DispatchTimeoutService } from './DispatchTimeoutService.js';
+import { emitNewJobOffer, NewJobOfferPayload } from '../../websocket/websocket.service.js';
+import config from '../../config/environment.js';
 import logger from '../../utils/logger.js';
 
 export interface DispatchResult {
@@ -126,8 +128,8 @@ export class DispatchService {
       timestamp: Date.now()
     }));
 
-    // In a real implementation, this would trigger a push notification
-    // or WebSocket message to the courier
+    this.emitNewJobOffer(match, request);
+
     logger.info("Offering delivery to courier", { deliveryId: request.id, courierId: match.courier.id });
 
     // Wait for response (in real implementation, this would be event-driven)
@@ -179,46 +181,57 @@ export class DispatchService {
       return { success: false };
     }
 
-    // Create broadcast offers
-    const broadcastKey = `broadcast:${request.id}`;
-    const offers = eligibleMatches.map(match => ({
-      courierId: match.courier.id,
-      eta: match.eta,
-      score: match.score
-    }));
+    const requestId = request.id;
+    const offerTtl = 30; // seconds
 
-    await redis.setEx(broadcastKey, 30, JSON.stringify({
-      requestId: request.id,
-      offers,
-      timestamp: Date.now()
-    }));
+    // Create a per-courier offer + push a real-time offer to each eligible courier
+    for (const match of eligibleMatches) {
+      const offerKey = `${this.COURIER_OFFER_PREFIX}${match.courier.id}:${requestId}`;
+      await redis.setEx(offerKey, offerTtl, JSON.stringify({
+        requestId,
+        courierId: match.courier.id,
+        eta: match.eta,
+        pickupAddress: request.pickupLocation.address,
+        dropoffAddress: request.dropoffLocation.address,
+        package: request.package,
+        timestamp: Date.now()
+      }));
 
-    // In production, send push notifications to all eligible couriers
-    logger.info('Broadcasting delivery to couriers', { requestId: request.id, courierCount: offers.length });
+      this.emitNewJobOffer(match, request, 10000);
+    }
 
-    // Wait for first acceptance (simplified - in production use pub/sub)
-    const responseKey = `${broadcastKey}:response`;
-    
+    logger.info('Broadcasting delivery to couriers', { requestId, courierCount: eligibleMatches.length });
+
+    // Wait for the first acceptance
     for (let i = 0; i < 10; i++) { // 10 second timeout for broadcast
-      const response = await redis.get(responseKey);
-      
-      if (response) {
-        const { courierId } = typeof response === 'string' ? JSON.parse(response) : response as any;
-        const assignedCourier = eligibleMatches.find(m => m.courier.id === courierId)?.courier;
-        
-        await redis.del(broadcastKey);
-        await redis.del(responseKey);
-        
-        return {
-          success: true,
-          assignedCourier
-        };
+      for (const match of eligibleMatches) {
+        const courierOfferKey = `${this.COURIER_OFFER_PREFIX}${match.courier.id}:${requestId}`;
+        const courierResponseKey = `${courierOfferKey}:response`;
+        const response = await redis.get(courierResponseKey);
+
+        if (response) {
+          const { accepted } = typeof response === 'string' ? JSON.parse(response) : response as any;
+
+          if (accepted) {
+            await redis.del(courierOfferKey);
+            await redis.del(courierResponseKey);
+            return { success: true, assignedCourier: match.courier };
+          }
+
+          // Courier declined — remove their offer so they aren't offered again
+          await redis.del(courierOfferKey);
+          await redis.del(courierResponseKey);
+        }
       }
-      
+
       await this.sleep(1000);
     }
 
-    await redis.del(broadcastKey);
+    // Clean up remaining offers
+    for (const match of eligibleMatches) {
+      await redis.del(`${this.COURIER_OFFER_PREFIX}${match.courier.id}:${requestId}`);
+      await redis.del(`${this.COURIER_OFFER_PREFIX}${match.courier.id}:${requestId}:response`);
+    }
     return { success: false };
   }
 
@@ -252,6 +265,48 @@ export class DispatchService {
     }));
 
     return true;
+  }
+
+  private static emitNewJobOffer(match: CourierMatch, request: DeliveryRequest, expiresInMs?: number): void {
+    const fee = this.estimateRiderEarnings(request, match.distance);
+    const weightKg = request.package.weight ?? 0;
+    const distanceKm = Math.round((match.distance / 1000) * 10) / 10;
+
+    const payload: NewJobOfferPayload = {
+      type: 'new-job-offer',
+      requestId: request.id,
+      packageId: request.packageId,
+      courierId: match.courier.id,
+      fee,
+      pickupAddress: request.pickupLocation.address,
+      dropoffAddress: request.dropoffLocation.address,
+      distanceMeters: Math.round(match.distance),
+      distanceKm,
+      etaSeconds: Math.round(match.eta),
+      etaMinutes: Math.max(1, Math.round(match.eta / 60)),
+      packageType: 'PARCEL',
+      packageSize: weightKg <= 1 ? 'SMALL' : weightKg <= 5 ? 'MEDIUM' : 'LARGE',
+      weightKg,
+      vehicleType: match.courier.vehicleType,
+      expiresAt: Date.now() + (expiresInMs ?? MATCHING_CONFIG.DISPATCH_TIMEOUT * 1000)
+    };
+
+    emitNewJobOffer(match.courier.id, payload);
+  }
+
+  /** Approximates the rider's share of the delivery fee, mirroring PricingService maths. */
+  private static estimateRiderEarnings(request: DeliveryRequest, distanceMeters: number): number {
+    const distanceKm = distanceMeters / 1000;
+    const baseFee = 500;
+    const distanceFee = distanceKm * 100;
+    const weight = request.package.weight ?? 1;
+    let weightMultiplier = 1;
+    if (weight > 15) weightMultiplier = 1.5;
+    else if (weight > 5) weightMultiplier = 1.25;
+
+    const subtotal = (baseFee + distanceFee) * weightMultiplier;
+    const riderEarnings = subtotal * (1 - config.financial.riderCommissionRate);
+    return Math.round(riderEarnings);
   }
 
   private static sleep(ms: number): Promise<void> {
