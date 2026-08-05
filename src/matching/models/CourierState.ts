@@ -22,6 +22,11 @@ export interface CourierState {
 
 export interface DeliveryRequest {
   id: string;
+  /**
+   * Set when the dispatch is backed by a real Package record (e.g. the booking
+   * flow). Undefined for standalone matching requests.
+   */
+  packageId?: string;
   pickupLocation: {
     lat: number;
     lng: number;

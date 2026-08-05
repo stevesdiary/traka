@@ -3,9 +3,39 @@ import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { MessageModel } from '../message/message.model.js';
 import { PackageModel } from '../package/package.model.js';
+import { RiderModel } from '../rider/rider.model.js';
 import { UserModel } from '../user/user.model.js';
 import { TrackingTokenService } from '../tracking/tracking-token.service.js';
 import logger from '../utils/logger.js';
+
+export interface NewJobOfferPayload {
+  type: 'new-job-offer';
+  requestId: string;
+  /** Present when the offer is backed by a real Package record. */
+  packageId?: string;
+  courierId: string;
+  fee: number;
+  pickupAddress: string;
+  dropoffAddress: string;
+  distanceMeters: number;
+  distanceKm: number;
+  etaSeconds: number;
+  etaMinutes: number;
+  packageType: string;
+  packageSize: string;
+  weightKg: number;
+  vehicleType: string;
+  expiresAt: number;
+}
+
+export interface DeliveryAssignedPayload {
+  type: 'delivery-assigned';
+  packageId: string;
+  trackingNumber: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  etaSeconds: number;
+}
 
 export class WebSocketService {
   private io: SocketIOServer;
@@ -70,6 +100,31 @@ export class WebSocketService {
         socket.leave(`package:${packageId}`);
       });
 
+      socket.on('join-rider', async (riderId: string) => {
+        try {
+          if (typeof riderId !== 'string' || !riderId || !socket.data.userId) return;
+
+          // The rider can join either as the user id itself or via an owned rider profile
+          if (riderId === socket.data.userId) {
+            socket.join(`rider:${riderId}`);
+            return;
+          }
+
+          const rider = await RiderModel.findByPk(riderId);
+          if (rider && rider.user_id === socket.data.userId) {
+            socket.join(`rider:${riderId}`);
+          }
+        } catch (error) {
+          logger.error('Error joining rider room', error);
+        }
+      });
+
+      socket.on('leave-rider', (riderId: string) => {
+        if (typeof riderId === 'string' && riderId) {
+          socket.leave(`rider:${riderId}`);
+        }
+      });
+
       socket.on('join-tracking', async (packageId: string) => {
         try {
           // Tracking-only sockets: token already scoped to a specific package
@@ -98,9 +153,11 @@ export class WebSocketService {
         socket.leave(`tracking:package:${packageId}`);
       });
 
-      socket.on('send-message', async (data: { packageId: string; message: string }) => {
+      socket.on('send-message', async (data: { packageId: string; message?: string; content?: string }) => {
         try {
-          const { packageId, message } = data;
+          const { packageId } = data;
+          const message = (data.content ?? data.message ?? '').trim();
+          if (!packageId || !message) return;
           
           const pkg = await PackageModel.findByPk(packageId);
           if (!pkg) return;
@@ -111,7 +168,7 @@ export class WebSocketService {
           const newMessage = await MessageModel.create({
             package_id: packageId,
             sender_id: socket.data.userId,
-            message: message.trim()
+            message
           });
 
           const messageWithSender = await MessageModel.findByPk(newMessage.id, {
@@ -148,6 +205,14 @@ export class WebSocketService {
   ): void {
     this.io.to(`tracking:package:${packageId}`).emit('rider-location-update', payload);
   }
+
+  emitNewJobOffer(riderId: string, payload: NewJobOfferPayload): void {
+    this.io.to(`rider:${riderId}`).emit('new-job-offer', payload);
+  }
+
+  emitDeliveryAssigned(riderId: string, payload: DeliveryAssignedPayload): void {
+    this.io.to(`rider:${riderId}`).emit('delivery-assigned', payload);
+  }
 }
 
 let webSocketService: WebSocketService | null = null;
@@ -174,4 +239,20 @@ export const emitRiderLocationUpdate = (
   }
 
   webSocketService.emitRiderLocationUpdate(packageId, payload);
+};
+
+export const emitNewJobOffer = (riderId: string, payload: NewJobOfferPayload): void => {
+  if (!webSocketService) {
+    return;
+  }
+
+  webSocketService.emitNewJobOffer(riderId, payload);
+};
+
+export const emitDeliveryAssigned = (riderId: string, payload: DeliveryAssignedPayload): void => {
+  if (!webSocketService) {
+    return;
+  }
+
+  webSocketService.emitDeliveryAssigned(riderId, payload);
 };

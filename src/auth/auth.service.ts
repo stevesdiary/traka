@@ -257,9 +257,9 @@ export class AuthService {
     first_name: string;
     surname: string;
     phone: string;
-    license_number: string;
+    license_number?: string;
     vehicle_type: 'BICYCLE' | 'MOTORCYCLE';
-    vehicle_plate: string;
+    vehicle_plate?: string;
     business_id?: string;
     terms_accepted: true;
   }): Promise<{ token: string; user: any; rider_profile: any }> {
@@ -285,13 +285,13 @@ export class AuthService {
       terms_accepted_at: new Date()
     });
 
-    // Create rider profile
+    // Create rider profile (license/plate optional for bicycle riders)
     const riderProfile = await this.riderRepository.createRiderProfile({
       user_id: user.id,
       business_id: riderData.business_id,
-      license_number: riderData.license_number,
+      license_number: riderData.license_number ?? null,
       vehicle_type: riderData.vehicle_type,
-      vehicle_plate: riderData.vehicle_plate,
+      vehicle_plate: riderData.vehicle_plate ?? null,
       verification_status: 'PENDING',
       is_available: false,
       rider_type,

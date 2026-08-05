@@ -22,6 +22,7 @@ import { PromotionService } from "../promotion/promotion.service.js";
 import { customAlphabet } from 'nanoid';
 import type { DeliveryRequest } from "../matching/models/CourierState.js";
 import type { RiderModel } from "../rider/rider.model.js";
+import { emitDeliveryAssigned } from "../websocket/websocket.service.js";
 import logger from '../utils/logger.js';
 
 export class PackageService {
@@ -849,6 +850,7 @@ export class PackageService {
   }> {
     const deliveryRequest: DeliveryRequest = {
       id: packageData.id,
+      packageId: packageData.id,
       pickupLocation: {
         lat: pickupGeo.latitude,
         lng: pickupGeo.longitude,
@@ -908,6 +910,16 @@ export class PackageService {
           assignedRider.vehicleType
         ),
       ]);
+
+      // Race-free hand-off: tell the rider's live socket that this delivery is now theirs
+      emitDeliveryAssigned(dispatchResult.assignedCourier.id, {
+        type: "delivery-assigned",
+        packageId: packageData.id,
+        trackingNumber: packageData.tracking_number,
+        pickupAddress: data.pickup_address,
+        dropoffAddress: data.delivery_address,
+        etaSeconds: etaSeconds ?? 0,
+      });
 
       const notificationPayload = {
         package_id: packageData.id,
