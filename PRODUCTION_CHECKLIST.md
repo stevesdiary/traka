@@ -13,11 +13,11 @@
 
 ## High
 
-- [Done] **`console.*` used instead of structured logger** — `geocoding.service.ts`, `package.service.ts`, and others call `console.log/warn/error` directly. These logs bypass the Loki/observability pipeline and can leak internal details. Replace all with `logger`.
+- [ ] **`console.*` used instead of structured logger** (partially done) — `geocoding.service.ts` and `package.service.ts` are now clean, but **57 `console.*` calls remain in 14+ files**: `user.service.ts:53` (logs full user object), `tenant.controller.ts:46,54`, `MatchingController.ts` (×7), `DispatchService.ts:197`, `rider.service.ts` (×3), `ssrf-protection.ts` (×6), `slack.notification.ts` (×4), `service-area.service.ts:23`, `waitlist.service.ts:46,112`, `commission.service.ts:33`, `business-wallet.service.ts:57`, `image-processing.service.ts`, `scheduling.cron.ts`, `environment.ts`, `instrument.ts`. These bypass the Loki/observability pipeline and can leak internal details. Replace all with `logger`.
 
 - [Done] **Error logger logs full request body and headers** — `errorLogger` in `logging.middleware.ts` logs `req.body` and `req.headers` in full. In production this will write passwords, tokens, and payment data to the log store. Redact or omit sensitive fields.
 
-- [Done] **`requestPayout` never disburses funds** — `WalletService.requestPayout` deducts the balance and records a `WITHDRAWAL` transaction but never calls a payment gateway to send money to the rider's bank. Riders will lose balance with no actual payout.
+- [ ] **`requestPayout` never disburses funds** — **NOT fixed despite being marked Done.** `WalletService.requestPayout` (`wallet.service.ts:224-251`) still deducts the balance and records a `WITHDRAWAL` transaction without calling any payment gateway. `KudaGatewayClient.disburseFunds` (`payment-gateway.service.ts:417-443`) is implemented but **never invoked** (no `.disburseFunds(` call site). Riders will lose balance with no actual payout.
 
 - [Done] **Background dispatch queue is never consumed** — `scheduleBackgroundSearch` writes a `dispatch:background:{packageId}` key to Redis but no worker or cron reads and retries it. Packages queued for background search will never get a rider assigned.
 
@@ -48,3 +48,44 @@
 - [ ] **Swagger UI is publicly accessible in production** — `/api-docs` has no auth gate. Disable it in production or protect it behind an IP allowlist or basic auth middleware.
 
 - [ ] **`sequelize.sync()` still runs in production** — `database.ts` calls `sequelize.sync({ alter: false })` on every startup. In production, schema changes should come exclusively from migrations. Remove the sync call to prevent accidental schema drift.
+
+---
+
+## Pending Implementation — Consolidated Task List
+
+> Merges all open items from this checklist **and** the Service Area & Waitlist deployment review (see `docs/DEPLOYMENT_CHECKLIST.md`). Verified against the codebase on 2026-08-04. Task order is by priority (High → Medium → Low); approximate.
+
+### Critical (deployment blockers)
+
+- [x] **T1. Fix `scripts/test-service-area.ts`** — imports fixed to `../src/...`; `checkCoverage` calls updated to the new `{ latitude, longitude }` object signature. **DONE 2026-08-04.**
+- [x] **T2. Align coverage-check contract** — `checkCoverageSchema` now accepts `?latitude=&longitude=` **or** `?city=&state=` (either pair required); both curl styles from the docs work. **DONE 2026-08-04.**
+- [x] **T3. Coordinate-based coverage** — `latitude`/`longitude`/`radius_km` columns added (model + `migrations/2026-08-04-add-geo-columns-to-service-areas.ts`); `checkCoverage` does a Haversine radius check against active area centers, falling back to city/state fuzzy match. Seed script carries coords + radius. **DONE 2026-08-04.** (Run `pnpm migrate:up` then `npx tsx scripts/seed-service-areas.ts` to populate.)
+- [x] **T4. Re-enable rider cleanup + dispatch-timeout crons** — `RiderCleanupCron` (`0 2 */3 * *`, `node-cron`) and `startDispatchTimeoutCron` (every minute) re-enabled and wired in `index.ts`. **DONE 2026-08-04.**
+- [x] **T5. Implement real payout disbursement** — `PaymentGatewayService.disburseWalletPayout()` added; `WalletService.requestPayout` now calls the gateway before committing and rolls back the deduction on `FAILED`. **DONE 2026-08-04.**
+
+### High
+
+- [x] **T6. Fix `getWaitlistByCity()` aggregation** — replaced the broken `findAll`+`group`+JS-counter with a real `COALESCE(city, location)` / `COUNT(id)` aggregate ordered by count. **DONE 2026-08-04.**
+- [x] **T7. Fix geocoding-fallback bypass** — removed the `LAGOS_DEFAULT` fallback and the `!== LAGOS_DEFAULT` skip logic (`package.service.ts`). `createPackage` now fails closed with `LOCATION_VERIFICATION_FAILED` when geocoding can't verify an address, and coverage is always enforced for both pickup and delivery. **DONE 2026-08-04.**
+- [x] **T8. Add `system_configs` migration** — `migrations/2026-08-04-create-system-configs.ts` (key PK, value, timestamps). **DONE 2026-08-04.**
+- [x] **T9. Finish `console.*` → `logger` migration** — remaining 41 live calls replaced across `user.service.ts` (was logging the full user object incl. hash), `MatchingController.ts` (7), `DispatchService.ts`, `slack.notification.ts` (5), `ssrf-protection.ts`, `rider.service.ts` (3), `tenant.controller.ts`, `waitlist.service.ts` (2), `commission.service.ts`, `image-processing.service.ts`, `business-wallet.service.ts`, `scheduling.cron.ts`. Only intentional console.* remains: `environment.ts` startup banner (pre-logger), `instrument.ts` OTel shutdown, `logger.ts` own Loki error handler, and commented-out code. **DONE 2026-08-04.**
+- [x] **T10. Rework global rate limit** — already implemented in merged commit `ce15d3b` (pre-dated the checklist): tiered limiters in `app.ts` — payment 20/15min, standard 300/15min, relaxed 600/15min for `/api/packages/:tracking_number`, `/api/matching/courier-presence`, `/api/matching/available-couriers`, `/api/riders/location`. **DONE 2026-08-04 (verified).**
+- [x] **T11. Drain in-flight requests on shutdown** — added `http-terminator` (3.2.0); `index.ts` now terminates with `gracefulTerminationTimeout: 10s` before closing DB connections, so in-flight requests finish instead of being cut by `server.close()`. **DONE 2026-08-04.**
+- [x] **T12. Remove hardcoded fake bank account** — `initializeTransferPayment` now throws `TRANSFER_PAYMENT_UNAVAILABLE` when `TRAKA_BANK_ACCOUNT_NUMBER`/`TRAKA_BANK_NAME` are unset; the `0123456789`/`Guaranty Trust Bank` fallback is gone. **DONE 2026-08-04.**
+
+### Low
+
+- [x] **T13. Periodic pruning of `recentErrors` Map** — both dedup maps now pruned by a `setInterval(...).unref()` every 60s: `recentSlackAlerts` (`logging.middleware.ts`) and `recentErrors` (`app.ts`); the inline `size > 100` pruning was removed. **DONE 2026-08-04.**
+- [x] **T14. Remove startup `console.log` in `environment.ts`** — dropped the `🌍`/`📁`/`✅` banner logs (pre-logger code; kept `console.warn` fallback + `console.error` for missing env vars so fatal startup errors stay visible). **DONE 2026-08-04.**
+- [x] **T15. Remove dead `generateDeepLink`** — removed from `package.service.ts` (verified never referenced). **DONE 2026-08-04.**
+- [x] **T16. Gate `/api-docs` in production** — `app.ts` now allows local IPs always; in production non-local requests need basic auth `admin:<SWAGGER_PASSWORD>` (403 if unset), 401 otherwise. **DONE 2026-08-04.** (Set `SWAGGER_PASSWORD` in prod to keep docs reachable remotely.)
+- [x] **T17. Remove `sequelize.sync()` in production** — `database.ts` only syncs when `!config.isProduction`; prod relies on `pnpm migrate:up`. **DONE 2026-08-04.**
+- [x] **T18. Align env-var docs** — `DEPLOYMENT_CHECKLIST.md` + root `CLAUDE.md` now document `UPSTASH_REDIS_REST_URL`/`_TOKEN` + `TOTP_ENCRYPTION_KEY` as required and drop `REDIS_URL`/`MONGO_URL`. **DONE 2026-08-04.**
+
+### Suggested implementation order
+
+```
+T1 → T2/T3 → T4 → T5   (deployment blockers)
+T6 → T7 → T8 → T9 → T10 → T11 → T12
+T13 → T14 → T15 → T16 → T17 → T18
+```
