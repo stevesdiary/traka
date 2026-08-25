@@ -33,7 +33,7 @@ export class PackageController {
   // Public tracking endpoint (no auth required)
   trackPackage = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { tracking_number } = req.params;
+      const { tracking_number } = req.params as Record<string, string>;
       const { token } = req.query;
       
       const packageData = await this.packageService.getPackageByTrackingNumber(
@@ -56,7 +56,7 @@ export class PackageController {
 
   initializeTransferPayment = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const user_id = req.user!.userId;
       const result = await this.packageService.initializeTransferPayment(id, user_id);
       res.json(result);
@@ -82,7 +82,7 @@ export class PackageController {
 
   getPackageById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(id)) {
         res.status(400).json({ error: 'Invalid package ID' });
@@ -107,7 +107,7 @@ export class PackageController {
   // Authenticated tracking endpoint
   getPackageByTrackingNumber = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { tracking_number } = req.params;
+      const { tracking_number } = req.params as Record<string, string>;
       const requester = { id: req.user!.userId, role: req.user!.role };
       const packageData = await this.packageService.getPackageByTrackingNumber(
         tracking_number,
@@ -135,7 +135,7 @@ export class PackageController {
   // Claim guest package to user account
   claimPackage = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { tracking_number } = req.params;
+      const { tracking_number } = req.params as Record<string, string>;
       const { guest_token } = req.body;
       const user_id = req.user!.userId;
 
@@ -157,7 +157,7 @@ export class PackageController {
 
   cancelPackage = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const { cancellation_reason, cancellation_note, rider_has_package } = req.body;
       const user_id = req.user!.userId;
 
@@ -181,7 +181,7 @@ export class PackageController {
 
   assignSelf = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const userId = req.user!.userId;
       await this.packageService.assignRiderSelf(id, userId);
       res.json({ message: 'Job accepted' });
@@ -194,7 +194,7 @@ export class PackageController {
 
   unassignSelf = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const userId = req.user!.userId;
       await this.packageService.unassignRiderSelf(id, userId);
       res.json({ message: 'Job cancelled' });
@@ -206,7 +206,7 @@ export class PackageController {
 
   confirmPickup = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const { pin } = req.body;
       const tenant_id = req.user!.tenant_id;
       const result = await this.packageService.confirmPickup(id, pin ?? '', tenant_id);
@@ -218,7 +218,7 @@ export class PackageController {
 
   confirmDelivery = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const { pin } = req.body;
       const tenant_id = req.user!.tenant_id;
       const result = await this.packageService.confirmDelivery(id, pin ?? '', tenant_id);

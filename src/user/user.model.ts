@@ -111,4 +111,18 @@ export class UserModel extends Model <UserModel> {
     defaultValue: null
   })
   declare refresh_token_expiry: Date | null;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    unique: true
+  })
+  declare referral_code: string | null;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    defaultValue: null
+  })
+  declare referral_code_updated_at: Date | null;
 }

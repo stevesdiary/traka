@@ -32,7 +32,7 @@ export class PromotionController {
 
   getPromotionById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const promotion = await promotionService.getPromotionById(id);
       if (!promotion) {
         res.status(404).json({ error: 'Promotion not found' });
@@ -48,7 +48,7 @@ export class PromotionController {
 
   updatePromotion = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const promotion = await promotionService.updatePromotion(id, req.body);
       res.json({ message: 'Promotion updated successfully', promotion });
     } catch (error: any) {
@@ -58,7 +58,7 @@ export class PromotionController {
 
   getPromotionUsages = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 50;
       const promotion = await promotionService.getPromotionById(id);

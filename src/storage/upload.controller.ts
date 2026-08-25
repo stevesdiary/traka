@@ -84,7 +84,7 @@ export class UploadController {
 
   getSignedUrl = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       const url = await storageService.getSignedUrl(key);
 
       res.json({ url });
@@ -95,7 +95,7 @@ export class UploadController {
 
   deleteFile = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { key } = req.params;
+      const { key } = req.params as Record<string, string>;
       await storageService.deleteFile(key);
 
       res.json({ message: 'File deleted successfully' });

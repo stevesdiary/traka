@@ -20,7 +20,7 @@ router.post(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const { package_id } = req.params;
+      const { package_id } = req.params as Record<string, string>;
       await packageVerificationService.triggerDeliveryCodeEmail(package_id);
       res.json({ 
         success: true,

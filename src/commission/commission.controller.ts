@@ -20,7 +20,7 @@ export class CommissionController {
 
   getDriverEarnings = async (req: Request, res: Response) => {
     try {
-      const { driver_id } = req.params;
+      const { driver_id } = req.params as Record<string, string>;
       const earnings = await this.commissionService.getRiderEarnings(driver_id);
       res.json(earnings);
     } catch (error) {
@@ -30,7 +30,7 @@ export class CommissionController {
 
   payCommission = async (req: Request, res: Response) => {
     try {
-      const { commission_id } = req.params;
+      const { commission_id } = req.params as Record<string, string>;
       const commission = await this.commissionService.payCommission(commission_id);
       res.json(commission);
     } catch (error) {
@@ -40,7 +40,7 @@ export class CommissionController {
 
   getEarningsSummary = async (req: Request, res: Response) => {
     try {
-      const { driver_id } = req.params;
+      const { driver_id } = req.params as Record<string, string>;
       const { days } = req.query;
       const summary = await this.commissionService.getEarningsSummary(driver_id, Number(days) || 30);
       res.json(summary);

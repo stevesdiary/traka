@@ -51,7 +51,7 @@ export class UserManagementController {
 
   getUserById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { user_id } = req.params;
+      const { user_id } = req.params as Record<string, string>;
       const tenant_id = req.user!.tenant_id;
       if (!tenant_id) {
         res.status(403).json({ error: 'No tenant access' });
@@ -74,7 +74,7 @@ export class UserManagementController {
 
   updateUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { user_id } = req.params;
+      const { user_id } = req.params as Record<string, string>;
       const updateData = req.body;
       const tenant_id = req.user!.tenant_id;
       if (!tenant_id) {
@@ -98,7 +98,7 @@ export class UserManagementController {
 
   deleteUser = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { user_id } = req.params;
+      const { user_id } = req.params as Record<string, string>;
       const tenant_id = req.user!.tenant_id;
       if (!tenant_id) {
         res.status(403).json({ error: 'No tenant access' });

@@ -32,10 +32,10 @@ export class RatingController {
 
   getRiderRatings = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { rider_id } = req.params;
+      const { rider_id } = req.params as Record<string, string>;
       const limit = req.query.limit ? Number(req.query.limit) : 50;
 
-      const result = await this.ratingService.getRiderRatings(rider_id, limit);
+      const result = await this.ratingService.getRiderRatings(Array.isArray(rider_id) ? String(rider_id[0]) : String(rider_id), limit);
 
       res.json(result);
     } catch (error: any) {
@@ -45,9 +45,9 @@ export class RatingController {
 
   getRiderStats = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { rider_id } = req.params;
+      const { rider_id } = req.params as Record<string, string>;
 
-      const stats = await this.ratingService.getRiderStats(rider_id);
+      const stats = await this.ratingService.getRiderStats(Array.isArray(rider_id) ? String(rider_id[0]) : String(rider_id));
 
       res.json(stats);
     } catch (error: any) {

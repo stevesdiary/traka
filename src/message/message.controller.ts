@@ -7,7 +7,7 @@ const getUserId = (req: Request) =>
 export class MessageController {
   async sendMessage(req: Request, res: Response) {
     try {
-      const { packageId } = req.params;
+      const { packageId } = req.params as Record<string, string>;
       const { message, content } = req.body;
       const text = (message || content)?.trim();
       const userId = getUserId(req);
@@ -25,7 +25,7 @@ export class MessageController {
 
   async getMessages(req: Request, res: Response) {
     try {
-      const { packageId } = req.params;
+      const { packageId } = req.params as Record<string, string>;
       const userId = getUserId(req);
 
       const messages = await messageService.getMessages(packageId, userId);
@@ -37,7 +37,7 @@ export class MessageController {
 
   async getUnreadCount(req: Request, res: Response) {
     try {
-      const { packageId } = req.params;
+      const { packageId } = req.params as Record<string, string>;
       const userId = getUserId(req);
 
       const count = await messageService.getUnreadCount(packageId, userId);

@@ -19,7 +19,7 @@ async function assertMembership(userId: string, tenantId: string, res: Response)
 export const createApiKey = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id } = req.params;
+    const { business_id } = req.params as Record<string, string>;
     const { name } = req.body;
 
     if (!name || typeof name !== 'string') {
@@ -42,7 +42,7 @@ export const createApiKey = async (req: Request, res: Response): Promise<void> =
 export const listApiKeys = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id } = req.params;
+    const { business_id } = req.params as Record<string, string>;
 
     if (!(await assertMembership(userId, business_id, res))) return;
 
@@ -56,7 +56,7 @@ export const listApiKeys = async (req: Request, res: Response): Promise<void> =>
 export const revokeApiKey = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id, key_id } = req.params;
+    const { business_id, key_id } = req.params as Record<string, string>;
 
     if (!(await assertMembership(userId, business_id, res))) return;
 

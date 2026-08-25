@@ -24,7 +24,7 @@ export class TenantController {
 
   getTenantById = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const tenant = await this.tenantService.getTenantById(id);
       
       if (!tenant) {
@@ -43,7 +43,7 @@ export class TenantController {
 
   approveTenant = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const tenant = await this.tenantService.approveTenant(id);
       logger.info('Tenant approved', { tenantId: tenant.id, businessName: tenant.business_name });
       res.json({
@@ -58,7 +58,7 @@ export class TenantController {
 
   suspendTenant = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const tenant = await this.tenantService.suspendTenant(id);
       res.json({
         message: 'Tenant suspended successfully',

@@ -61,7 +61,7 @@ export class BusinessController {
         return;
       }
 
-      const { business_id } = req.params;
+      const { business_id } = req.params as Record<string, string>;
       const updated = await this.businessService.updateBusiness(business_id, userId, req.body);
 
       res.json({

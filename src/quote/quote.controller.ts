@@ -42,7 +42,7 @@ export class QuoteController {
 
   getQuote = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { quote_code } = req.params;
+      const { quote_code } = req.params as Record<string, string>;
 
       const quote = await quoteService.getQuoteByCode(quote_code);
 
@@ -106,7 +106,7 @@ export class QuoteController {
 
   getAnonymousQuotes = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { session_id } = req.params;
+      const { session_id } = req.params as Record<string, string>;
       const limit = req.query.limit ? Number(req.query.limit) : 10;
 
       if (!session_id) {

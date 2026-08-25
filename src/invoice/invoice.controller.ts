@@ -8,7 +8,7 @@ export class InvoiceController {
   generateInvoice = async (req: Request, res: Response): Promise<void> => {
     try {
       const { year, month } = req.body;
-      const tenantId = req.user?.tenant_id || req.params.tenantId;
+      const tenantId = req.user?.tenant_id || (req.params.tenantId as string);
 
       if (!tenantId) {
         res.status(400).json({ error: 'Tenant ID required' });
@@ -44,7 +44,7 @@ export class InvoiceController {
 
   markPaid = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { invoiceId } = req.params;
+      const { invoiceId } = req.params as Record<string, string>;
       
       await this.invoiceService.markInvoicePaid(invoiceId);
       res.json({ message: 'Invoice marked as paid' });

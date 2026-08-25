@@ -56,7 +56,7 @@ export class RiderController {
 
   verifyRider = async (req: Request, res: Response) => {
     try {
-      const { user_id } = req.params;
+      const { user_id } = req.params as Record<string, string>;
       const { approved } = req.body;
       const profile = await this.riderService.verifyRider(user_id, approved);
       res.json(profile);
@@ -77,7 +77,7 @@ export class RiderController {
 
   getBusinessRiders = async (req: Request, res: Response) => {
     try {
-      const { business_id } = req.params;
+      const { business_id } = req.params as Record<string, string>;
       const userId = (req as any).user?.id;
 
       const membership = await this.memberRepository.findByUserAndTenant(userId, business_id);
@@ -148,7 +148,7 @@ export class RiderController {
 
   softDeleteRider = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const businessId = (req as any).user?.tenant_id;
       
       await this.riderService.softDeleteRider(id, businessId);
@@ -162,7 +162,7 @@ export class RiderController {
 
   hardDeleteRider = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       await this.riderService.hardDeleteRider(id);
       res.json({ message: 'Rider permanently deleted' });
     } catch (error: any) {
@@ -172,7 +172,7 @@ export class RiderController {
 
   restoreRider = async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as Record<string, string>;
       const businessId = (req as any).user?.tenant_id;
       
       const rider = await this.riderService.restoreRider(id, businessId);

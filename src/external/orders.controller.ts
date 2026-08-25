@@ -109,7 +109,7 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 export const trackOrder = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tenantId } = req.apiContext!;
-    const { tracking_number } = req.params;
+    const { tracking_number } = req.params as Record<string, string>;
 
     const packageData = await packageService.getPackageByTrackingNumber(tracking_number);
 
@@ -224,7 +224,7 @@ export const createBulkOrders = async (req: Request, res: Response): Promise<voi
 export const updateRecipient = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tenantId } = req.apiContext!;
-    const { tracking_number } = req.params;
+    const { tracking_number } = req.params as Record<string, string>;
     const { recipient_name, recipient_phone, recipient_email, delivery_address } = req.body;
 
     if (!recipient_name && !recipient_phone && recipient_email === undefined && !delivery_address) {
@@ -259,7 +259,7 @@ export const updateRecipient = async (req: Request, res: Response): Promise<void
 export const confirmDelivery = async (req: Request, res: Response): Promise<void> => {
   try {
     const { tenantId } = req.apiContext!;
-    const { tracking_number } = req.params;
+    const { tracking_number } = req.params as Record<string, string>;
 
     const rawPackage = await packageRepository.findByTrackingNumber(tracking_number);
     if (!rawPackage || rawPackage.tenant_id !== tenantId) {

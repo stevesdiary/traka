@@ -6,7 +6,7 @@ import config from '../config/environment.js';
 export class CashPaymentController {
   confirmCashPayment = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { package_id } = req.params;
+      const { package_id } = req.params as Record<string, string>;
       const { amount_collected } = req.body;
       const rider_id = req.user!.userId;
 

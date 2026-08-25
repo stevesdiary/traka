@@ -18,7 +18,7 @@ async function assertMembership(userId: string, tenantId: string, res: Response)
 export const createWebhook = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id } = req.params;
+    const { business_id } = req.params as Record<string, string>;
     const { url, events } = req.body;
 
     if (!url || typeof url !== 'string') {
@@ -52,7 +52,7 @@ export const createWebhook = async (req: Request, res: Response): Promise<void> 
 export const listWebhooks = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id } = req.params;
+    const { business_id } = req.params as Record<string, string>;
 
     if (!(await assertMembership(userId, business_id, res))) return;
 
@@ -66,7 +66,7 @@ export const listWebhooks = async (req: Request, res: Response): Promise<void> =
 export const deleteWebhook = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id, webhook_id } = req.params;
+    const { business_id, webhook_id } = req.params as Record<string, string>;
 
     if (!(await assertMembership(userId, business_id, res))) return;
 
@@ -84,7 +84,7 @@ export const deleteWebhook = async (req: Request, res: Response): Promise<void> 
 export const listDeliveries = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { business_id, webhook_id } = req.params;
+    const { business_id, webhook_id } = req.params as Record<string, string>;
 
     if (!(await assertMembership(userId, business_id, res))) return;
 

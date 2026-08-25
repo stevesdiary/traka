@@ -106,7 +106,8 @@ describe('Critical API Flows (E2E)', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
         message: 'Login successful',
-        token: 'access-token-1'
+        token: 'access-token-1',
+        refresh_token: 'refresh-token-1'
       });
       expect(response.headers['set-cookie']).toEqual(
         expect.arrayContaining([
@@ -261,6 +262,7 @@ describe('Critical API Flows (E2E)', () => {
     it('rejects invalid webhook signatures', async () => {
       mockPaymentGatewayService.handleWebhook.mockResolvedValue({
         processed: false,
+        code: 'INVALID_SIGNATURE',
         message: 'Invalid webhook signature'
       });
 

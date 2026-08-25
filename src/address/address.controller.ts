@@ -54,7 +54,7 @@ export class AddressController {
   getAddressById = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
-      const { addressId } = req.params;
+      const { addressId } = req.params as Record<string, string>;
 
       if (!userId) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -76,7 +76,7 @@ export class AddressController {
   updateAddress = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
-      const { addressId } = req.params;
+      const { addressId } = req.params as Record<string, string>;
       const { label, address, city, state, latitude, longitude } = req.body;
 
       if (!userId) {
@@ -102,7 +102,7 @@ export class AddressController {
   setDefaultAddress = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
-      const { addressId } = req.params;
+      const { addressId } = req.params as Record<string, string>;
 
       if (!userId) {
         res.status(401).json({ error: 'Unauthorized' });
@@ -119,7 +119,7 @@ export class AddressController {
   deleteAddress = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
-      const { addressId } = req.params;
+      const { addressId } = req.params as Record<string, string>;
 
       if (!userId) {
         res.status(401).json({ error: 'Unauthorized' });

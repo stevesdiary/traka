@@ -29,7 +29,7 @@ export class MatchingController {
   // Courier presence endpoints
   updateLocation = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { courierId } = req.params;
+      const { courierId } = req.params as Record<string, string>;
 
       if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
@@ -71,7 +71,7 @@ export class MatchingController {
 
   updateStatus = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { courierId } = req.params;
+      const { courierId } = req.params as Record<string, string>;
 
       if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
@@ -94,7 +94,7 @@ export class MatchingController {
 
   getCourierState = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { courierId } = req.params;
+      const { courierId } = req.params as Record<string, string>;
       const state = await CourierPresenceService.getCourierState(courierId);
 
       res.json({
@@ -247,7 +247,7 @@ export class MatchingController {
   // Courier response endpoints
   acceptOffer = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { courierId, requestId } = req.params;
+      const { courierId, requestId } = req.params as Record<string, string>;
 
       if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
@@ -275,7 +275,7 @@ export class MatchingController {
 
   rejectOffer = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { courierId, requestId } = req.params;
+      const { courierId, requestId } = req.params as Record<string, string>;
 
       if (!await this._isCourierOwner(req.user!.userId, courierId)) {
         res.status(403).json({ error: 'Forbidden' });
